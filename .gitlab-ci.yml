@@ -6,7 +6,6 @@ include:
   - project: 'deepl-org/deepl/devex/gitlab-ci-lib'
     file:
       - '/templates/.secret-detection.yml'
-      - '/templates/.gitlab-release.yml'
   - template: Security/SAST.gitlab-ci.yml
 
 # Global --------------------------
@@ -21,8 +20,13 @@ variables:
 
 workflow:
   rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    # The tag pipeline must run: that is where the registry publish job fires.
     - if: $CI_COMMIT_TAG
+    # The release commit carries only the version and the changelog, both
+    # derived from commits that were already checked on the way in.
+    - if: $CI_COMMIT_MESSAGE =~ /^chore\(release\):/
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
 
 stages:
@@ -229,12 +233,3 @@ publish:
 publish_manual:
   extends: .publish_base
   when: manual
-
-## gitlab release
-
-gitlab release:
-  stage: publish
-  image: registry.gitlab.com/gitlab-org/release-cli:latest
-  extends: .create_gitlab_release
-  rules:
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
