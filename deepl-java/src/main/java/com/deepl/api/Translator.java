@@ -1025,16 +1025,6 @@ public class Translator {
     if (targetLang.isEmpty()) {
       throw new IllegalArgumentException("targetLang must not be empty");
     }
-    switch (targetLang) {
-      case "en":
-        throw new IllegalArgumentException(
-            "targetLang=\"en\" is not allowed, please use \"en-GB\" or \"en-US\" instead");
-      case "pt":
-        throw new IllegalArgumentException(
-            "targetLang=\"pt\" is not allowed, please use \"pt-PT\" or \"pt-BR\" instead");
-      default:
-        break;
-    }
   }
 
   /** Creates a glossary with given details. */

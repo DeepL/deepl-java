@@ -89,8 +89,11 @@ will be auto-detected.
 
 Language codes are **case-insensitive** strings according to ISO 639-1, for
 example `'de'`, `'fr'`, `'ja''`. Some target languages also include the regional
-variant according to ISO 3166-1, for example `'en-US'`, or `'pt-BR'`. The full
-list of supported languages is in the [API documentation][api-docs-lang-list].
+variant according to ISO 3166-1, for example `'en-US'`, or `'pt-BR'`. The bare
+codes `'en'` and `'pt'` are also accepted as target languages and translate to
+the default variants `'en-US'` and `'pt-PT'`; use a regional variant to choose
+explicitly. The full list of supported languages is in the
+[API documentation][api-docs-lang-list].
 
 There are additional optional arguments to control translation, see
 [Text translation options](#text-translation-options) below.

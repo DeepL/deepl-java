@@ -26,12 +26,19 @@ public class LanguageCode {
   /** German language code, may be used as source or target language. */
   public static final String German = "de";
 
+  /** Swiss German language code, may only be used as a target language. */
+  public static final String GermanSwiss = "de-CH";
+
+  /** German (Germany) language code, may only be used as a target language. */
+  public static final String GermanGermany = "de-DE";
+
   /** Greek language code, may be used as source or target language. */
   public static final String Greek = "el";
 
   /**
-   * English language code, may only be used as a source language. In input texts, this language
-   * code supports all English variants.
+   * English language code, may be used as source or target language. In input texts, this language
+   * code supports all English variants. As a target language it translates to American English; use
+   * {@link #EnglishBritish} or {@link #EnglishAmerican} to choose the variant explicitly.
    */
   public static final String English = "en";
 
@@ -44,6 +51,12 @@ public class LanguageCode {
   /** Spanish language code, may be used as source or target language. */
   public static final String Spanish = "es";
 
+  /** European Spanish language code, may only be used as a target language. */
+  public static final String SpanishEuropean = "es-ES";
+
+  /** Latin American Spanish language code, may only be used as a target language. */
+  public static final String SpanishLatinAmerican = "es-419";
+
   /** Estonian language code, may be used as source or target language. */
   public static final String Estonian = "et";
 
@@ -52,6 +65,12 @@ public class LanguageCode {
 
   /** French language code, may be used as source or target language. */
   public static final String French = "fr";
+
+  /** Canadian French language code, may only be used as a target language. */
+  public static final String FrenchCanadian = "fr-CA";
+
+  /** European French language code, may only be used as a target language. */
+  public static final String FrenchEuropean = "fr-FR";
 
   /** Hungarian language code, may be used as source or target language. */
   public static final String Hungarian = "hu";
@@ -84,8 +103,10 @@ public class LanguageCode {
   public static final String Polish = "pl";
 
   /**
-   * Portuguese language code, may only be used as a source language. In input texts, this language
-   * code supports all Portuguese variants.
+   * Portuguese language code, may be used as source or target language. In input texts, this
+   * language code supports all Portuguese variants. As a target language it translates to European
+   * Portuguese; use {@link #PortugueseBrazilian} or {@link #PortugueseEuropean} to choose the
+   * variant explicitly.
    */
   public static final String Portuguese = "pt";
 
@@ -118,6 +139,12 @@ public class LanguageCode {
 
   /** Chinese language code, may be used as source or target language. */
   public static final String Chinese = "zh";
+
+  /** Simplified Chinese language code, may only be used as a target language. */
+  public static final String ChineseSimplified = "zh-Hans";
+
+  /** Traditional Chinese language code, may only be used as a target language. */
+  public static final String ChineseTraditional = "zh-Hant";
 
   /**
    * Removes the regional variant (if any) from the given language code.

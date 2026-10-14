@@ -82,18 +82,15 @@ public class TranslateTextTest extends TestBase {
             .orElse(null);
     Assertions.assertNotNull(targetLanguageDe);
     checkResult.accept(translator.translateText(exampleText.get("en"), null, targetLanguageDe));
+  }
 
-    // Check that en and pt as target languages throw an exception
-    Assertions.assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          translator.translateText(exampleText.get("de"), null, "en");
-        });
-    Assertions.assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          translator.translateText(exampleText.get("de"), null, "pt");
-        });
+  @Test
+  void testBareEnglishAndPortugueseTargetLanguages() {
+    Translator translator = createTranslator();
+    Assertions.assertDoesNotThrow(
+        () -> translator.translateText(exampleText.get("de"), null, LanguageCode.English));
+    Assertions.assertDoesNotThrow(
+        () -> translator.translateText(exampleText.get("de"), null, LanguageCode.Portuguese));
   }
 
   @Test

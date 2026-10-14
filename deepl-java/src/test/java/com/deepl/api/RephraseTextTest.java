@@ -18,6 +18,15 @@ public class RephraseTextTest extends TestBase {
   }
 
   @Test
+  void testBareEnglishAndPortugueseTargetLanguages() {
+    DeepLClient client = createDeepLClient();
+    Assertions.assertDoesNotThrow(
+        () -> client.rephraseText(exampleText.get("en"), LanguageCode.English, null));
+    Assertions.assertDoesNotThrow(
+        () -> client.rephraseText(exampleText.get("pt"), LanguageCode.Portuguese, null));
+  }
+
+  @Test
   void testTextArray() throws DeepLException, InterruptedException {
     DeepLClient client = createDeepLClient();
     List<String> texts = new ArrayList<>();

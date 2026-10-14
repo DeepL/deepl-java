@@ -328,15 +328,11 @@ public class GlossaryTest extends TestBase {
   @Test
   void testGlossaryTranslateTextInvalid() throws Exception {
     Translator translator = createTranslator();
-    try (GlossaryCleanupUtility cleanupEnDe = new GlossaryCleanupUtility(translator, "EnDe");
-        GlossaryCleanupUtility cleanupDeEn = new GlossaryCleanupUtility(translator, "DeEn")) {
+    try (GlossaryCleanupUtility cleanupEnDe = new GlossaryCleanupUtility(translator, "EnDe")) {
       String glossaryNameEnDe = cleanupEnDe.getGlossaryName();
-      String glossaryNameDeEn = cleanupDeEn.getGlossaryName();
 
       GlossaryInfo glossaryEnDe =
           translator.createGlossary(glossaryNameEnDe, "en", "de", testEntries);
-      GlossaryInfo glossaryDeEn =
-          translator.createGlossary(glossaryNameDeEn, "de", "en", testEntries);
 
       IllegalArgumentException exception =
           Assertions.assertThrows(
@@ -345,14 +341,6 @@ public class GlossaryTest extends TestBase {
                   translator.translateText(
                       "test", null, "de", new TextTranslationOptions().setGlossary(glossaryEnDe)));
       Assertions.assertTrue(exception.getMessage().contains("sourceLang is required"));
-
-      exception =
-          Assertions.assertThrows(
-              IllegalArgumentException.class,
-              () ->
-                  translator.translateText(
-                      "test", "de", "en", new TextTranslationOptions().setGlossary(glossaryDeEn)));
-      Assertions.assertTrue(exception.getMessage().contains("targetLang=\"en\" is not allowed"));
     }
   }
 

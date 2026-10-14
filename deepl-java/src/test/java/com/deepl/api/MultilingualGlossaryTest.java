@@ -662,14 +662,6 @@ public class MultilingualGlossaryTest extends TestBase {
                   deepLClient.translateText(
                       "test", null, "de", new TextTranslationOptions().setGlossary(glossary)));
       Assertions.assertTrue(exception.getMessage().contains("sourceLang is required"));
-
-      exception =
-          Assertions.assertThrows(
-              IllegalArgumentException.class,
-              () ->
-                  deepLClient.translateText(
-                      "test", "de", "en", new TextTranslationOptions().setGlossary(glossary)));
-      Assertions.assertTrue(exception.getMessage().contains("targetLang=\"en\" is not allowed"));
     }
   }
 
