@@ -34,7 +34,7 @@ dependencies {
     implementation("org.apache.httpcomponents:httpclient:4.5.14") { because("java.net.HttpURLConnection does not support PATCH") }
 
 //    implementation("com.google.guava:guava:30.1.1-jre")
-    implementation("com.google.code.gson:gson:2.10.1")
+    implementation("com.google.code.gson:gson:2.11.0")
 }
 
 
