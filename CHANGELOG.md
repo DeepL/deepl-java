@@ -5,6 +5,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- `getSourceLanguages()`, `getTargetLanguages()`, `getLanguages()` and
+  `getGlossaryLanguages()` now use `GET /v3/languages` instead of the
+  deprecated v2 endpoints. The returned lists may contain additional
+  languages, including the bare `en` and `pt` as target languages.
+
+### Fixed
+- `getLanguages()` no longer sends a `POST` request to `/v2/languages`; it
+  now sends `GET`.
 
 ## [1.17.0] - 2026-08-11
 ### Added

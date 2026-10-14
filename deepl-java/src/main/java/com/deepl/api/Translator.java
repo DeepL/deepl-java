@@ -300,15 +300,10 @@ public class Translator {
    */
   public List<Language> getLanguages(LanguageType languageType)
       throws DeepLException, InterruptedException {
-    ArrayList<KeyValuePair<String, String>> params = new ArrayList<>();
-    if (languageType == LanguageType.Target) {
-      params.add(new KeyValuePair<>("type", "target"));
-    }
     HttpResponse response =
-        httpClientWrapper.sendRequestWithBackoff(
-            String.format("/%s/languages", apiVersion), params);
+        httpClientWrapper.sendGetRequestWithBackoff("/v3/languages?resource=translate_text");
     checkResponse(response, false, false);
-    return jsonParser.parseLanguages(response.getBody());
+    return jsonParser.parseV3Languages(response.getBody(), languageType);
   }
 
   /**
@@ -323,10 +318,9 @@ public class Translator {
   public List<GlossaryLanguagePair> getGlossaryLanguages()
       throws DeepLException, InterruptedException {
     HttpResponse response =
-        httpClientWrapper.sendGetRequestWithBackoff(
-            String.format("/%s/glossary-language-pairs", apiVersion));
+        httpClientWrapper.sendGetRequestWithBackoff("/v3/languages?resource=glossary");
     checkResponse(response, false, false);
-    return jsonParser.parseGlossaryLanguageList(response.getBody());
+    return jsonParser.parseV3GlossaryLanguagePairs(response.getBody());
   }
 
   /**

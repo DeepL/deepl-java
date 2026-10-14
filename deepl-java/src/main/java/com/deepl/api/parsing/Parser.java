@@ -26,7 +26,6 @@ public class Parser {
     GsonBuilder gsonBuilder = new GsonBuilder();
     gsonBuilder.registerTypeAdapter(TextResult.class, new TextResultDeserializer());
     gsonBuilder.registerTypeAdapter(WriteResult.class, new WriteResultDeserializer());
-    gsonBuilder.registerTypeAdapter(Language.class, new LanguageDeserializer());
     gsonBuilder.registerTypeAdapter(Usage.class, new UsageDeserializer());
     gsonBuilder.registerTypeAdapter(
         TranslationMemoryJob.class, new TranslationMemoryJobDeserializer());
@@ -47,13 +46,40 @@ public class Parser {
     return gson.fromJson(json, Usage.class);
   }
 
-  public List<Language> parseLanguages(String json) {
-    Type languageListType = new TypeToken<ArrayList<Language>>() {}.getType();
-    return gson.fromJson(json, languageListType);
+  public List<Language> parseV3Languages(String json, LanguageType languageType) {
+    Type v3LanguageListType = new TypeToken<ArrayList<V3Language>>() {}.getType();
+    List<V3Language> entries = gson.fromJson(json, v3LanguageListType);
+    List<Language> result = new ArrayList<>();
+    for (V3Language entry : entries) {
+      if (languageType == LanguageType.Target) {
+        if (!entry.isUsableAsTarget()) continue;
+        result.add(new Language(entry.getName(), entry.getLang(), entry.hasFeature("formality")));
+      } else {
+        if (!entry.isUsableAsSource()) continue;
+        result.add(new Language(entry.getName(), entry.getLang(), null));
+      }
+    }
+    return result;
   }
 
-  public List<GlossaryLanguagePair> parseGlossaryLanguageList(String json) {
-    return gson.fromJson(json, GlossaryLanguagesResponse.class).getSupportedLanguages();
+  public List<GlossaryLanguagePair> parseV3GlossaryLanguagePairs(String json) {
+    Type v3LanguageListType = new TypeToken<ArrayList<V3Language>>() {}.getType();
+    List<V3Language> entries = gson.fromJson(json, v3LanguageListType);
+    List<String> sourceCodes = new ArrayList<>();
+    List<String> targetCodes = new ArrayList<>();
+    for (V3Language entry : entries) {
+      if (entry.isUsableAsSource()) sourceCodes.add(entry.getLang());
+      if (entry.isUsableAsTarget()) targetCodes.add(entry.getLang());
+    }
+    List<GlossaryLanguagePair> pairs = new ArrayList<>();
+    for (String source : sourceCodes) {
+      for (String target : targetCodes) {
+        if (!source.equals(target)) {
+          pairs.add(new GlossaryLanguagePair(source, target));
+        }
+      }
+    }
+    return pairs;
   }
 
   public DocumentStatus parseDocumentStatus(String json) {
