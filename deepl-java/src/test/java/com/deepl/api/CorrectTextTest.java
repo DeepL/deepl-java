@@ -32,7 +32,7 @@ public class CorrectTextTest extends TestBase {
   @Test
   void testEmptyText() {
     DeepLClient client = createDeepLClient();
-    Assertions.assertThrows(IllegalArgumentException.class, () -> client.correctText("", "en-US"));
+    Assertions.assertThrows(IllegalArgumentException.class, () -> client.correctText("", null));
   }
 
   protected void checkSanityOfImprovements(

@@ -1826,8 +1826,10 @@ public class DeepLClient extends Translator {
 
   protected static ArrayList<KeyValuePair<String, String>> createWriteHttpParams(
       List<String> texts, @Nullable String targetLang, @Nullable TextRephraseOptions options) {
-    targetLang = LanguageCode.standardize(targetLang);
-    checkValidLanguages(null, targetLang);
+    if (targetLang != null) {
+      targetLang = LanguageCode.standardize(targetLang);
+      checkValidLanguages(null, targetLang);
+    }
 
     ArrayList<KeyValuePair<String, String>> params = new ArrayList<>();
     if (targetLang != null) {

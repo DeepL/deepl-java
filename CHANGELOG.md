@@ -33,6 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed the doc comments of `LanguageCode.English` and
   `LanguageCode.Portuguese`, which claimed they may only be used as source
   languages.
+- `rephraseText()` no longer throws a `NullPointerException` when the target
+  language is `null`.
 - `getLanguages()` no longer sends a `POST` request to `/v2/languages`; it
   now sends `GET`.
 

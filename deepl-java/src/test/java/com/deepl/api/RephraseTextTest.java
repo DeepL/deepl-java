@@ -5,6 +5,7 @@ package com.deepl.api;
 
 import java.util.*;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 public class RephraseTextTest extends TestBase {
@@ -24,6 +25,15 @@ public class RephraseTextTest extends TestBase {
         () -> client.rephraseText(exampleText.get("en"), LanguageCode.English, null));
     Assertions.assertDoesNotThrow(
         () -> client.rephraseText(exampleText.get("pt"), LanguageCode.Portuguese, null));
+  }
+
+  @Test
+  void testNullTargetLang() throws DeepLException, InterruptedException {
+    // deepl-mock requires target_lang for rephrase although the API does not.
+    Assumptions.assumeFalse(isMockServer);
+    DeepLClient client = createDeepLClient();
+    WriteResult result = client.rephraseText(exampleText.get("en"), null, null);
+    Assertions.assertNotNull(result.getText());
   }
 
   @Test
