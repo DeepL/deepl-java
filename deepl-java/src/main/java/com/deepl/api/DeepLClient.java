@@ -95,6 +95,30 @@ public class DeepLClient extends Translator {
   }
 
   /**
+   * Corrects grammar, spelling and punctuation of the given text without rewriting it.
+   *
+   * @param text Text to correct, must not be empty.
+   * @param targetLang Optional language code the corrected text should be in, e.g. "EN-US".
+   * @throws IllegalArgumentException If text is empty.
+   */
+  public WriteResult correctText(String text, @Nullable String targetLang)
+      throws InterruptedException, DeepLException {
+    ArrayList<String> texts = new ArrayList<>();
+    texts.add(text);
+    return this.correctText(texts, targetLang).get(0);
+  }
+
+  public List<WriteResult> correctText(List<String> texts, @Nullable String targetLang)
+      throws InterruptedException, DeepLException {
+    Iterable<KeyValuePair<String, String>> params = createWriteHttpParams(texts, targetLang, null);
+    HttpResponse response =
+        httpClientWrapper.sendRequestWithBackoff(
+            String.format("/%s/write/correct", apiVersion), params);
+    checkResponse(response, false, false);
+    return jsonParser.parseWriteResult(response.getBody());
+  }
+
+  /**
    * Creates a glossary in your DeepL account with the specified details and returns a {@link
    * MultilingualGlossaryInfo} object with details about the newly created glossary. The glossary
    * will contain the glossary dictionaries specified in <paramref name="glossaryDicts" /> each with

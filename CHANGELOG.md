@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `GET /v3/languages/resources` and returns `LanguageResource` objects
   describing each resource's features and whether they need source and/or
   target language support.
+- Added `correctText()` to the `DeepLClient` class, which corrects grammar, spelling
+  and punctuation using the `/v2/write/correct` endpoint. It accepts a single
+  text or a list of texts and an optional target language.
 
 ### Changed
 - The bare target languages `en` and `pt` are no longer rejected
