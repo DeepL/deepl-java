@@ -794,6 +794,61 @@ public class DeepLClient extends Translator {
   }
 
   /**
+   * Retrieves the languages supported by the given DeepL API resource, along with the features each
+   * language supports for that resource.
+   *
+   * @param resource Resource to retrieve languages for, for example {@link
+   *     LanguageResource#RESOURCE_TRANSLATE_TEXT} or {@link LanguageResource#RESOURCE_GLOSSARY}.
+   * @param include Optional list of include values, for example {@link
+   *     LanguageSupport#INCLUDE_BETA} or {@link LanguageSupport#INCLUDE_EXTERNAL}. By default, or
+   *     if <code>null</code>, only stable languages and features are returned.
+   * @return List of {@link LanguageSupport} objects with per-feature support information.
+   * @throws IllegalArgumentException If resource is <code>null</code> or empty.
+   * @throws InterruptedException If the thread is interrupted during execution of this function.
+   * @throws DeepLException If any error occurs while communicating with the DeepL API.
+   */
+  public List<LanguageSupport> getLanguagesForResource(
+      String resource, @Nullable List<String> include) throws DeepLException, InterruptedException {
+    validateParameter("resource", resource);
+    ArrayList<KeyValuePair<String, String>> queryParams = new ArrayList<>();
+    queryParams.add(new KeyValuePair<>("resource", resource));
+    if (include != null) {
+      for (String value : include) {
+        queryParams.add(new KeyValuePair<>("include", value));
+      }
+    }
+    String relativeUrl = "/v3/languages" + createQueryString(queryParams);
+    HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
+    checkResponse(response, false, false);
+    return jsonParser.parseLanguageSupportList(response.getBody());
+  }
+
+  /**
+   * Functions the same as {@link DeepLClient#getLanguagesForResource(String, List)} but returns
+   * only stable languages and features.
+   *
+   * @see DeepLClient#getLanguagesForResource(String, List)
+   */
+  public List<LanguageSupport> getLanguagesForResource(String resource)
+      throws DeepLException, InterruptedException {
+    return getLanguagesForResource(resource, null);
+  }
+
+  /**
+   * Retrieves the resources supported by the DeepL API, along with their features and whether each
+   * feature requires support from the source and/or target language.
+   *
+   * @return List of {@link LanguageResource} objects, one per supported resource.
+   * @throws InterruptedException If the thread is interrupted during execution of this function.
+   * @throws DeepLException If any error occurs while communicating with the DeepL API.
+   */
+  public List<LanguageResource> getLanguageResources() throws DeepLException, InterruptedException {
+    HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff("/v3/languages/resources");
+    checkResponse(response, false, false);
+    return jsonParser.parseLanguageResourceList(response.getBody());
+  }
+
+  /**
    * Retrieves a list of translation memories available for the account associated with the DeepL
    * API auth key. The maximum number of translation memories returned is controlled by pageSize
    * (max 25).

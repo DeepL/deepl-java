@@ -62,6 +62,27 @@ public class Parser {
     return result;
   }
 
+  public List<LanguageSupport> parseLanguageSupportList(String json) {
+    Type listType = new TypeToken<ArrayList<LanguageSupport>>() {}.getType();
+    return gson.fromJson(json, listType);
+  }
+
+  public List<LanguageResource> parseLanguageResourceList(String json) {
+    Type listType = new TypeToken<ArrayList<V3LanguageResource>>() {}.getType();
+    List<V3LanguageResource> entries = gson.fromJson(json, listType);
+    List<LanguageResource> result = new ArrayList<>();
+    for (V3LanguageResource entry : entries) {
+      Map<String, ResourceFeature> features = new LinkedHashMap<>();
+      if (entry.features != null) {
+        for (ResourceFeature feature : entry.features) {
+          features.put(feature.getName(), feature);
+        }
+      }
+      result.add(new LanguageResource(entry.name, features));
+    }
+    return result;
+  }
+
   public List<GlossaryLanguagePair> parseV3GlossaryLanguagePairs(String json) {
     Type v3LanguageListType = new TypeToken<ArrayList<V3Language>>() {}.getType();
     List<V3Language> entries = gson.fromJson(json, v3LanguageListType);

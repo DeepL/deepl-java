@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Added `LanguageCode` constants for the target language variants `de-CH`,
   `de-DE`, `es-ES`, `es-419`, `fr-CA`, `fr-FR`, `zh-Hans` and `zh-Hant`.
+- Added `DeepLClient.getLanguagesForResource()`, which calls
+  `GET /v3/languages` for a given resource (`translate_text`, `glossary`,
+  `write`, ...) with optional `include` values (`beta`, `external`) and
+  returns `LanguageSupport` objects with per-language feature support.
+- Added `DeepLClient.getLanguageResources()`, which calls
+  `GET /v3/languages/resources` and returns `LanguageResource` objects
+  describing each resource's features and whether they need source and/or
+  target language support.
 
 ### Changed
 - The bare target languages `en` and `pt` are no longer rejected
