@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.http.Request;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
+import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -75,13 +76,21 @@ class TranslateDocumentTest {
     return fields;
   }
 
-  /** The parts of the one request the server saw, in order: the stub only checks presence. */
-  private void assertPartNames(String... expected) {
-    List<String> names = new ArrayList<>();
-    for (Request.Part part : wm.getAllServeEvents().get(0).getRequest().getParts()) {
-      names.add(part.getName());
+  /** The parts of every request to {@code path}, in order: the stub only checks presence. */
+  private void assertPartNames(String path, String... expected) {
+    int uploads = 0;
+    for (ServeEvent event : wm.getAllServeEvents()) {
+      if (!event.getRequest().getUrl().equals(path)) {
+        continue;
+      }
+      uploads++;
+      List<String> names = new ArrayList<>();
+      for (Request.Part part : event.getRequest().getParts()) {
+        names.add(part.getName());
+      }
+      assertEquals(Arrays.asList(expected), names);
     }
-    assertEquals(Arrays.asList(expected), names);
+    assertTrue(uploads > 0, "No request to " + path);
   }
 
   private File writeInput(String name, String content) throws IOException {
@@ -97,7 +106,7 @@ class TranslateDocumentTest {
         "proton beam".getBytes(StandardCharsets.UTF_8),
         fields("source_lang", "en", "target_lang", "de"));
     client.translateDocumentUpload(input, "EN", "DE");
-    assertPartNames("file", "source_lang", "target_lang");
+    assertPartNames("/v2/document", "file", "source_lang", "target_lang");
   }
 
   @Test
@@ -107,7 +116,7 @@ class TranslateDocumentTest {
     java.nio.file.Files.write(input.toPath(), bytes);
     expectUpload("/v2/document", "example.docx", bytes, fields("target_lang", "de"));
     client.translateDocumentUpload(input, null, "de");
-    assertPartNames("file", "target_lang");
+    assertPartNames("/v2/document", "file", "target_lang");
   }
 
   @Test
@@ -136,6 +145,7 @@ class TranslateDocumentTest {
             .setTranslationMemoryId("tm1")
             .setTranslationMemoryThreshold(80));
     assertPartNames(
+        "/v2/document",
         "file",
         "source_lang",
         "target_lang",
@@ -161,7 +171,7 @@ class TranslateDocumentTest {
         "a".getBytes(StandardCharsets.UTF_8),
         fields("source_lang", "en", "glossary_ids", "g1,g2", "target_lang", "fr", "debug", "1"));
     client.translateDocumentUpload(input, "en", "de", options);
-    assertPartNames("file", "source_lang", "glossary_ids", "target_lang", "debug");
+    assertPartNames("/v2/document", "file", "source_lang", "glossary_ids", "target_lang", "debug");
   }
 
   @Test
@@ -182,6 +192,7 @@ class TranslateDocumentTest {
         null,
         "de",
         new DocumentTranslationOptions().setStyleRule(rule).setTranslationMemory(memory));
+    assertPartNames("/v2/document", "file", "target_lang", "style_id", "translation_memory_id");
   }
 
   @Test
@@ -197,6 +208,7 @@ class TranslateDocumentTest {
             "stream.txt",
             null,
             "de");
+    assertPartNames("/v2/document/", "file", "target_lang");
     assertEquals("D1", handle.getDocumentId());
     assertEquals("K1", handle.getDocumentKey());
   }
@@ -330,6 +342,7 @@ class TranslateDocumentTest {
             .withRequestBody(FormBody.of("document_key", "K1"))
             .willReturn(aResponse().withStatus(200).withBody("Protonenstrahl")));
     DocumentStatus status = client.translateDocument(input, output, "en", "de");
+    assertPartNames("/v2/document/", "file", "source_lang", "target_lang");
     assertTrue(status.done());
     assertEquals("Protonenstrahl", Fixtures.readFile(output));
   }
@@ -352,6 +365,7 @@ class TranslateDocumentTest {
         null,
         "de",
         null);
+    assertPartNames("/v2/document/", "file", "target_lang");
     assertEquals("xyz", new String(output.toByteArray(), StandardCharsets.UTF_8));
   }
 
@@ -427,5 +441,6 @@ class TranslateDocumentTest {
     DocumentHandle handle = client.translateDocumentUpload(input, null, "de");
     assertNotNull(handle);
     assertEquals(2, wm.getAllServeEvents().size());
+    assertPartNames("/v2/document", "file", "target_lang");
   }
 }
