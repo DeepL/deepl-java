@@ -347,10 +347,11 @@ public class Translator {
       String targetLang,
       @Nullable DocumentTranslationOptions options)
       throws DocumentTranslationException, IOException {
+    // Checked before the try block: its handler deletes the output file.
+    if (outputFile.exists()) {
+      throw new IOException("File already exists at output path");
+    }
     try {
-      if (outputFile.exists()) {
-        throw new IOException("File already exists at output path");
-      }
       try (InputStream inputStream = new FileInputStream(inputFile);
           OutputStream outputStream = new FileOutputStream(outputFile)) {
         return translateDocument(
@@ -578,10 +579,11 @@ public class Translator {
    */
   public void translateDocumentDownload(DocumentHandle handle, File outputFile)
       throws DeepLException, IOException, InterruptedException {
+    // Checked before the try block: its handler deletes the output file.
+    if (outputFile.exists()) {
+      throw new IOException("File already exists at output path");
+    }
     try {
-      if (outputFile.exists()) {
-        throw new IOException("File already exists at output path");
-      }
       try (FileOutputStream outputStream = new FileOutputStream(outputFile)) {
         translateDocumentDownload(handle, outputStream);
       }

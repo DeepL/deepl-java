@@ -37,6 +37,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   language is `null`.
 - `getLanguages()` no longer sends a `POST` request to `/v2/languages`; it
   now sends `GET`.
+- `translateDocument()` with file arguments and `translateDocumentDownload()`
+  with an output file no longer delete an existing file at the output path
+  when they refuse to overwrite it and throw an `IOException`.
 
 ## [1.17.0] - 2026-08-11
 ### Added

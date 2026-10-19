@@ -391,10 +391,18 @@ class TranslateDocumentTest {
   }
 
   @Test
-  void throwsIOExceptionWhenTheOutputFileExistsBeforeSendingAnything() throws Exception {
+  void keepsAnExistingOutputFileWhenTranslatingAFile() throws Exception {
     File input = writeInput("example.txt", "a");
     File output = writeInput("out.txt", "already here");
     assertThrows(IOException.class, () -> client.translateDocument(input, output, "en", "de"));
+    assertEquals("already here", Fixtures.readFile(output));
+  }
+
+  @Test
+  void keepsAnExistingOutputFileWhenDownloadingAResultToAFile() throws Exception {
+    File output = writeInput("out.txt", "already here");
+    assertThrows(IOException.class, () -> client.translateDocumentDownload(HANDLE_OBJECT, output));
+    assertEquals("already here", Fixtures.readFile(output));
   }
 
   @Test
