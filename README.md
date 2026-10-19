@@ -1230,20 +1230,28 @@ We welcome Pull Requests, please read the
 
 ### Tests
 
-Execute the tests using `./gradlew test`. The tests communicate with the DeepL
-API using the auth key defined by the `DEEPL_AUTH_KEY` environment variable.
+There are two test suites.
 
-Be aware that the tests make DeepL API requests that contribute toward your API
-usage.
+The offline tests need no auth key and no network. They test the options,
+request encoding, error handling, retries and polling against a local
+[WireMock][wiremock] server and check each outgoing request exactly. Execute
+them using `./gradlew offlineTest`. They run on Java 8 and newer.
 
-The test suite may instead be configured to communicate with the mock-server
-provided by [deepl-mock][deepl-mock]. Although most test cases work for either,
-some test cases work only with the DeepL API or the mock-server and will be
-otherwise skipped. The test cases that require the mock-server trigger server
-errors and test the client error-handling. To execute the tests using
-deepl-mock, run it in another terminal while executing the tests. Execute the
-tests using `./gradlew test` with the `DEEPL_MOCK_SERVER_PORT` and
-`DEEPL_SERVER_URL` environment variables defined referring to the mock-server.
+The real-API tests send each request the library supports once to the DeepL
+API, using the auth key defined by the `DEEPL_AUTH_KEY` environment variable.
+Set `DEEPL_SERVER_URL` to test against another server, for example the test
+API. Execute them using `./gradlew realApiTest`, with Java 11 or newer. They
+create glossaries, style rules and translation memories named
+`sdktest-java-...` and delete them again.
+
+Be aware that the real-API tests make DeepL API requests that contribute
+toward your API usage.
+
+Each run writes a coverage report of the library to
+`deepl-java/build/reports/jacoco/offlineTestCoverage` or
+`deepl-java/build/reports/jacoco/realApiTestCoverage`.
+
+[wiremock]: https://wiremock.org/
 
 [api-docs]: https://www.deepl.com/docs-api?utm_source=github&utm_medium=github-java-readme
 
@@ -1258,8 +1266,6 @@ tests using `./gradlew test` with the `DEEPL_MOCK_SERVER_PORT` and
 [api-docs-glossary-lang-list]: https://www.deepl.com/docs-api/managing-glossaries/?utm_source=github&utm_medium=github-java-readme
 
 [create-account]: https://www.deepl.com/pro?utm_source=github&utm_medium=github-java-readme#developer
-
-[deepl-mock]: https://www.github.com/DeepLcom/deepl-mock
 
 [issues]: https://www.github.com/DeepLcom/deepl-java/issues
 
