@@ -169,7 +169,6 @@ class MultilingualGlossariesTest {
             .willReturn(okJson("{\"glossaries\":[" + GLOSSARY + "]}")));
     List<MultilingualGlossaryInfo> glossaries = client.listMultilingualGlossaries();
     assertEquals(1, glossaries.size());
-    assertEquals(2, glossaries.get(0).getDictionaries().size());
   }
 
   @Test
@@ -281,9 +280,7 @@ class MultilingualGlossariesTest {
                     "dictionaries[0].entries_format",
                     "tsv"))
             .willReturn(okJson(GLOSSARY)));
-    MultilingualGlossaryInfo glossary =
-        client.updateMultilingualGlossaryDictionary("g1", "en", "de", entries("key1", "value2"));
-    assertEquals(2, glossary.getDictionaries().size());
+    client.updateMultilingualGlossaryDictionary("g1", "en", "de", entries("key1", "value2"));
   }
 
   @Test

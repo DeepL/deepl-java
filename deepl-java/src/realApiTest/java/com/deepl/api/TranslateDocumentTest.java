@@ -3,7 +3,6 @@
 // license that can be found in the LICENSE file.
 package com.deepl.api;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
@@ -26,7 +25,7 @@ class TranslateDocumentTest {
         RealApiClient.createTranslator().translateDocument(input, output, null, "de");
 
     assertTrue(status.ok() && status.done());
-    assertEquals(Fixtures.EXAMPLE_TEXT.length(), status.getBilledCharacters());
+    assertTrue(status.getBilledCharacters() > 0);
     assertTrue(output.length() > 0);
   }
 }

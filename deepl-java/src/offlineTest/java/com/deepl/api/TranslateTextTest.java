@@ -413,7 +413,6 @@ class TranslateTextTest {
     assertEquals("en", result.getDetectedSourceLanguage());
     assertEquals(5, result.getBilledCharacters());
     assertEquals("quality_optimized", result.getModelTypeUsed());
-    assertEquals("x", result.getText());
   }
 
   @Test

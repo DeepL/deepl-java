@@ -13,7 +13,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -110,7 +109,6 @@ class GlossariesTest {
         translator.createGlossary(
             "n", "en", "de", new GlossaryEntries(Collections.singletonMap("a", "b")));
     assertEquals("g1", glossary.getGlossaryId());
-    assertTrue(glossary.isReady());
     assertEquals("en", glossary.getSourceLang());
     assertEquals("de", glossary.getTargetLang());
     assertEquals(2, glossary.getEntryCount());

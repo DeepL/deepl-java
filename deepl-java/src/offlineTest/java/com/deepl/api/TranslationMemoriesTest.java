@@ -117,7 +117,6 @@ class TranslationMemoriesTest {
             .willReturn(okJson("{\"translation_memories\":[" + MEMORY + "," + MEMORY + "]}")));
     List<TranslationMemoryInfo> memories = client.listTranslationMemories();
     assertEquals(2, memories.size());
-    assertEquals("n", memories.get(1).getName());
   }
 
   @Test

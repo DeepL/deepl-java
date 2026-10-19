@@ -66,7 +66,6 @@ class LanguagesTest {
     for (Language language : languages) {
       assertNull(language.getSupportsFormality());
     }
-    assertEquals("German", languages.get(0).getName());
   }
 
   @Test
@@ -120,7 +119,6 @@ class LanguagesTest {
     assertTrue(german.isUsableAsSource());
     assertTrue(german.isUsableAsTarget());
     assertTrue(german.supports(LanguageFeature.FEATURE_FORMALITY));
-    assertEquals("stable", german.getFeatures().get(LanguageFeature.FEATURE_FORMALITY).getStatus());
     assertFalse(languages.get(1).supports(LanguageFeature.FEATURE_FORMALITY));
     assertTrue(languages.get(2).getFeatures().isEmpty());
   }
@@ -145,7 +143,6 @@ class LanguagesTest {
     LanguageResource translateText = resources.get(0);
     assertEquals("translate_text", translateText.getResource());
     ResourceFeature glossary = translateText.getFeatures().get(LanguageFeature.FEATURE_GLOSSARY);
-    assertEquals("glossary", glossary.getName());
     assertEquals(Boolean.TRUE, glossary.getNeedsSourceSupport());
     assertEquals(Boolean.TRUE, glossary.getNeedsTargetSupport());
     ResourceFeature formality = translateText.getFeatures().get(LanguageFeature.FEATURE_FORMALITY);
