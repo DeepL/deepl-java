@@ -162,7 +162,8 @@ test_offline_manual:
     - if: $CI_PIPELINE_SOURCE != "schedule"
 
 # Every endpoint once against the real API; no retry, as a retry repeats every request.
-# Java 21 is the newest runtime the Gradle wrapper supports.
+# Java 21 is the current LTS. Gradle 7.4.2 officially supports up to Java 17, but this build runs
+# on 21 (offline matrix and this job).
 .test_real_api_base:
   stage: test
   extends: .test
