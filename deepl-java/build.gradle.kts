@@ -68,6 +68,14 @@ testing {
                 }
             }
         }
+        val realApiTest by registering(JvmTestSuite::class) {
+            useJUnitJupiter("5.10.0")
+            dependencies {
+                implementation(project)
+                // Java 11+, which is why this is not part of offlineTest.
+                implementation("io.github.littleproxy:littleproxy:2.9.1")
+            }
+        }
     }
 }
 
@@ -80,6 +88,7 @@ tasks.withType<Test>().configureEach {
 
 dependencies {
     "offlineTestImplementation"(testFixtures(project))
+    "realApiTestImplementation"(testFixtures(project))
 }
 
 tasks.named("check") {
@@ -93,7 +102,7 @@ components["java"].let { javaComponent ->
     javaComponent.withVariantsFromConfiguration(configurations["testFixturesRuntimeElements"]) { skip() }
 }
 
-listOf("offlineTest").forEach { suite ->
+listOf("offlineTest", "realApiTest").forEach { suite ->
     tasks.register<JacocoReport>("${suite}Coverage") {
         executionData(tasks.named(suite).get())
         sourceSets(sourceSets.main.get())
