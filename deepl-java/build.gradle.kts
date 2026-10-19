@@ -7,6 +7,8 @@ plugins {
     `maven-publish`
     signing
     id("com.diffplug.spotless") version "6.8.0"
+    jacoco
+    `java-test-fixtures`
 }
 
 group = "com.deepl.api"
@@ -40,6 +42,66 @@ dependencies {
 
 tasks.named<Test>("test") {
     useJUnitPlatform()
+}
+
+jacoco { toolVersion = "0.8.12" }
+
+// offlineTest needs no key and no network; realApiTest needs DEEPL_AUTH_KEY.
+testing {
+    suites {
+        val offlineTest by registering(JvmTestSuite::class) {
+            useJUnitJupiter("5.10.0")
+            dependencies {
+                implementation(project)
+                // The last WireMock line that runs on Java 8.
+                implementation("com.github.tomakehurst:wiremock-jre8:2.35.2")
+                // Encodes the expected form bodies independently of the SDK's own encoder.
+                implementation("org.apache.httpcomponents:httpclient:4.5.14")
+            }
+            targets.all {
+                testTask.configure {
+                    // Any request that does not go to the local WireMock server fails.
+                    systemProperty("http.proxyHost", "127.0.0.1")
+                    systemProperty("http.proxyPort", "9")
+                    systemProperty("https.proxyHost", "127.0.0.1")
+                    systemProperty("https.proxyPort", "9")
+                }
+            }
+        }
+    }
+}
+
+tasks.withType<Test>().configureEach {
+    testLogging {
+        events("failed")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
+}
+
+dependencies {
+    "offlineTestImplementation"(testFixtures(project))
+}
+
+tasks.named("check") {
+    dependsOn(tasks.named("offlineTest"))
+}
+
+// The test fixtures are shared by the test suites only and must not be published.
+components["java"].let { javaComponent ->
+    javaComponent as AdhocComponentWithVariants
+    javaComponent.withVariantsFromConfiguration(configurations["testFixturesApiElements"]) { skip() }
+    javaComponent.withVariantsFromConfiguration(configurations["testFixturesRuntimeElements"]) { skip() }
+}
+
+listOf("offlineTest").forEach { suite ->
+    tasks.register<JacocoReport>("${suite}Coverage") {
+        executionData(tasks.named(suite).get())
+        sourceSets(sourceSets.main.get())
+        reports {
+            xml.required.set(true)
+            html.required.set(true)
+        }
+    }
 }
 
 spotless {

@@ -1,0 +1,423 @@
+// Copyright 2026 DeepL SE (https://www.deepl.com)
+// Use of this source code is governed by an MIT
+// license that can be found in the LICENSE file.
+package com.deepl.api;
+
+import static com.github.tomakehurst.wiremock.client.WireMock.aMultipart;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.binaryEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.containing;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.matching;
+import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.github.tomakehurst.wiremock.client.MappingBuilder;
+import com.github.tomakehurst.wiremock.http.Request;
+import com.github.tomakehurst.wiremock.stubbing.Scenario;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.io.TempDir;
+
+class TranslateDocumentTest {
+  @RegisterExtension static OfflineServer wm = new OfflineServer();
+
+  private static final String HANDLE = "{\"document_id\":\"D1\",\"document_key\":\"K1\"}";
+  private static final String DONE =
+      "{\"document_id\":\"D1\",\"status\":\"done\",\"billed_characters\":11}";
+  private static final DocumentHandle HANDLE_OBJECT = new DocumentHandle("D1", "K1");
+
+  @TempDir Path tempDir;
+
+  private final DeepLClient client = OfflineClient.createClient(wm);
+
+  /** Stubs a document upload that expects exactly the given file and form fields. */
+  private void expectUpload(
+      String path, String fileName, byte[] content, Map<String, String> fields) {
+    MappingBuilder stub =
+        post(path)
+            .withHeader("Content-Type", matching("multipart/form-data; boundary=.+"))
+            .withMultipartRequestBody(
+                aMultipart()
+                    .withName("file")
+                    .withHeader("Content-Disposition", containing("filename=\"" + fileName + "\""))
+                    .withBody(binaryEqualTo(content)));
+    for (Map.Entry<String, String> field : fields.entrySet()) {
+      stub.withMultipartRequestBody(
+          aMultipart().withName(field.getKey()).withBody(equalTo(field.getValue())));
+    }
+    wm.stubFor(stub.willReturn(okJson(HANDLE)));
+  }
+
+  private static Map<String, String> fields(String... keysAndValues) {
+    Map<String, String> fields = new LinkedHashMap<>();
+    for (int i = 0; i < keysAndValues.length; i += 2) {
+      fields.put(keysAndValues[i], keysAndValues[i + 1]);
+    }
+    return fields;
+  }
+
+  /** The parts of the one request the server saw, in order: the stub only checks presence. */
+  private void assertPartNames(String... expected) {
+    List<String> names = new ArrayList<>();
+    for (Request.Part part : wm.getAllServeEvents().get(0).getRequest().getParts()) {
+      names.add(part.getName());
+    }
+    assertEquals(Arrays.asList(expected), names);
+  }
+
+  private File writeInput(String name, String content) throws IOException {
+    return Fixtures.writeFile(tempDir.resolve(name).toFile(), content);
+  }
+
+  @Test
+  void sendsTextFileAndLanguagesAsMultipartParts() throws Exception {
+    File input = writeInput("example.txt", "proton beam");
+    expectUpload(
+        "/v2/document",
+        "example.txt",
+        "proton beam".getBytes(StandardCharsets.UTF_8),
+        fields("source_lang", "en", "target_lang", "de"));
+    client.translateDocumentUpload(input, "EN", "DE");
+    assertPartNames("file", "source_lang", "target_lang");
+  }
+
+  @Test
+  void sendsBinaryFileBytesUnchanged() throws Exception {
+    byte[] bytes = new byte[] {0x50, 0x4b, 0x03, 0x04, (byte) 0xff, 0x00, (byte) 0x80, 0x0d, 0x0a};
+    File input = tempDir.resolve("example.docx").toFile();
+    java.nio.file.Files.write(input.toPath(), bytes);
+    expectUpload("/v2/document", "example.docx", bytes, fields("target_lang", "de"));
+    client.translateDocumentUpload(input, null, "de");
+    assertPartNames("file", "target_lang");
+  }
+
+  @Test
+  void sendsAllDocumentOptionsInOrder() throws Exception {
+    File input = writeInput("example.txt", "a");
+    expectUpload(
+        "/v2/document",
+        "example.txt",
+        "a".getBytes(StandardCharsets.UTF_8),
+        fields(
+            "source_lang", "en",
+            "target_lang", "de",
+            "formality", "prefer_more",
+            "glossary_id", "g1",
+            "style_id", "s1",
+            "translation_memory_id", "tm1",
+            "translation_memory_threshold", "80"));
+    client.translateDocumentUpload(
+        input,
+        "en",
+        "de",
+        new DocumentTranslationOptions()
+            .setFormality(Formality.PreferMore)
+            .setGlossaryId("g1")
+            .setStyleId("s1")
+            .setTranslationMemoryId("tm1")
+            .setTranslationMemoryThreshold(80));
+    assertPartNames(
+        "file",
+        "source_lang",
+        "target_lang",
+        "formality",
+        "glossary_id",
+        "style_id",
+        "translation_memory_id",
+        "translation_memory_threshold");
+  }
+
+  @Test
+  void sendsGlossaryIdsJoinedByCommaAndExtraBodyParametersLast() throws Exception {
+    File input = writeInput("example.txt", "a");
+    Map<String, String> extra = new LinkedHashMap<>();
+    extra.put("target_lang", "fr");
+    extra.put("debug", "1");
+    DocumentTranslationOptions options =
+        new DocumentTranslationOptions().setGlossaryIds("g1", "g2");
+    options.setExtraBodyParameters(extra);
+    expectUpload(
+        "/v2/document",
+        "example.txt",
+        "a".getBytes(StandardCharsets.UTF_8),
+        fields("source_lang", "en", "glossary_ids", "g1,g2", "target_lang", "fr", "debug", "1"));
+    client.translateDocumentUpload(input, "en", "de", options);
+    assertPartNames("file", "source_lang", "glossary_ids", "target_lang", "debug");
+  }
+
+  @Test
+  void sendsTheIdsOfAStyleRuleAndATranslationMemory() throws Exception {
+    File input = writeInput("example.txt", "a");
+    StyleRuleInfo rule =
+        new StyleRuleInfo(
+            "s2", "n", new java.util.Date(), new java.util.Date(), "de", 1, null, null);
+    TranslationMemoryInfo memory =
+        new TranslationMemoryInfo("tm2", "n", "en", Arrays.asList("de"), 1);
+    expectUpload(
+        "/v2/document",
+        "example.txt",
+        "a".getBytes(StandardCharsets.UTF_8),
+        fields("target_lang", "de", "style_id", "s2", "translation_memory_id", "tm2"));
+    client.translateDocumentUpload(
+        input,
+        null,
+        "de",
+        new DocumentTranslationOptions().setStyleRule(rule).setTranslationMemory(memory));
+  }
+
+  @Test
+  void sendsStreamUploadsToThePathWithATrailingSlash() throws Exception {
+    expectUpload(
+        "/v2/document/",
+        "stream.txt",
+        "abc".getBytes(StandardCharsets.UTF_8),
+        fields("target_lang", "de"));
+    DocumentHandle handle =
+        client.translateDocumentUpload(
+            new ByteArrayInputStream("abc".getBytes(StandardCharsets.UTF_8)),
+            "stream.txt",
+            null,
+            "de");
+    assertEquals("D1", handle.getDocumentId());
+    assertEquals("K1", handle.getDocumentKey());
+  }
+
+  @Test
+  void sendsTheDocumentKeyWhenAskingForTheStatus() throws Exception {
+    wm.stubFor(
+        post("/v2/document/D1")
+            .withHeader("Content-Type", equalTo("application/x-www-form-urlencoded"))
+            .withRequestBody(FormBody.of("document_key", "K1"))
+            .willReturn(
+                okJson(
+                    "{\"document_id\":\"D1\",\"status\":\"translating\","
+                        + "\"seconds_remaining\":7,\"billed_characters\":3}")));
+    DocumentStatus status = client.translateDocumentStatus(HANDLE_OBJECT);
+    assertEquals(DocumentStatus.StatusCode.Translating, status.getStatus());
+    assertTrue(status.ok());
+    assertFalse(status.done());
+    assertEquals(7L, status.getSecondsRemaining());
+    assertEquals(3L, status.getBilledCharacters());
+  }
+
+  @Test
+  void parsesErrorStatusAsNotOk() throws Exception {
+    wm.stubFor(
+        post("/v2/document/D1")
+            .willReturn(
+                okJson(
+                    "{\"document_id\":\"D1\",\"status\":\"error\",\"error_message\":\"boom\"}")));
+    DocumentStatus status = client.translateDocumentStatus(HANDLE_OBJECT);
+    assertFalse(status.ok());
+    assertFalse(status.done());
+    assertEquals("boom", status.getErrorMessage());
+  }
+
+  @Test
+  void pollsTheStatusUntilTheDocumentIsDone() throws Exception {
+    wm.stubFor(
+        post("/v2/document/D1")
+            .inScenario("poll")
+            .whenScenarioStateIs(Scenario.STARTED)
+            .willSetStateTo("translating")
+            .willReturn(okJson("{\"document_id\":\"D1\",\"status\":\"queued\"}")));
+    wm.stubFor(
+        post("/v2/document/D1")
+            .inScenario("poll")
+            .whenScenarioStateIs("translating")
+            .willReturn(okJson(DONE)));
+    DocumentStatus status = client.translateDocumentWaitUntilDone(HANDLE_OBJECT);
+    assertTrue(status.done());
+    assertEquals(11L, status.getBilledCharacters());
+  }
+
+  @Test
+  void throwsDeepLExceptionWithTheErrorMessageWhenWaitingForAFailedDocument() {
+    wm.stubFor(
+        post("/v2/document/D1")
+            .willReturn(
+                okJson(
+                    "{\"document_id\":\"D1\",\"status\":\"error\",\"error_message\":\"boom\"}")));
+    DeepLException thrown =
+        assertThrows(
+            DeepLException.class, () -> client.translateDocumentWaitUntilDone(HANDLE_OBJECT));
+    assertEquals("boom", thrown.getMessage());
+  }
+
+  @Test
+  void throwsDeepLExceptionWithAGenericMessageWhenAFailedDocumentHasNoErrorMessage() {
+    wm.stubFor(
+        post("/v2/document/D1")
+            .willReturn(okJson("{\"document_id\":\"D1\",\"status\":\"error\"}")));
+    DeepLException thrown =
+        assertThrows(
+            DeepLException.class, () -> client.translateDocumentWaitUntilDone(HANDLE_OBJECT));
+    assertEquals("Unknown error", thrown.getMessage());
+  }
+
+  @Test
+  void sendsTheDocumentKeyWhenDownloadingTheResultToAStream() throws Exception {
+    byte[] bytes = new byte[] {0x00, (byte) 0xff, 0x7f, (byte) 0x80, 0x0a};
+    wm.stubFor(
+        post("/v2/document/D1/result")
+            .withHeader("Content-Type", equalTo("application/x-www-form-urlencoded"))
+            .withRequestBody(FormBody.of("document_key", "K1"))
+            .willReturn(aResponse().withStatus(200).withBody(bytes)));
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    client.translateDocumentDownload(HANDLE_OBJECT, output);
+    assertArrayEquals(bytes, output.toByteArray());
+  }
+
+  @Test
+  void sendsTheDocumentKeyWhenDownloadingTheResultToAFile() throws Exception {
+    wm.stubFor(
+        post("/v2/document/D1/result")
+            .withRequestBody(FormBody.of("document_key", "K1"))
+            .willReturn(aResponse().withStatus(200).withBody("Protonenstrahl")));
+    File output = tempDir.resolve("out.txt").toFile();
+    client.translateDocumentDownload(HANDLE_OBJECT, output);
+    assertEquals("Protonenstrahl", Fixtures.readFile(output));
+  }
+
+  @Test
+  void throwsDocumentNotReadyWhenTheResultIsNotAvailableYet() {
+    wm.stubFor(post("/v2/document/D1/result").willReturn(aResponse().withStatus(503)));
+    assertThrows(
+        DocumentNotReadyException.class,
+        () -> client.translateDocumentDownload(HANDLE_OBJECT, new ByteArrayOutputStream()));
+  }
+
+  @Test
+  void throwsNotFoundWhenTheHandleIsUnknown() {
+    wm.stubFor(post("/v2/document/D1").willReturn(aResponse().withStatus(404)));
+    assertThrows(NotFoundException.class, () -> client.translateDocumentStatus(HANDLE_OBJECT));
+  }
+
+  @Test
+  void uploadsPollsAndDownloadsWhenTranslatingAFile() throws Exception {
+    File input = writeInput("example.txt", "proton beam");
+    File output = tempDir.resolve("out.txt").toFile();
+    expectUpload(
+        "/v2/document/",
+        "example.txt",
+        "proton beam".getBytes(StandardCharsets.UTF_8),
+        fields("source_lang", "en", "target_lang", "de"));
+    wm.stubFor(
+        post("/v2/document/D1")
+            .withRequestBody(FormBody.of("document_key", "K1"))
+            .willReturn(okJson(DONE)));
+    wm.stubFor(
+        post("/v2/document/D1/result")
+            .withRequestBody(FormBody.of("document_key", "K1"))
+            .willReturn(aResponse().withStatus(200).withBody("Protonenstrahl")));
+    DocumentStatus status = client.translateDocument(input, output, "en", "de");
+    assertTrue(status.done());
+    assertEquals("Protonenstrahl", Fixtures.readFile(output));
+  }
+
+  @Test
+  void uploadsStreamsToThePathWithATrailingSlashWhenTranslatingStreams() throws Exception {
+    expectUpload(
+        "/v2/document/",
+        "stream.txt",
+        "abc".getBytes(StandardCharsets.UTF_8),
+        fields("target_lang", "de"));
+    wm.stubFor(post("/v2/document/D1").willReturn(okJson(DONE)));
+    wm.stubFor(
+        post("/v2/document/D1/result").willReturn(aResponse().withStatus(200).withBody("xyz")));
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    client.translateDocument(
+        new ByteArrayInputStream("abc".getBytes(StandardCharsets.UTF_8)),
+        "stream.txt",
+        output,
+        null,
+        "de",
+        null);
+    assertEquals("xyz", new String(output.toByteArray(), StandardCharsets.UTF_8));
+  }
+
+  @Test
+  void throwsDocumentTranslationExceptionWithTheHandleWhenTheTranslationFails() throws Exception {
+    File input = writeInput("example.txt", "a");
+    File output = tempDir.resolve("out.txt").toFile();
+    wm.stubFor(post("/v2/document/").willReturn(okJson(HANDLE)));
+    wm.stubFor(
+        post("/v2/document/D1")
+            .willReturn(
+                okJson(
+                    "{\"document_id\":\"D1\",\"status\":\"error\","
+                        + "\"error_message\":\"Source and target language are equal\"}")));
+    DocumentTranslationException thrown =
+        assertThrows(
+            DocumentTranslationException.class,
+            () -> client.translateDocument(input, output, null, "de"));
+    assertTrue(thrown.getMessage().contains("Source and target language are equal"));
+    assertEquals("D1", thrown.getHandle().getDocumentId());
+    assertFalse(output.exists());
+  }
+
+  @Test
+  void throwsDocumentTranslationExceptionWithoutHandleWhenTheUploadFails() throws Exception {
+    File input = writeInput("example.xyz", "a");
+    File output = tempDir.resolve("out.xyz").toFile();
+    wm.stubFor(
+        post("/v2/document/")
+            .willReturn(aResponse().withStatus(400).withBody("{\"message\":\"Invalid file\"}")));
+    DocumentTranslationException thrown =
+        assertThrows(
+            DocumentTranslationException.class,
+            () -> client.translateDocument(input, output, "en", "de"));
+    assertNull(thrown.getHandle());
+    assertTrue(thrown.getMessage().contains("Invalid file"));
+  }
+
+  @Test
+  void throwsIOExceptionWhenTheOutputFileExistsBeforeSendingAnything() throws Exception {
+    File input = writeInput("example.txt", "a");
+    File output = writeInput("out.txt", "already here");
+    assertThrows(IOException.class, () -> client.translateDocument(input, output, "en", "de"));
+  }
+
+  @Test
+  void retriesTheUploadWithTheSameBodyAfterTooManyRequests() throws Exception {
+    File input = writeInput("example.txt", "retry me");
+    wm.stubFor(
+        post("/v2/document")
+            .inScenario("upload")
+            .whenScenarioStateIs(Scenario.STARTED)
+            .willSetStateTo("second")
+            .willReturn(aResponse().withStatus(429)));
+    wm.stubFor(
+        post("/v2/document")
+            .inScenario("upload")
+            .whenScenarioStateIs("second")
+            .withMultipartRequestBody(
+                aMultipart()
+                    .withName("file")
+                    .withBody(binaryEqualTo("retry me".getBytes(StandardCharsets.UTF_8))))
+            .withMultipartRequestBody(aMultipart().withName("target_lang").withBody(equalTo("de")))
+            .willReturn(okJson(HANDLE)));
+    DocumentHandle handle = client.translateDocumentUpload(input, null, "de");
+    assertNotNull(handle);
+    assertEquals(2, wm.getAllServeEvents().size());
+  }
+}
