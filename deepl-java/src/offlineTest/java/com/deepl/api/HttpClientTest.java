@@ -12,6 +12,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.patchRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
@@ -114,12 +115,29 @@ class HttpClientTest {
     assertThrows(ConnectionException.class, () -> client(0).getUsage());
   }
 
+  // A request to any host but the local server goes to the refusing proxy that the offline
+  // suite configures through the JVM settings. The .invalid host never resolves, so a request
+  // that ignored the proxy would fail with another message.
+  private static DeepLClient externalClient() {
+    DeepLClientOptions options = new DeepLClientOptions();
+    options.setServerUrl("https://example.invalid").setMaxRetries(0);
+    return new DeepLClient("k", options);
+  }
+
   @Test
-  void throwsConnectionExceptionWhenARequestWouldLeaveTheMachine() {
-    DeepLClientOptions options = new DeepLClientOptions().setApiVersion(DeepLApiVersion.VERSION_2);
-    options.setServerUrl("https://api.deepl.com").setMaxRetries(0);
-    DeepLClient external = new DeepLClient("k", options);
-    assertThrows(ConnectionException.class, external::getUsage);
+  void sendsRequestsThroughTheProxyOfTheJvmSettings() {
+    ConnectionException thrown =
+        assertThrows(ConnectionException.class, () -> externalClient().getUsage());
+    assertTrue(thrown.getMessage().contains("Connection refused"), thrown.getMessage());
+  }
+
+  @Test
+  void sendsPatchRequestsThroughTheProxyOfTheJvmSettings() {
+    ConnectionException thrown =
+        assertThrows(
+            ConnectionException.class,
+            () -> externalClient().updateMultilingualGlossaryName("g1", "n"));
+    assertTrue(thrown.getMessage().contains("Connection refused"), thrown.getMessage());
   }
 
   @Test

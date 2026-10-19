@@ -40,6 +40,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `translateDocument()` with file arguments and `translateDocumentDownload()`
   with an output file no longer delete an existing file at the output path
   when they refuse to overwrite it and throw an `IOException`.
+- `PATCH` requests (`updateMultilingualGlossaryName()`,
+  `updateMultilingualGlossaryDictionary()` and `updateStyleRuleName()`) now use
+  the JVM proxy settings (`http.proxyHost`, `https.proxyHost` and others) like
+  all other requests. They ignored them before.
 
 ## [1.17.0] - 2026-08-11
 ### Added

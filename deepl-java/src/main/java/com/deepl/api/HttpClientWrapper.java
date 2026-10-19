@@ -131,7 +131,8 @@ class HttpClientWrapper {
 
   private HttpResponse sendPatchRequest(
       String relativeUrl, HttpContent content, BackoffTimer backoffTimer) throws DeepLException {
-    HttpClientBuilder builder = HttpClients.custom();
+    // Like HttpURLConnection, honor the JVM's proxy settings unless a proxy was configured.
+    HttpClientBuilder builder = HttpClients.custom().useSystemProperties();
     if (proxy != null) {
       InetSocketAddress addr = (InetSocketAddress) proxy.address();
       builder.setProxy(new HttpHost(addr.getHostName(), addr.getPort()));
