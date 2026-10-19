@@ -123,69 +123,86 @@ build_manual:
 
 # stage: test -------------------------
 
-.test_base:
+.test_offline_base:
   stage: test
-  extends: .test
   variables:
     KUBERNETES_MEMORY_LIMIT: 8Gi
   parallel:
     matrix:
       - DOCKER_IMAGE: "eclipse-temurin:18-alpine"
       - DOCKER_IMAGE: "amazoncorretto:8-alpine"
-        USE_MOCK_SERVER: "use mock server"
       - DOCKER_IMAGE: "eclipse-temurin:8-focal"
-        USE_MOCK_SERVER: "use mock server"
       - DOCKER_IMAGE: "eclipse-temurin:11-alpine"
-        USE_MOCK_SERVER: "use mock server"
       - DOCKER_IMAGE: "eclipse-temurin:17-alpine"
-        USE_MOCK_SERVER: "use mock server"
       - DOCKER_IMAGE: "eclipse-temurin:19-alpine"
-        USE_MOCK_SERVER: "use mock server"
+      - DOCKER_IMAGE: "eclipse-temurin:21-alpine"
   image: ${DOCKER_IMAGE}
   script:
-    - >
-      if [[ ! -z "${USE_MOCK_SERVER}" ]]; then
-        echo "Using mock server"
-        export DEEPL_SERVER_URL=http://deepl-mock:3000
-        export DEEPL_MOCK_SERVER_PORT=3000
-        export DEEPL_PROXY_URL=http://deepl-mock:3001
-        export DEEPL_MOCK_PROXY_SERVER_PORT=3001
-      fi
-    - ./gradlew test -DrunV1ApiTests=true
+    - ./gradlew offlineTest
   artifacts:
     paths:
-      - deepl-java/build/reports/tests/test
+      - deepl-java/build/reports/jacoco/offlineTestCoverage
     reports:
+      coverage_report:
+        coverage_format: jacoco
+        path: deepl-java/build/reports/jacoco/offlineTestCoverage/offlineTestCoverage.xml
       junit:
-        - deepl-java/build/reports/tests/test/index.html
+        - deepl-java/build/test-results/offlineTest/TEST-*.xml
     when: always
 
-test_scheduled:
-  extends: .test_base
+test_offline_scheduled:
+  extends: .test_offline_base
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
   retry: 2
 
-test_manual:
-  stage: test
-  extends: .test_base
+test_offline_manual:
+  extends: .test_offline_base
   rules:
     - if: $CI_PIPELINE_SOURCE != "schedule"
 
+# Every endpoint once against the real API; no retry, as a retry repeats every request.
+# Java 21 is the newest runtime the Gradle wrapper supports.
+.test_real_api_base:
+  stage: test
+  extends: .test
+  # Replaces the deepl-mock service of .test
+  services: []
+  variables:
+    KUBERNETES_MEMORY_LIMIT: 8Gi
+  image: eclipse-temurin:21-alpine
+  script:
+    - ./gradlew realApiTest
+  artifacts:
+    paths:
+      - deepl-java/build/reports/jacoco/realApiTestCoverage
+    reports:
+      coverage_report:
+        coverage_format: jacoco
+        path: deepl-java/build/reports/jacoco/realApiTestCoverage/realApiTestCoverage.xml
+      junit:
+        - deepl-java/build/test-results/realApiTest/TEST-*.xml
+    when: always
+
+test_real_api_scheduled:
+  extends: .test_real_api_base
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+
+test_real_api_manual:
+  extends: .test_real_api_base
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "schedule"
+
+# The example runs against the real API, with the released library from Maven Central.
 .test_examples_base:
   stage: test
   extends: .test
+  # Replaces the deepl-mock service of .test
+  services: []
   variables:
     MAVEN_OPTS: -Dmaven.repo.local=.m2/repository
-  parallel:
-    matrix:
-      - DOCKER_IMAGE: "maven:3.9"
-      - DOCKER_IMAGE: "maven:3.8-openjdk-18-slim"
-      - DOCKER_IMAGE: "maven:3.8-openjdk-8-slim"
-      - DOCKER_IMAGE: "maven:3.9-sapmachine-17"
-      - DOCKER_IMAGE: "maven:3.9-eclipse-temurin-8"
-      - DOCKER_IMAGE: "maven:3.9-eclipse-temurin-21"
-  image: ${DOCKER_IMAGE}
+  image: maven:3.9-eclipse-temurin-21
   script:
     - cd examples/maven/deepl-test-app
     - mvn install -B -PbuildProject -l mvn_build.log

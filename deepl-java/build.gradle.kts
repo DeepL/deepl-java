@@ -96,8 +96,9 @@ components["java"].let { javaComponent ->
     javaComponent.withVariantsFromConfiguration(configurations["testFixturesRuntimeElements"]) { skip() }
 }
 
+// The coverage report is written even when a test fails, so that CI can publish it.
 listOf("offlineTest", "realApiTest").forEach { suite ->
-    tasks.register<JacocoReport>("${suite}Coverage") {
+    val coverage = tasks.register<JacocoReport>("${suite}Coverage") {
         executionData(tasks.named(suite).get())
         sourceSets(sourceSets.main.get())
         reports {
@@ -105,6 +106,7 @@ listOf("offlineTest", "realApiTest").forEach { suite ->
             html.required.set(true)
         }
     }
+    tasks.named(suite) { finalizedBy(coverage) }
 }
 
 spotless {
