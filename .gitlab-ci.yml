@@ -167,8 +167,6 @@ test_offline_manual:
 .test_real_api_base:
   stage: test
   extends: .test
-  # Replaces the deepl-mock service of .test
-  services: []
   variables:
     KUBERNETES_MEMORY_LIMIT: 8Gi
   image: eclipse-temurin:21-alpine
@@ -199,8 +197,6 @@ test_real_api_manual:
 .test_examples_base:
   stage: test
   extends: .test
-  # Replaces the deepl-mock service of .test
-  services: []
   variables:
     MAVEN_OPTS: -Dmaven.repo.local=.m2/repository
   image: maven:3.9-eclipse-temurin-21
