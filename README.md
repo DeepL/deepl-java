@@ -340,6 +340,9 @@ arguments, `translateDocument()` accepts an optional
 - `setTranslationMemory()`/`setTranslationMemoryId()`/`setTranslationMemoryThreshold()`:
   same as in [Text translation options](#text-translation-options). Document
   translation now supports translation memories.
+- `setOutputFormat()`: the file format of the translated document, as a file
+  extension, for example `docx`. By default the translated document has the
+  same format as the input document.
 
 ### Glossaries
 
