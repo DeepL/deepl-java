@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added the API Pro fields of `GET /v2/usage` to `Usage`:
+  `getApiKeyCharacter()` (per-key character usage), `getSpeechToTextMinutes()`,
+  `getSpeechToSpeechMinutes()`, `getStartTime()` and `getEndTime()` (billing
+  period) and `getProducts()` (per-product usage as `Usage.Product`). They are
+  `null` when the response does not contain them, for example for Free accounts.
 - Added `DocumentTranslationOptions.setEnableWatermark()` to add a
   "Translated by DeepL" watermark to translated `docx` and `pdf` documents.
   By default the option is not sent.

@@ -1048,6 +1048,20 @@ amount used and maximum amount respectively, and the `limit_reached` property
 that checks if the usage has reached the limit. The top level `Usage` object has
 the `any_limit_reached` property to check all usage subtypes.
 
+API Pro accounts get further usage information; for other accounts these
+properties are `null`:
+
+- `getApiKeyCharacter()`: the characters used by the API key making the
+  request, as opposed to `getCharacter()`, which covers the whole account.
+- `getSpeechToTextMinutes()` and `getSpeechToSpeechMinutes()`: speech usage in
+  minutes, with `count` and `limit` like the other subtypes.
+- `getStartTime()` and `getEndTime()`: the current billing period as `Date`s.
+- `getProducts()`: a list of `Usage.Product`, one per product, with
+  `getProductType()` (for example `"translate"`, `"write"`, `"speechToText"`;
+  new values may be added), `getBillingUnit()` (`"characters"` or `"minutes"`),
+  `getApiKeyUnitCount()` (units used by this API key) and
+  `getAccountUnitCount()` (units used by the whole account).
+
 ```java
 class Example {  // Continuing class Example from above
     public void getUsageExample() throws Exception {
@@ -1056,14 +1070,34 @@ class Example {  // Continuing class Example from above
             System.out.println("Translation limit reached.");
         }
         if (usage.getCharacter() != null) {
-            System.out.printf("Character usage: %d of %d%n",
+            System.out.printf("Character usage (account): %d of %d%n",
                               usage.getCharacter().getCount(),
                               usage.getCharacter().getLimit());
+        }
+        if (usage.getApiKeyCharacter() != null) {
+            System.out.printf("Character usage (this API key): %d of %d%n",
+                              usage.getApiKeyCharacter().getCount(),
+                              usage.getApiKeyCharacter().getLimit());
         }
         if (usage.getDocument() != null) {
             System.out.printf("Document usage: %d of %d%n",
                               usage.getDocument().getCount(),
                               usage.getDocument().getLimit());
+        }
+        if (usage.getStartTime() != null && usage.getEndTime() != null) {
+            System.out.printf("Billing period: %s to %s%n",
+                              usage.getStartTime().toInstant(),
+                              usage.getEndTime().toInstant());
+        }
+        if (usage.getProducts() != null) {
+            for (Usage.Product product : usage.getProducts()) {
+                System.out.printf("%s: %d %s (this API key), %d %s (account)%n",
+                                  product.getProductType(),
+                                  product.getApiKeyUnitCount(),
+                                  product.getBillingUnit(),
+                                  product.getAccountUnitCount(),
+                                  product.getBillingUnit());
+            }
         }
     }
 }
