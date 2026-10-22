@@ -909,6 +909,9 @@ public class Translator {
                 "translation_memory_threshold",
                 options.getTranslationMemoryThreshold().toString()));
       }
+      if (options.getOutputFormat() != null) {
+        params.add(new KeyValuePair<>("output_format", options.getOutputFormat()));
+      }
     }
 
     addExtraBodyParameters(params, options != null ? options.getExtraBodyParameters() : null);

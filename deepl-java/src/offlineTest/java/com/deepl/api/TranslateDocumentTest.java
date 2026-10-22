@@ -133,7 +133,8 @@ class TranslateDocumentTest {
             "glossary_id", "g1",
             "style_id", "s1",
             "translation_memory_id", "tm1",
-            "translation_memory_threshold", "80"));
+            "translation_memory_threshold", "80",
+            "output_format", "pdf"));
     client.translateDocumentUpload(
         input,
         "en",
@@ -143,7 +144,8 @@ class TranslateDocumentTest {
             .setGlossaryId("g1")
             .setStyleId("s1")
             .setTranslationMemoryId("tm1")
-            .setTranslationMemoryThreshold(80));
+            .setTranslationMemoryThreshold(80)
+            .setOutputFormat("pdf"));
     assertPartNames(
         "/v2/document",
         "file",
@@ -153,7 +155,8 @@ class TranslateDocumentTest {
         "glossary_id",
         "style_id",
         "translation_memory_id",
-        "translation_memory_threshold");
+        "translation_memory_threshold",
+        "output_format");
   }
 
   @Test

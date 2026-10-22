@@ -24,6 +24,7 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
   private String styleId;
   private String translationMemoryId;
   private Integer translationMemoryThreshold;
+  private String outputFormat;
 
   /**
    * Sets whether translations should lean toward formal or informal language. This option is only
@@ -160,6 +161,16 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
     return this;
   }
 
+  /**
+   * Sets the file format of the translated document, as a file extension, for example <code>
+   * "docx"</code>. By default, this value is <code>null</code> and the translated document has the
+   * same format as the input document.
+   */
+  public DocumentTranslationOptions setOutputFormat(String outputFormat) {
+    this.outputFormat = outputFormat;
+    return this;
+  }
+
   /** Gets the current formality setting. */
   public Formality getFormality() {
     return formality;
@@ -188,5 +199,10 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
   /** Gets the current translation memory threshold. */
   public Integer getTranslationMemoryThreshold() {
     return translationMemoryThreshold;
+  }
+
+  /** Gets the current output format. */
+  public String getOutputFormat() {
+    return outputFormat;
   }
 }
