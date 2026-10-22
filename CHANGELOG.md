@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added `DocumentTranslationOptions.setEnableWatermark()` to add a
+  "Translated by DeepL" watermark to translated `docx` and `pdf` documents.
+  By default the option is not sent.
 - Added `DocumentTranslationOptions.setOutputFormat()` to request the file
   format of the translated document, for example `docx`. By default the
   translated document has the same format as the input document.

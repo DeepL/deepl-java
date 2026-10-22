@@ -6,6 +6,7 @@ package com.deepl.api;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Options to control document translation behaviour. These options may be provided to {@link
@@ -25,6 +26,7 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
   private String translationMemoryId;
   private Integer translationMemoryThreshold;
   private String outputFormat;
+  private @Nullable Boolean enableWatermark;
 
   /**
    * Sets whether translations should lean toward formal or informal language. This option is only
@@ -171,6 +173,17 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
     return this;
   }
 
+  /**
+   * Sets whether a "Translated by DeepL" watermark is added to the translated document. The API
+   * supports watermarks only for <code>docx</code> and <code>pdf</code> output and ignores this
+   * option for other output formats. By default, this value is <code>null</code> and the option is
+   * not sent, so the API default (no watermark) applies.
+   */
+  public DocumentTranslationOptions setEnableWatermark(@Nullable Boolean enableWatermark) {
+    this.enableWatermark = enableWatermark;
+    return this;
+  }
+
   /** Gets the current formality setting. */
   public Formality getFormality() {
     return formality;
@@ -204,5 +217,10 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
   /** Gets the current output format. */
   public String getOutputFormat() {
     return outputFormat;
+  }
+
+  /** Gets the current watermark setting, or <code>null</code> if it is not set. */
+  public @Nullable Boolean getEnableWatermark() {
+    return enableWatermark;
   }
 }

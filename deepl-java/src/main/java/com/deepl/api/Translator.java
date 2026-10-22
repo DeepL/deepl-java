@@ -912,6 +912,10 @@ public class Translator {
       if (options.getOutputFormat() != null) {
         params.add(new KeyValuePair<>("output_format", options.getOutputFormat()));
       }
+      if (options.getEnableWatermark() != null) {
+        // The API ignores "1" here; only "true" enables the watermark.
+        params.add(new KeyValuePair<>("enable_watermark", options.getEnableWatermark().toString()));
+      }
     }
 
     addExtraBodyParameters(params, options != null ? options.getExtraBodyParameters() : null);

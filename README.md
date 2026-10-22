@@ -343,6 +343,10 @@ arguments, `translateDocument()` accepts an optional
 - `setOutputFormat()`: the file format of the translated document, as a file
   extension, for example `docx`. By default the translated document has the
   same format as the input document.
+- `setEnableWatermark()`: set to `true` to add a "Translated by DeepL"
+  watermark to the translated document. Only supported for `docx` and `pdf`
+  output; for other output formats the API ignores it. By default the option
+  is not sent and no watermark is added.
 
 ### Glossaries
 

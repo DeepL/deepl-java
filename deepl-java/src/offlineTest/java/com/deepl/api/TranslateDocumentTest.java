@@ -160,6 +160,49 @@ class TranslateDocumentTest {
   }
 
   @Test
+  void sendsEnableWatermarkWithOutputFormat() throws Exception {
+    File input = writeInput("example.txt", "a");
+    expectUpload(
+        "/v2/document",
+        "example.txt",
+        "a".getBytes(StandardCharsets.UTF_8),
+        fields("target_lang", "de", "output_format", "docx", "enable_watermark", "true"));
+    client.translateDocumentUpload(
+        input,
+        null,
+        "de",
+        new DocumentTranslationOptions().setOutputFormat("docx").setEnableWatermark(true));
+    assertPartNames("/v2/document", "file", "target_lang", "output_format", "enable_watermark");
+  }
+
+  @Test
+  void sendsEnableWatermarkFalseWhenExplicitlyDisabled() throws Exception {
+    File input = writeInput("example.txt", "a");
+    expectUpload(
+        "/v2/document",
+        "example.txt",
+        "a".getBytes(StandardCharsets.UTF_8),
+        fields("target_lang", "de", "enable_watermark", "false"));
+    client.translateDocumentUpload(
+        input, null, "de", new DocumentTranslationOptions().setEnableWatermark(false));
+    assertPartNames("/v2/document", "file", "target_lang", "enable_watermark");
+  }
+
+  @Test
+  void omitsEnableWatermarkWhenUnset() throws Exception {
+    File input = writeInput("example.txt", "a");
+    DocumentTranslationOptions options = new DocumentTranslationOptions().setOutputFormat("docx");
+    assertNull(options.getEnableWatermark());
+    expectUpload(
+        "/v2/document",
+        "example.txt",
+        "a".getBytes(StandardCharsets.UTF_8),
+        fields("target_lang", "de", "output_format", "docx"));
+    client.translateDocumentUpload(input, null, "de", options);
+    assertPartNames("/v2/document", "file", "target_lang", "output_format");
+  }
+
+  @Test
   void sendsGlossaryIdsJoinedByCommaAndExtraBodyParametersLast() throws Exception {
     File input = writeInput("example.txt", "a");
     Map<String, String> extra = new LinkedHashMap<>();
@@ -348,6 +391,23 @@ class TranslateDocumentTest {
     assertPartNames("/v2/document/", "file", "source_lang", "target_lang");
     assertTrue(status.done());
     assertEquals("Protonenstrahl", Fixtures.readFile(output));
+  }
+
+  @Test
+  void sendsEnableWatermarkWhenTranslatingAFile() throws Exception {
+    File input = writeInput("example.txt", "a");
+    File output = tempDir.resolve("out.txt").toFile();
+    expectUpload(
+        "/v2/document/",
+        "example.txt",
+        "a".getBytes(StandardCharsets.UTF_8),
+        fields("target_lang", "de", "enable_watermark", "true"));
+    wm.stubFor(post("/v2/document/D1").willReturn(okJson(DONE)));
+    wm.stubFor(
+        post("/v2/document/D1/result").willReturn(aResponse().withStatus(200).withBody("b")));
+    client.translateDocument(
+        input, output, null, "de", new DocumentTranslationOptions().setEnableWatermark(true));
+    assertPartNames("/v2/document/", "file", "target_lang", "enable_watermark");
   }
 
   @Test
