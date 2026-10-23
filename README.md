@@ -682,6 +682,101 @@ class Example {  // Continuing class Example from above
 The `translateDocument()` and `translateDocumentUpload()` functions both
 support the `glossary` argument.
 
+### Spoken Terms
+
+Spoken Terms collections improve the transcription of terms such as product
+names and technical vocabulary. A collection holds one term list per language
+(ISO 639-1 code, for example `en`); each term list is a list of terms. Multiple
+collections can be stored with your account, each with a user-specified name
+and a uniquely-assigned ID.
+
+Each method that takes a collection accepts either its ID or a `SpokenTerms`
+object. The terms are not validated client-side; the API rejects invalid terms
+with a `DeepLException`.
+
+#### Creating a Spoken Terms collection
+
+Use `createSpokenTerms()` with a name and a list of `SpokenTermsEntries`, one
+per language. It returns a `SpokenTerms` object with the ID, name, creation
+time and the term lists (`SpokenTermsList`: language and entry count):
+
+```java
+class Example {  // Continuing class Example from above
+    public void createSpokenTermsExample() throws Exception {
+        SpokenTerms spokenTerms = client.createSpokenTerms(
+            "Technical Terms",
+            Arrays.asList(new SpokenTermsEntries("en", Arrays.asList("DeepL", "API", "webhook"))));
+        System.out.println("Created " + spokenTerms.getSpokenTermsId());
+        for (SpokenTermsList termList : spokenTerms.getTermLists()) {
+            System.out.println(termList.getLang() + ": " + termList.getEntryCount() + " terms");
+        }
+    }
+}
+```
+
+#### Getting and listing Spoken Terms collections
+
+`getSpokenTerms()` retrieves one collection, `listSpokenTerms()` all of them.
+Neither returns the terms themselves; use `getSpokenTermsEntries()` with a
+language code for those:
+
+```java
+class Example {  // Continuing class Example from above
+    public void getSpokenTermsExample() throws Exception {
+        SpokenTerms spokenTerms = client.getSpokenTerms("def3a26b-3e84-45b3-84ae-0c0aaf3525f7");
+        System.out.println(spokenTerms.getName() + " " + spokenTerms.getCreationTime());
+
+        for (SpokenTerms collection : client.listSpokenTerms()) {
+            System.out.println(collection.getName() + " (" + collection.getSpokenTermsId() + ")");
+        }
+
+        SpokenTermsEntries entries = client.getSpokenTermsEntries(spokenTerms, "en");
+        System.out.println(entries.getEntries()); // [API, DeepL, webhook]
+    }
+}
+```
+
+#### Editing a Spoken Terms collection
+
+`updateSpokenTerms()` changes the name and/or merges terms into the existing
+term lists; pass `null` for what should not change. `replaceSpokenTermsList()`
+replaces the term list of one language, or adds it if the collection has none
+for that language. `deleteSpokenTermsList()` removes the term list of one
+language:
+
+```java
+class Example {  // Continuing class Example from above
+    public void editSpokenTermsExample() throws Exception {
+        String spokenTermsId = "def3a26b-3e84-45b3-84ae-0c0aaf3525f7";
+
+        // Rename the collection
+        client.updateSpokenTerms(spokenTermsId, "Product Terms", null);
+
+        // Merge a term into the "en" term list
+        SpokenTerms updated = client.updateSpokenTerms(spokenTermsId, null,
+            Arrays.asList(new SpokenTermsEntries("en", Arrays.asList("authentication"))));
+
+        // Replace the "en" term list, then add and remove a "de" term list
+        SpokenTermsList replaced = client.replaceSpokenTermsList(spokenTermsId,
+            new SpokenTermsEntries("en", Arrays.asList("API")));
+        System.out.println(replaced.getEntryCount()); // 1
+        client.replaceSpokenTermsList(spokenTermsId,
+            new SpokenTermsEntries("de", Arrays.asList("Schnittstelle")));
+        client.deleteSpokenTermsList(spokenTermsId, "de");
+    }
+}
+```
+
+#### Deleting a Spoken Terms collection
+
+```java
+class Example {  // Continuing class Example from above
+    public void deleteSpokenTermsExample() throws Exception {
+        client.deleteSpokenTerms("def3a26b-3e84-45b3-84ae-0c0aaf3525f7");
+    }
+}
+```
+
 ### Style Rules
 
 Style rules allow you to customize your translations using a managed, shared list

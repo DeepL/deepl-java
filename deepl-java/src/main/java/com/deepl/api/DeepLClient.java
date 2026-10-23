@@ -14,6 +14,7 @@ import java.nio.file.Files;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.Nullable;
@@ -775,6 +776,240 @@ public class DeepLClient extends Translator {
   }
 
   /**
+   * Creates a Spoken Terms collection with the given term lists and returns a {@link SpokenTerms}
+   * object with details about the new collection.
+   *
+   * @param name User-defined name of the collection.
+   * @param termLists Term lists of the collection, one {@link SpokenTermsEntries} per language.
+   * @return {@link SpokenTerms} object with details about the new collection.
+   * @throws InterruptedException If the thread is interrupted during execution of this function.
+   * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
+   *     DeepLException} or a derived class will be thrown.
+   */
+  public SpokenTerms createSpokenTerms(String name, List<SpokenTermsEntries> termLists)
+      throws DeepLException, InterruptedException {
+    Map<String, Object> requestData = new LinkedHashMap<>();
+    requestData.put("name", name);
+    requestData.put("term_lists", createSpokenTermsListsData(termLists));
+    String jsonBody = jsonParser.getGson().toJson(requestData);
+    HttpResponse response =
+        httpClientWrapper.sendJsonRequestWithBackoff("/v3/spoken-terms", jsonBody);
+    checkResponse(response, false, false);
+    return jsonParser.parseSpokenTerms(response.getBody());
+  }
+
+  /**
+   * Retrieves all Spoken Terms collections in your account. The returned {@link SpokenTerms}
+   * objects do not contain the terms; to retrieve them use {@link
+   * DeepLClient#getSpokenTermsEntries(String, String)}.
+   *
+   * @return List of {@link SpokenTerms} objects, one per collection.
+   * @throws InterruptedException If the thread is interrupted during execution of this function.
+   * @throws DeepLException If any error occurs while communicating with the DeepL API.
+   */
+  public List<SpokenTerms> listSpokenTerms() throws DeepLException, InterruptedException {
+    HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff("/v3/spoken-terms");
+    checkResponse(response, false, false);
+    return jsonParser.parseSpokenTermsList(response.getBody());
+  }
+
+  /**
+   * Retrieves information about the Spoken Terms collection with the given ID. This does not
+   * retrieve the terms; to retrieve them use {@link DeepLClient#getSpokenTermsEntries(String,
+   * String)}.
+   *
+   * @param spokenTermsId ID of the collection to retrieve.
+   * @return {@link SpokenTerms} object with details about the collection.
+   * @throws NotFoundException If no collection with the given ID is found.
+   * @throws InterruptedException If the thread is interrupted during execution of this function.
+   * @throws DeepLException If any error occurs while communicating with the DeepL API.
+   */
+  public SpokenTerms getSpokenTerms(String spokenTermsId)
+      throws DeepLException, InterruptedException {
+    validateParameter("spokenTermsId", spokenTermsId);
+    String relativeUrl = String.format("/v3/spoken-terms/%s", spokenTermsId);
+    HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
+    checkResponse(response, false, false);
+    return jsonParser.parseSpokenTerms(response.getBody());
+  }
+
+  /**
+   * Functions the same as {@link DeepLClient#getSpokenTerms(String)} but accepts a {@link
+   * SpokenTerms} object.
+   *
+   * @see DeepLClient#getSpokenTerms(String)
+   */
+  public SpokenTerms getSpokenTerms(SpokenTerms spokenTerms)
+      throws DeepLException, InterruptedException {
+    return getSpokenTerms(spokenTermsId(spokenTerms));
+  }
+
+  /**
+   * Updates the name and/or term lists of the Spoken Terms collection with the given ID. The
+   * entries of each given term list are merged into the existing term list of that language. To
+   * replace a term list instead, use {@link DeepLClient#replaceSpokenTermsList(String,
+   * SpokenTermsEntries)}.
+   *
+   * @param spokenTermsId ID of the collection to update.
+   * @param name New name of the collection, or <code>null</code> to keep the current name.
+   * @param termLists Term lists to merge into the collection, or <code>null</code> to keep the
+   *     current term lists.
+   * @return {@link SpokenTerms} object with details about the updated collection.
+   * @throws NotFoundException If no collection with the given ID is found.
+   * @throws InterruptedException If the thread is interrupted during execution of this function.
+   * @throws DeepLException If any error occurs while communicating with the DeepL API.
+   */
+  public SpokenTerms updateSpokenTerms(
+      String spokenTermsId, @Nullable String name, @Nullable List<SpokenTermsEntries> termLists)
+      throws DeepLException, InterruptedException {
+    validateParameter("spokenTermsId", spokenTermsId);
+    Map<String, Object> requestData = new LinkedHashMap<>();
+    if (name != null) {
+      requestData.put("name", name);
+    }
+    if (termLists != null) {
+      requestData.put("term_lists", createSpokenTermsListsData(termLists));
+    }
+    String jsonBody = jsonParser.getGson().toJson(requestData);
+    String relativeUrl = String.format("/v3/spoken-terms/%s", spokenTermsId);
+    HttpResponse response =
+        httpClientWrapper.sendJsonPatchRequestWithBackoff(relativeUrl, jsonBody);
+    checkResponse(response, false, false);
+    return jsonParser.parseSpokenTerms(response.getBody());
+  }
+
+  /**
+   * Functions the same as {@link DeepLClient#updateSpokenTerms(String, String, List)} but accepts a
+   * {@link SpokenTerms} object.
+   *
+   * @see DeepLClient#updateSpokenTerms(String, String, List)
+   */
+  public SpokenTerms updateSpokenTerms(
+      SpokenTerms spokenTerms, @Nullable String name, @Nullable List<SpokenTermsEntries> termLists)
+      throws DeepLException, InterruptedException {
+    return updateSpokenTerms(spokenTermsId(spokenTerms), name, termLists);
+  }
+
+  /**
+   * Retrieves the terms of the given language in the Spoken Terms collection with the given ID.
+   *
+   * @param spokenTermsId ID of the collection.
+   * @param lang Language code (ISO 639-1) of the term list, for example "en".
+   * @return {@link SpokenTermsEntries} object containing the terms.
+   * @throws NotFoundException If the collection or its term list for the language is not found.
+   * @throws InterruptedException If the thread is interrupted during execution of this function.
+   * @throws DeepLException If any error occurs while communicating with the DeepL API.
+   */
+  public SpokenTermsEntries getSpokenTermsEntries(String spokenTermsId, String lang)
+      throws DeepLException, InterruptedException {
+    validateParameter("spokenTermsId", spokenTermsId);
+    String relativeUrl =
+        String.format("/v3/spoken-terms/%s/entries%s", spokenTermsId, langQueryString(lang));
+    HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
+    checkResponse(response, false, false);
+    return jsonParser.parseSpokenTermsEntries(response.getBody());
+  }
+
+  /**
+   * Functions the same as {@link DeepLClient#getSpokenTermsEntries(String, String)} but accepts a
+   * {@link SpokenTerms} object.
+   *
+   * @see DeepLClient#getSpokenTermsEntries(String, String)
+   */
+  public SpokenTermsEntries getSpokenTermsEntries(SpokenTerms spokenTerms, String lang)
+      throws DeepLException, InterruptedException {
+    return getSpokenTermsEntries(spokenTermsId(spokenTerms), lang);
+  }
+
+  /**
+   * Replaces the term list of the language of {@code entries} in the Spoken Terms collection with
+   * the given ID, or adds it if the collection has no term list for that language.
+   *
+   * @param spokenTermsId ID of the collection.
+   * @param entries Language and terms of the new term list.
+   * @return {@link SpokenTermsList} object with details about the new term list.
+   * @throws NotFoundException If no collection with the given ID is found.
+   * @throws InterruptedException If the thread is interrupted during execution of this function.
+   * @throws DeepLException If any error occurs while communicating with the DeepL API.
+   */
+  public SpokenTermsList replaceSpokenTermsList(String spokenTermsId, SpokenTermsEntries entries)
+      throws DeepLException, InterruptedException {
+    validateParameter("spokenTermsId", spokenTermsId);
+    String jsonBody = jsonParser.getGson().toJson(createSpokenTermsListData(entries));
+    String relativeUrl = String.format("/v3/spoken-terms/%s/term-lists", spokenTermsId);
+    HttpResponse response =
+        httpClientWrapper.sendJsonRequestWithBackoff("PUT", relativeUrl, jsonBody);
+    checkResponse(response, false, false);
+    return jsonParser.parseSpokenTermsTermList(response.getBody());
+  }
+
+  /**
+   * Functions the same as {@link DeepLClient#replaceSpokenTermsList(String, SpokenTermsEntries)}
+   * but accepts a {@link SpokenTerms} object.
+   *
+   * @see DeepLClient#replaceSpokenTermsList(String, SpokenTermsEntries)
+   */
+  public SpokenTermsList replaceSpokenTermsList(SpokenTerms spokenTerms, SpokenTermsEntries entries)
+      throws DeepLException, InterruptedException {
+    return replaceSpokenTermsList(spokenTermsId(spokenTerms), entries);
+  }
+
+  /**
+   * Deletes the Spoken Terms collection with the given ID.
+   *
+   * @param spokenTermsId ID of the collection to delete.
+   * @throws NotFoundException If no collection with the given ID is found.
+   * @throws InterruptedException If the thread is interrupted during execution of this function.
+   * @throws DeepLException If any error occurs while communicating with the DeepL API.
+   */
+  public void deleteSpokenTerms(String spokenTermsId) throws DeepLException, InterruptedException {
+    validateParameter("spokenTermsId", spokenTermsId);
+    String relativeUrl = String.format("/v3/spoken-terms/%s", spokenTermsId);
+    HttpResponse response = httpClientWrapper.sendDeleteRequestWithBackoff(relativeUrl);
+    checkResponse(response, false, false);
+  }
+
+  /**
+   * Functions the same as {@link DeepLClient#deleteSpokenTerms(String)} but accepts a {@link
+   * SpokenTerms} object.
+   *
+   * @see DeepLClient#deleteSpokenTerms(String)
+   */
+  public void deleteSpokenTerms(SpokenTerms spokenTerms)
+      throws DeepLException, InterruptedException {
+    deleteSpokenTerms(spokenTermsId(spokenTerms));
+  }
+
+  /**
+   * Deletes the term list of the given language from the Spoken Terms collection with the given ID.
+   *
+   * @param spokenTermsId ID of the collection.
+   * @param lang Language code (ISO 639-1) of the term list to delete, for example "en".
+   * @throws NotFoundException If the collection or its term list for the language is not found.
+   * @throws InterruptedException If the thread is interrupted during execution of this function.
+   * @throws DeepLException If any error occurs while communicating with the DeepL API.
+   */
+  public void deleteSpokenTermsList(String spokenTermsId, String lang)
+      throws DeepLException, InterruptedException {
+    validateParameter("spokenTermsId", spokenTermsId);
+    String relativeUrl =
+        String.format("/v3/spoken-terms/%s/term-lists%s", spokenTermsId, langQueryString(lang));
+    HttpResponse response = httpClientWrapper.sendDeleteRequestWithBackoff(relativeUrl);
+    checkResponse(response, false, false);
+  }
+
+  /**
+   * Functions the same as {@link DeepLClient#deleteSpokenTermsList(String, String)} but accepts a
+   * {@link SpokenTerms} object.
+   *
+   * @see DeepLClient#deleteSpokenTermsList(String, String)
+   */
+  public void deleteSpokenTermsList(SpokenTerms spokenTerms, String lang)
+      throws DeepLException, InterruptedException {
+    deleteSpokenTermsList(spokenTermsId(spokenTerms), lang);
+  }
+
+  /**
    * Retrieves the list of all available style rules and returns a list of {@link StyleRuleInfo}
    * objects corresponding to all of your stored style rules.
    *
@@ -1464,6 +1699,38 @@ public class DeepLClient extends Translator {
       throw new IllegalArgumentException("translationMemory must not be null");
     }
     return translationMemory.getTranslationMemoryId();
+  }
+
+  /** Extracts the ID of the given Spoken Terms collection. */
+  private static String spokenTermsId(SpokenTerms spokenTerms) throws IllegalArgumentException {
+    if (spokenTerms == null) {
+      throw new IllegalArgumentException("spokenTerms must not be null");
+    }
+    return spokenTerms.getSpokenTermsId();
+  }
+
+  /** Builds the query string that selects the term list of the given language. */
+  private static String langQueryString(String lang) {
+    List<KeyValuePair<String, String>> queryParams = new ArrayList<>();
+    queryParams.add(new KeyValuePair<>("lang", lang));
+    return createQueryString(queryParams);
+  }
+
+  /** Builds the JSON object of one term list; the API expects the terms newline-separated. */
+  private static Map<String, Object> createSpokenTermsListData(SpokenTermsEntries entries) {
+    Map<String, Object> data = new LinkedHashMap<>();
+    data.put("lang", entries.getLang());
+    data.put("entries", String.join("\n", entries.getEntries()));
+    return data;
+  }
+
+  private static List<Map<String, Object>> createSpokenTermsListsData(
+      List<SpokenTermsEntries> termLists) {
+    List<Map<String, Object>> data = new ArrayList<>();
+    for (SpokenTermsEntries entries : termLists) {
+      data.add(createSpokenTermsListData(entries));
+    }
+    return data;
   }
 
   /**

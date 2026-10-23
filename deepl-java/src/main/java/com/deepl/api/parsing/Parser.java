@@ -180,6 +180,33 @@ public class Parser {
     return gson.fromJson(json, CustomInstruction.class);
   }
 
+  public SpokenTerms parseSpokenTerms(String json) {
+    return gson.fromJson(json, SpokenTerms.class);
+  }
+
+  public List<SpokenTerms> parseSpokenTermsList(String json) {
+    SpokenTermsListResponse result = gson.fromJson(json, SpokenTermsListResponse.class);
+    List<SpokenTerms> spokenTerms = result != null ? result.getSpokenTerms() : null;
+    return spokenTerms != null ? spokenTerms : new ArrayList<>();
+  }
+
+  public SpokenTermsList parseSpokenTermsTermList(String json) {
+    return gson.fromJson(json, SpokenTermsList.class);
+  }
+
+  public SpokenTermsEntries parseSpokenTermsEntries(String json) {
+    SpokenTermsEntriesResponse response = gson.fromJson(json, SpokenTermsEntriesResponse.class);
+    List<String> entries = new ArrayList<>();
+    if (response.getEntries() != null) {
+      for (String entry : response.getEntries().split("\n")) {
+        if (!entry.isEmpty()) {
+          entries.add(entry);
+        }
+      }
+    }
+    return new SpokenTermsEntries(response.getLang(), entries);
+  }
+
   public String parseErrorMessage(String json) {
     ErrorResponse response = gson.fromJson(json, ErrorResponse.class);
 

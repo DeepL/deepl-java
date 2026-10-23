@@ -54,4 +54,18 @@ final class RealApiClient {
       }
     }
   }
+
+  /** Calls {@code call}, retrying while a just-created resource is not yet visible. */
+  static <T> T retryWhileNotFound(Callable<T> call) throws Exception {
+    for (int attempt = 0; ; attempt++) {
+      try {
+        return call.call();
+      } catch (NotFoundException e) {
+        if (attempt >= 9) {
+          throw e;
+        }
+        Thread.sleep(1000);
+      }
+    }
+  }
 }
