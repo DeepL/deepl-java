@@ -4,37 +4,26 @@
 package com.deepl.deepltestapp;
 
 import com.deepl.api.*;
-import com.deepl.deepltestapp.*;
-import com.deepl.deepltestapp.annotation.IntegrationTest;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import org.junit.Assert.*;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * Internal DeepL Integration Test
  */
-@Category(IntegrationTest.class)
-public class DeepLIntegrationTest extends TestCase {
-    public DeepLIntegrationTest(String testName) {
-        super(testName);
-    }
-
-    public static Test suite() {
-        return new TestSuite(DeepLIntegrationTest.class);
-    }
+public class DeepLIntegrationTest {
 
     /**
      * Runs the hello world example. Requires a DeepL auth key via the DEEPL_AUTH_KEY
      * environment variable.
      */
-    public void testApp() throws InterruptedException, DeepLException {
+    @Test
+    void testApp() throws InterruptedException, DeepLException {
         String result = App.translateHelloWorld();
         String[] wordsToCheck = {"Hello", "World"};
         for (String wordToCheck : wordsToCheck) {
-            assertFalse(String.format("Expected translation to no longer contain the english %s, received %s", 
-                wordToCheck, result), result.contains(wordToCheck)
+            assertFalse(result.contains(wordToCheck),
+                    String.format("Expected translation to no longer contain the english %s, received %s", wordToCheck, result)
             );
         }
     }
