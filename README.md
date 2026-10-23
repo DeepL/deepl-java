@@ -1044,9 +1044,11 @@ subtypes may be `null`. For API accounts:
 - `usage.document` and `usage.teamDocument` are `null`.
 
 Each usage subtype (if valid) has `count` and `limit` properties giving the
-amount used and maximum amount respectively, and the `limit_reached` property
+amount used and maximum amount respectively, and the `limitReached()` method
 that checks if the usage has reached the limit. The top level `Usage` object has
-the `any_limit_reached` property to check all usage subtypes.
+the `anyLimitReached()` method to check the character, document and team
+document subtypes. It does not consider the API Pro subtypes described below;
+call `limitReached()` on those directly, e.g. `getApiKeyCharacter().limitReached()`.
 
 API Pro accounts get further usage information; for other accounts these
 properties are `null`:

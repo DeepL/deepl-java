@@ -55,7 +55,12 @@ class UsageDeserializer implements JsonDeserializer<Usage> {
     if (!jsonObject.has(parameterName) || jsonObject.get(parameterName).isJsonNull()) {
       return null;
     }
-    return context.deserialize(jsonObject.get(parameterName), Date.class);
+    try {
+      return context.deserialize(jsonObject.get(parameterName), Date.class);
+    } catch (JsonParseException e) {
+      // An unexpected billing-period format must not fail the whole usage response.
+      return null;
+    }
   }
 
   public static @Nullable Usage.Detail createDetail(JsonObject jsonObject, String prefix) {

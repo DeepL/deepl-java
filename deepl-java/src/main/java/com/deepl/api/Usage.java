@@ -206,8 +206,10 @@ public class Usage {
   }
 
   /**
-   * @return <code>true</code> if any of the usage types included for the account type have been
-   *     reached, otherwise <code>false</code>.
+   * @return <code>true</code> if the character, document or team document limit has been reached,
+   *     otherwise <code>false</code>. The API Pro usage types ({@link #getApiKeyCharacter()},
+   *     {@link #getSpeechToTextMinutes()}, {@link #getSpeechToSpeechMinutes()}) are not considered;
+   *     call {@link Detail#limitReached()} on them directly.
    */
   public boolean anyLimitReached() {
     return (getCharacter() != null && getCharacter().limitReached())

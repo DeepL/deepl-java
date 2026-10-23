@@ -157,6 +157,20 @@ class UsageTest {
   }
 
   @Test
+  void ignoresAnUnparseableBillingPeriod() throws Exception {
+    wm.stubFor(
+        get("/v2/usage")
+            .willReturn(
+                okJson(
+                    "{\"character_count\":20,\"character_limit\":500000,"
+                        + "\"start_time\":\"not a timestamp\",\"end_time\":\"\"}")));
+    Usage usage = client.getUsage();
+    assertEquals(20, usage.getCharacter().getCount());
+    assertNull(usage.getStartTime());
+    assertNull(usage.getEndTime());
+  }
+
+  @Test
   void keepsTheThreeArgumentConstructor() {
     Usage usage = new Usage(new Usage.Detail(1, 2), null, null);
     assertEquals(1, usage.getCharacter().getCount());
