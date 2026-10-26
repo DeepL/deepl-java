@@ -925,6 +925,111 @@ class Example {  // Continuing class Example from above
 }
 ```
 
+### Style Profiles
+
+A style profile bundles glossaries, style rules and translation memories under
+one name, with an optional description and industry. Style profiles are managed
+with `DeepLClient`; each has a user-specified name and a uniquely-assigned ID.
+
+#### Creating a style profile
+
+Use `createStyleProfile()` to create a style profile. Only the name is required.
+Pass a `StyleProfileOptions` to set a description, an industry, the IDs of the
+components to link, and whether the glossary order sets priority. If any of the
+component IDs cannot be used, the request fails and no style profile is created.
+
+```java
+class Example {  // Continuing class Example from above
+    public void createStyleProfileExample() throws Exception {
+        // Create a style profile with only a name
+        StyleProfile profile = client.createStyleProfile("Legal, German");
+        System.out.println("Created: " + profile.getStyleProfileId());
+
+        // Create a style profile with a description and linked components
+        StyleProfile linked = client.createStyleProfile(
+            "Legal, German",
+            new StyleProfileOptions()
+                .setDescription("Contract wording for the German market.")
+                .setIndustry("Legal")
+                .setGlossaryIds(Arrays.asList(
+                    "4d0a2e1c-6b93-4f7a-8d15-2c6e9a3b7f81",
+                    "7c1b3d2e-0f4a-4e6b-9a8c-5d2f1e3b4a60"))
+                .setGlossaryPriorityOrderEnabled(true)
+                .setStyleRuleIds(Arrays.asList("dca2e053-8ae5-45e6-a0d2-881156e7f4e4")));
+        System.out.println(linked.getStyleRuleIds());
+    }
+}
+```
+
+#### Getting and listing style profiles
+
+`getStyleProfile()` retrieves a style profile by its ID or `StyleProfile` object.
+`listStyleProfiles()` returns one page of your style profiles. It accepts the
+optional parameters `page` (page number, 0-indexed, default 0) and `pageSize`
+(items per page, default 10; the API reduces values above 100 to 100). Optional
+fields that a style profile does not have, such as the description and industry,
+are `null`.
+
+```java
+class Example {  // Continuing class Example from above
+    public void listStyleProfilesExample() throws Exception {
+        StyleProfile profile = client.getStyleProfile("3f1c9d0e-7a24-4b58-9c31-8f0e5d2a1b47");
+        System.out.println(profile.getName() + ": " + profile.getDescription());
+
+        for (int page = 0; ; page++) {
+            List<StyleProfile> profiles = client.listStyleProfiles(page, 100);
+            if (profiles.isEmpty()) {
+                break;
+            }
+            for (StyleProfile p : profiles) {
+                System.out.println(String.format("%s (%s)", p.getName(), p.getStyleProfileId()));
+            }
+        }
+    }
+}
+```
+
+#### Updating a style profile
+
+`updateStyleProfile()` takes the ID or `StyleProfile` object, an optional new
+name and an optional `StyleProfileOptions`. Fields left `null` are not sent and
+stay unchanged. An empty string clears the description or industry. A component
+list you send replaces the linked list in full; an empty list unlinks all
+components of that kind.
+
+```java
+class Example {  // Continuing class Example from above
+    public void updateStyleProfileExample() throws Exception {
+        String profileId = "3f1c9d0e-7a24-4b58-9c31-8f0e5d2a1b47";
+
+        // Rename and set the industry; other fields are unchanged
+        client.updateStyleProfile(
+            profileId, "Legal, German (2026)", new StyleProfileOptions().setIndustry("Legal"));
+
+        // Clear the description and unlink all style rules
+        StyleProfile updated = client.updateStyleProfile(
+            profileId,
+            null,
+            new StyleProfileOptions()
+                .setDescription("")
+                .setStyleRuleIds(Collections.emptyList()));
+        System.out.println(updated.getDescription());  // null
+    }
+}
+```
+
+#### Deleting a style profile
+
+Use `deleteStyleProfile()` with the ID or `StyleProfile` object:
+
+```java
+class Example {  // Continuing class Example from above
+    public void deleteStyleProfileExample() throws Exception {
+        client.deleteStyleProfile("3f1c9d0e-7a24-4b58-9c31-8f0e5d2a1b47");
+    }
+}
+```
+
 ### Translation Memories
 
 Translation memories store and reuse previously created translations, helping to

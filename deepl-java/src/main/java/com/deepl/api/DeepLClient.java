@@ -7,6 +7,8 @@ package com.deepl.api;
 import com.deepl.api.http.HttpResponse;
 import com.deepl.api.http.HttpResponseStream;
 import com.deepl.api.utils.*;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import java.io.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -1056,6 +1058,166 @@ public class DeepLClient extends Translator {
   }
 
   /**
+   * Retrieves one page of the style profiles in your account.
+   *
+   * @param page Page number to retrieve (starting from 0), or <code>null</code> for the API default
+   *     (0).
+   * @param pageSize Number of items per page, or <code>null</code> for the API default (10). The
+   *     API reduces values above 100 to 100.
+   * @return List of {@link StyleProfile} objects on the requested page.
+   * @throws InterruptedException If the thread is interrupted during execution of this function.
+   * @throws DeepLException If any error occurs while communicating with the DeepL API.
+   */
+  public List<StyleProfile> listStyleProfiles(@Nullable Integer page, @Nullable Integer pageSize)
+      throws DeepLException, InterruptedException {
+    ArrayList<KeyValuePair<String, String>> queryParams = new ArrayList<>();
+    if (page != null) {
+      queryParams.add(new KeyValuePair<>("page", page.toString()));
+    }
+    if (pageSize != null) {
+      queryParams.add(new KeyValuePair<>("page_size", pageSize.toString()));
+    }
+    String relativeUrl = "/v3/style_profiles" + ApiClientHelper.createQueryString(queryParams);
+    HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
+    checkResponse(response, false, false);
+    return jsonParser.parseStyleProfileList(response.getBody());
+  }
+
+  /**
+   * Functions the same as {@link DeepLClient#listStyleProfiles(Integer, Integer)} but with default
+   * parameters (all null).
+   *
+   * @see DeepLClient#listStyleProfiles(Integer, Integer)
+   */
+  public List<StyleProfile> listStyleProfiles() throws DeepLException, InterruptedException {
+    return listStyleProfiles(null, null);
+  }
+
+  /**
+   * Creates a style profile and returns a {@link StyleProfile} object with details about it. If any
+   * of the given component IDs cannot be used, the request fails and no style profile is created.
+   *
+   * @param name Name of the style profile.
+   * @param options Optional description, industry and linked components, or <code>null</code>.
+   *     Fields left <code>null</code> are not sent.
+   * @return {@link StyleProfile} object with details about the new style profile.
+   * @throws InterruptedException If the thread is interrupted during execution of this function.
+   * @throws DeepLException If any error occurs while communicating with the DeepL API.
+   */
+  public StyleProfile createStyleProfile(String name, @Nullable StyleProfileOptions options)
+      throws DeepLException, InterruptedException {
+    HttpResponse response =
+        httpClientWrapper.sendJsonRequestWithBackoff(
+            "/v3/style_profiles", createStyleProfileBody(name, options));
+    checkResponse(response, false, false);
+    return jsonParser.parseStyleProfile(response.getBody());
+  }
+
+  /**
+   * Functions the same as {@link DeepLClient#createStyleProfile(String, StyleProfileOptions)} but
+   * without options.
+   *
+   * @see DeepLClient#createStyleProfile(String, StyleProfileOptions)
+   */
+  public StyleProfile createStyleProfile(String name) throws DeepLException, InterruptedException {
+    return createStyleProfile(name, null);
+  }
+
+  /**
+   * Retrieves the style profile with the given ID.
+   *
+   * @param styleProfileId ID of the style profile to retrieve.
+   * @return {@link StyleProfile} object with details about the style profile.
+   * @throws IllegalArgumentException If the ID is <code>null</code> or empty.
+   * @throws NotFoundException If no style profile with the given ID is found.
+   * @throws InterruptedException If the thread is interrupted during execution of this function.
+   * @throws DeepLException If any error occurs while communicating with the DeepL API.
+   */
+  public StyleProfile getStyleProfile(String styleProfileId)
+      throws DeepLException, InterruptedException {
+    HttpResponse response =
+        httpClientWrapper.sendGetRequestWithBackoff(styleProfilePath(styleProfileId));
+    checkResponse(response, false, false);
+    return jsonParser.parseStyleProfile(response.getBody());
+  }
+
+  /**
+   * Functions the same as {@link DeepLClient#getStyleProfile(String)} but accepts a {@link
+   * StyleProfile} object.
+   *
+   * @see DeepLClient#getStyleProfile(String)
+   */
+  public StyleProfile getStyleProfile(StyleProfile styleProfile)
+      throws DeepLException, InterruptedException {
+    return getStyleProfile(styleProfileId(styleProfile));
+  }
+
+  /**
+   * Updates the style profile with the given ID and returns the updated {@link StyleProfile}.
+   * Fields left <code>null</code> are not sent and stay unchanged. An empty string clears the
+   * description or industry; a component list that is sent replaces the linked list in full, and an
+   * empty list unlinks all components of that kind. With nothing set, nothing changes.
+   *
+   * @param styleProfileId ID of the style profile to update.
+   * @param name New name of the style profile, or <code>null</code> to keep the current name.
+   * @param options Fields to change, or <code>null</code>.
+   * @return {@link StyleProfile} object with details about the updated style profile.
+   * @throws IllegalArgumentException If the ID is <code>null</code> or empty.
+   * @throws NotFoundException If no style profile with the given ID is found.
+   * @throws InterruptedException If the thread is interrupted during execution of this function.
+   * @throws DeepLException If any error occurs while communicating with the DeepL API.
+   */
+  public StyleProfile updateStyleProfile(
+      String styleProfileId, @Nullable String name, @Nullable StyleProfileOptions options)
+      throws DeepLException, InterruptedException {
+    String relativeUrl = styleProfilePath(styleProfileId);
+    HttpResponse response =
+        httpClientWrapper.sendJsonPatchRequestWithBackoff(
+            relativeUrl, createStyleProfileBody(name, options));
+    checkResponse(response, false, false);
+    return jsonParser.parseStyleProfile(response.getBody());
+  }
+
+  /**
+   * Functions the same as {@link DeepLClient#updateStyleProfile(String, String,
+   * StyleProfileOptions)} but accepts a {@link StyleProfile} object.
+   *
+   * @see DeepLClient#updateStyleProfile(String, String, StyleProfileOptions)
+   */
+  public StyleProfile updateStyleProfile(
+      StyleProfile styleProfile, @Nullable String name, @Nullable StyleProfileOptions options)
+      throws DeepLException, InterruptedException {
+    return updateStyleProfile(styleProfileId(styleProfile), name, options);
+  }
+
+  /**
+   * Deletes the style profile with the given ID.
+   *
+   * @param styleProfileId ID of the style profile to delete.
+   * @throws IllegalArgumentException If the ID is <code>null</code> or empty.
+   * @throws NotFoundException If no style profile with the given ID is found.
+   * @throws InterruptedException If the thread is interrupted during execution of this function.
+   * @throws DeepLException If any error occurs while communicating with the DeepL API.
+   */
+  public void deleteStyleProfile(String styleProfileId)
+      throws DeepLException, InterruptedException {
+    HttpResponse response =
+        httpClientWrapper.sendDeleteRequestWithBackoff(styleProfilePath(styleProfileId));
+    checkResponse(response, false, false);
+  }
+
+  /**
+   * Functions the same as {@link DeepLClient#deleteStyleProfile(String)} but accepts a {@link
+   * StyleProfile} object.
+   *
+   * @see DeepLClient#deleteStyleProfile(String)
+   */
+  public void deleteStyleProfile(StyleProfile styleProfile)
+      throws DeepLException, InterruptedException {
+    deleteStyleProfile(styleProfileId(styleProfile));
+  }
+
+  /**
    * Retrieves the languages supported by the given DeepL API resource, along with the features each
    * language supports for that resource.
    *
@@ -1711,6 +1873,40 @@ public class DeepLClient extends Translator {
       throw new IllegalArgumentException("spokenTerms must not be null");
     }
     return spokenTerms.getSpokenTermsId();
+  }
+
+  /** Extracts the ID of the given style profile. */
+  private static String styleProfileId(StyleProfile styleProfile) throws IllegalArgumentException {
+    if (styleProfile == null) {
+      throw new IllegalArgumentException("styleProfile must not be null");
+    }
+    return styleProfile.getStyleProfileId();
+  }
+
+  /** Validates the style profile ID and builds its URL path with the ID escaped. */
+  private String styleProfilePath(String styleProfileId) throws DeepLException {
+    validateParameter("styleProfileId", styleProfileId);
+    try {
+      return "/v3/style_profiles/" + ApiClientHelper.encodeQueryComponent(styleProfileId);
+    } catch (UnsupportedEncodingException exception) {
+      throw new DeepLException("Error while URL-encoding request", exception);
+    }
+  }
+
+  /** Builds the JSON body of a style profile request; Gson omits the options left null. */
+  private String createStyleProfileBody(
+      @Nullable String name, @Nullable StyleProfileOptions options) {
+    JsonObject body = new JsonObject();
+    if (name != null) {
+      body.addProperty("name", name);
+    }
+    if (options != null) {
+      for (Map.Entry<String, JsonElement> entry :
+          jsonParser.getGson().toJsonTree(options).getAsJsonObject().entrySet()) {
+        body.add(entry.getKey(), entry.getValue());
+      }
+    }
+    return jsonParser.getGson().toJson(body);
   }
 
   /** Builds the query string that selects the term list of the given language. */

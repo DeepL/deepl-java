@@ -160,7 +160,7 @@ final class ApiClientHelper {
   // URLEncoder encodes a space as "+", which is correct for a form body but not for a URI query
   // string. Any literal "+" is already escaped as %2B by URLEncoder, so every remaining "+" is a
   // space.
-  private static String encodeQueryComponent(String value) throws UnsupportedEncodingException {
+  static String encodeQueryComponent(String value) throws UnsupportedEncodingException {
     return URLEncoder.encode(value, StandardCharsets.UTF_8.name()).replace("+", "%20");
   }
 }

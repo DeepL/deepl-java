@@ -31,6 +31,7 @@ public class Parser {
     gsonBuilder.registerTypeAdapter(Usage.class, new UsageDeserializer());
     gsonBuilder.registerTypeAdapter(
         TranslationMemoryJob.class, new TranslationMemoryJobDeserializer());
+    gsonBuilder.registerTypeAdapter(StyleProfile.class, new StyleProfileDeserializer());
     gson = gsonBuilder.create();
     adminParser =
         new AdminResponseParser(
@@ -188,6 +189,23 @@ public class Parser {
     return gson.fromJson(json, CustomInstruction.class);
   }
 
+  public StyleProfile parseStyleProfile(String json) {
+    return gson.fromJson(json, StyleProfile.class);
+  }
+
+  public List<StyleProfile> parseStyleProfileList(String json) {
+    StyleProfileListResponse result = gson.fromJson(json, StyleProfileListResponse.class);
+    List<StyleProfile> styleProfiles = new ArrayList<>();
+    if (result != null && result.getStyleProfiles() != null) {
+      for (StyleProfile styleProfile : result.getStyleProfiles()) {
+        if (styleProfile != null) {
+          styleProfiles.add(styleProfile);
+        }
+      }
+    }
+    return styleProfiles;
+  }
+
   public SpokenTerms parseSpokenTerms(String json) {
     return gson.fromJson(json, SpokenTerms.class);
   }
@@ -272,5 +290,18 @@ public class Parser {
   static @Nullable Boolean getAsBooleanOrNull(JsonObject jsonObject, String parameterName) {
     if (!jsonObject.has(parameterName)) return null;
     return jsonObject.get(parameterName).getAsBoolean();
+  }
+
+  /** Parses a timestamp tolerantly: a missing, null or unparseable value yields null. */
+  static @Nullable Date getAsDateOrNull(
+      JsonObject jsonObject, String parameterName, JsonDeserializationContext context) {
+    if (!jsonObject.has(parameterName) || jsonObject.get(parameterName).isJsonNull()) {
+      return null;
+    }
+    try {
+      return context.deserialize(jsonObject.get(parameterName), Date.class);
+    } catch (JsonParseException e) {
+      return null;
+    }
   }
 }

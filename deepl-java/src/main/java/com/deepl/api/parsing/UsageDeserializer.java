@@ -27,8 +27,8 @@ class UsageDeserializer implements JsonDeserializer<Usage> {
         createDetail(jsonObject, "speech_to_text_minutes_"),
         createDetail(jsonObject, "speech_to_speech_minutes_"),
         createProducts(jsonObject),
-        deserializeDate(jsonObject, "start_time", context),
-        deserializeDate(jsonObject, "end_time", context));
+        Parser.getAsDateOrNull(jsonObject, "start_time", context),
+        Parser.getAsDateOrNull(jsonObject, "end_time", context));
   }
 
   private static @Nullable List<Usage.Product> createProducts(JsonObject jsonObject) {
@@ -48,19 +48,6 @@ class UsageDeserializer implements JsonDeserializer<Usage> {
               accountUnitCount == null ? 0 : accountUnitCount));
     }
     return products;
-  }
-
-  private static @Nullable Date deserializeDate(
-      JsonObject jsonObject, String parameterName, JsonDeserializationContext context) {
-    if (!jsonObject.has(parameterName) || jsonObject.get(parameterName).isJsonNull()) {
-      return null;
-    }
-    try {
-      return context.deserialize(jsonObject.get(parameterName), Date.class);
-    } catch (JsonParseException e) {
-      // An unexpected billing-period format must not fail the whole usage response.
-      return null;
-    }
   }
 
   public static @Nullable Usage.Detail createDetail(JsonObject jsonObject, String prefix) {

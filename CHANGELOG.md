@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added style profile support to `DeepLClient` (`/v3/style_profiles`):
+  `createStyleProfile()`, `listStyleProfiles()`, `getStyleProfile()`,
+  `updateStyleProfile()` and `deleteStyleProfile()`, with the new classes
+  `StyleProfile` and `StyleProfileOptions`. Options left `null` are not sent;
+  an empty string clears the description or industry and an empty list
+  unlinks all components of that kind.
 - Added Spoken Terms support to `DeepLClient` (`/v3/spoken-terms`):
   `createSpokenTerms()`, `listSpokenTerms()`, `getSpokenTerms()`,
   `updateSpokenTerms()`, `getSpokenTermsEntries()`, `replaceSpokenTermsList()`,
