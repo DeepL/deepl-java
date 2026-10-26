@@ -3,14 +3,19 @@
 // license that can be found in the LICENSE file.
 package com.deepl.api;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.anyRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.put;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -34,5 +39,19 @@ class SpokenTermsTest {
 
     assertEquals("en", entries.getLang());
     assertEquals(Arrays.asList("a", "b"), entries.getEntries());
+  }
+
+  @Test
+  void rejectsATermContainingANewlineBeforeSendingAnyRequest() {
+    List<SpokenTermsEntries> termLists =
+        Collections.singletonList(new SpokenTermsEntries("en", Arrays.asList("DeepL", "a\nb")));
+
+    assertThrows(IllegalArgumentException.class, () -> client.createSpokenTerms("n", termLists));
+    assertThrows(
+        IllegalArgumentException.class, () -> client.updateSpokenTerms("st1", null, termLists));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> client.replaceSpokenTermsList("st1", termLists.get(0)));
+    wm.verify(0, anyRequestedFor(anyUrl()));
   }
 }

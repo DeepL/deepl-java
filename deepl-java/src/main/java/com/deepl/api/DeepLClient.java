@@ -782,6 +782,7 @@ public class DeepLClient extends Translator {
    * @param name User-defined name of the collection.
    * @param termLists Term lists of the collection, one {@link SpokenTermsEntries} per language.
    * @return {@link SpokenTerms} object with details about the new collection.
+   * @throws IllegalArgumentException If a term is invalid, as checked for glossary terms.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
    *     DeepLException} or a derived class will be thrown.
@@ -856,6 +857,7 @@ public class DeepLClient extends Translator {
    *     current term lists.
    * @return {@link SpokenTerms} object with details about the updated collection.
    * @throws NotFoundException If no collection with the given ID is found.
+   * @throws IllegalArgumentException If a term is invalid, as checked for glossary terms.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
@@ -929,6 +931,7 @@ public class DeepLClient extends Translator {
    * @param entries Language and terms of the new term list.
    * @return {@link SpokenTermsList} object with details about the new term list.
    * @throws NotFoundException If no collection with the given ID is found.
+   * @throws IllegalArgumentException If a term is invalid, as checked for glossary terms.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
@@ -1716,8 +1719,14 @@ public class DeepLClient extends Translator {
     return createQueryString(queryParams);
   }
 
-  /** Builds the JSON object of one term list; the API expects the terms newline-separated. */
+  /**
+   * Builds the JSON object of one term list; the API expects the terms newline-separated, so each
+   * term is checked like a glossary term first: a term containing a newline would split.
+   */
   private static Map<String, Object> createSpokenTermsListData(SpokenTermsEntries entries) {
+    for (String term : entries.getEntries()) {
+      GlossaryEntries.validateGlossaryTerm(term);
+    }
     Map<String, Object> data = new LinkedHashMap<>();
     data.put("lang", entries.getLang());
     data.put("entries", String.join("\n", entries.getEntries()));

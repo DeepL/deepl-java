@@ -11,7 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `updateSpokenTerms()`, `getSpokenTermsEntries()`, `replaceSpokenTermsList()`,
   `deleteSpokenTerms()` and `deleteSpokenTermsList()`, with the new classes
   `SpokenTerms`, `SpokenTermsList` and `SpokenTermsEntries`. Terms are passed
-  and returned as a list of strings.
+  and returned as a list of strings and are checked like glossary terms, so a
+  term containing a newline throws an `IllegalArgumentException`.
 - Added the API Pro fields of `GET /v2/usage` to `Usage`:
   `getApiKeyCharacter()` (per-key character usage), `getSpeechToTextMinutes()`,
   `getSpeechToSpeechMinutes()`, `getStartTime()` and `getEndTime()` (billing
