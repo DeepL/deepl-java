@@ -72,6 +72,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   deprecated v2 endpoints. The returned lists may contain additional
   languages, including the bare `en` and `pt` as target languages.
 
+### Deprecated
+- Deprecated the language code constants in `LanguageCode` (for example
+  `LanguageCode.German`). Pass the language code as a string instead, for
+  example `"de"`, or use `getSourceLanguages()` / `getTargetLanguages()`.
+  The constants will be removed in the next major version. The class itself
+  and its helper methods are not deprecated.
+
 ### Fixed
 - Fixed the doc comments of `LanguageCode.English` and
   `LanguageCode.Portuguese`, which claimed they may only be used as source
