@@ -22,6 +22,7 @@ public class TextTranslationOptions extends BaseRequestOptions {
   private String glossaryId;
   private List<String> glossaryIds;
   private String styleId;
+  private String styleProfileId;
   private String translationMemoryId;
   private Integer translationMemoryThreshold;
   private SentenceSplittingMode sentenceSplittingMode;
@@ -133,6 +134,29 @@ public class TextTranslationOptions extends BaseRequestOptions {
       throw new IllegalArgumentException("styleRule must not be null");
     }
     return setStyleId(styleRule.getStyleId());
+  }
+
+  /**
+   * Sets the ID of a style profile to use with the translation. A style profile applies its
+   * glossaries, style rules and translation memories through one ID; components that do not fit the
+   * language pair are left out. By default, this value is <code>null</code> and no style profile is
+   * used. The API rejects combining a style profile with glossaries, a style rule, a translation
+   * memory, a translation memory threshold or custom instructions.
+   */
+  public TextTranslationOptions setStyleProfileId(String styleProfileId) {
+    this.styleProfileId = styleProfileId;
+    return this;
+  }
+
+  /**
+   * Sets the style profile to use with the translation. By default, this value is <code>null
+   * </code> and no style profile is used. See {@link #setStyleProfileId}.
+   */
+  public TextTranslationOptions setStyleProfile(StyleProfile styleProfile) {
+    if (styleProfile == null) {
+      throw new IllegalArgumentException("styleProfile must not be null");
+    }
+    return setStyleProfileId(styleProfile.getStyleProfileId());
   }
 
   /**
@@ -298,6 +322,11 @@ public class TextTranslationOptions extends BaseRequestOptions {
   /** Gets the current style rule ID. */
   public String getStyleId() {
     return styleId;
+  }
+
+  /** Gets the current style profile ID. */
+  public String getStyleProfileId() {
+    return styleProfileId;
   }
 
   /** Gets the current translation memory ID. */

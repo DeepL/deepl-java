@@ -839,6 +839,9 @@ public class Translator {
       if (options.getStyleId() != null) {
         params.add(new KeyValuePair<>("style_id", options.getStyleId()));
       }
+      if (options.getStyleProfileId() != null) {
+        params.add(new KeyValuePair<>("style_profile_id", options.getStyleProfileId()));
+      }
       if (options.getTranslationMemoryId() != null) {
         params.add(new KeyValuePair<>("translation_memory_id", options.getTranslationMemoryId()));
       }
@@ -885,6 +888,9 @@ public class Translator {
     if (options != null) {
       if (options.getStyleId() != null) {
         params.add(new KeyValuePair<>("style_id", options.getStyleId()));
+      }
+      if (options.getStyleProfileId() != null) {
+        params.add(new KeyValuePair<>("style_profile_id", options.getStyleProfileId()));
       }
       if (options.getTranslationMemoryId() != null) {
         params.add(new KeyValuePair<>("translation_memory_id", options.getTranslationMemoryId()));

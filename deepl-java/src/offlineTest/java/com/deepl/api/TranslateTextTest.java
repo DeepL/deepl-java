@@ -7,6 +7,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -266,6 +267,63 @@ class TranslateTextTest {
         FormBody.of(
             "target_lang", "de", "text", "Hello", "show_billed_characters", "1", "style_id", "s2"));
     client.translateText("Hello", null, "de", new TextTranslationOptions().setStyleRule(rule));
+  }
+
+  @Test
+  void sendsStyleProfileIdWithoutSourceLanguage() throws Exception {
+    expectBody(
+        FormBody.of(
+            "target_lang",
+            "de",
+            "text",
+            "Hello",
+            "show_billed_characters",
+            "1",
+            "style_profile_id",
+            "sp1"));
+    client.translateText(
+        "Hello", null, "de", new TextTranslationOptions().setStyleProfileId("sp1"));
+  }
+
+  @Test
+  void sendsTheIdOfAStyleProfile() throws Exception {
+    StyleProfile profile =
+        new StyleProfile("sp2", "n", null, null, null, null, null, false, null, null);
+    expectBody(
+        FormBody.of(
+            "source_lang",
+            "en",
+            "target_lang",
+            "de",
+            "text",
+            "Hello",
+            "show_billed_characters",
+            "1",
+            "style_id",
+            "s1",
+            "style_profile_id",
+            "sp2"));
+    client.translateText(
+        "Hello",
+        "en",
+        "de",
+        new TextTranslationOptions().setStyleId("s1").setStyleProfile(profile));
+  }
+
+  @Test
+  void omitsStyleProfileIdWhenUnset() throws Exception {
+    TextTranslationOptions options = new TextTranslationOptions().setStyleId("s1");
+    expectBody(
+        FormBody.of(
+            "target_lang", "de", "text", "Hello", "show_billed_characters", "1", "style_id", "s1"));
+    client.translateText("Hello", null, "de", options);
+    assertNull(options.getStyleProfileId());
+  }
+
+  @Test
+  void rejectsANullStyleProfile() {
+    assertThrows(
+        IllegalArgumentException.class, () -> new TextTranslationOptions().setStyleProfile(null));
   }
 
   @Test

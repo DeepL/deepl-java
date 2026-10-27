@@ -175,6 +175,14 @@ a `TextTranslationOptions`, with the following setters:
 - `setStyleRule()`: specifies a style rule to use with translation, as a string
   containing the ID of the style rule, or a `StyleRuleInfo` object.
     - `setStyleId()` is also available, accepting a string containing the style rule ID.
+- `setStyleProfile()`: specifies a style profile to use with translation, as a
+  `StyleProfile` object. The profile's glossaries, style rules and translation
+  memories are applied per text once the source language is known; a component
+  that does not fit the language pair is left out. No source language is
+  required. Cannot be combined with the glossary, style rule, translation memory
+  or custom instruction options; the API rejects such a request.
+    - `setStyleProfileId()` is also available, accepting a string containing the
+      style profile ID.
 - `setTranslationMemory()`: specifies a translation memory to use with translation,
   as a `TranslationMemoryInfo` object. Sets the translation memory ID.
     - `setTranslationMemoryId()` is also available, accepting a string containing
@@ -337,6 +345,11 @@ arguments, `translateDocument()` accepts an optional
 - `setStyleRule()`/`setStyleId()`: same as
   in [Text translation options](#text-translation-options). Document translation
   now supports style rules.
+- `setStyleProfile()`/`setStyleProfileId()`: same as
+  in [Text translation options](#text-translation-options). An unknown style
+  profile is not rejected at upload; the document status reports an error and
+  a `DocumentTranslationException` is thrown with the message
+  `Style profile not found.`
 - `setTranslationMemory()`/`setTranslationMemoryId()`/`setTranslationMemoryThreshold()`:
   same as in [Text translation options](#text-translation-options). Document
   translation now supports translation memories.
@@ -1026,6 +1039,26 @@ Use `deleteStyleProfile()` with the ID or `StyleProfile` object:
 class Example {  // Continuing class Example from above
     public void deleteStyleProfileExample() throws Exception {
         client.deleteStyleProfile("3f1c9d0e-7a24-4b58-9c31-8f0e5d2a1b47");
+    }
+}
+```
+
+#### Using a style profile in translations
+
+Pass a `StyleProfile` to `setStyleProfile()` or an ID to `setStyleProfileId()`
+in `TextTranslationOptions` or `DocumentTranslationOptions` to translate with all
+of the profile's components through one ID:
+
+```java
+class Example {  // Continuing class Example from above
+    public void usingStyleProfileExample() throws Exception {
+        TextResult result = client.translateText(
+            "The artist is here.",
+            null,
+            "de",
+            new TextTranslationOptions()
+                .setStyleProfileId("3f1c9d0e-7a24-4b58-9c31-8f0e5d2a1b47"));
+        System.out.println(result.getText());
     }
 }
 ```

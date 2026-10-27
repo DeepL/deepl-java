@@ -132,6 +132,7 @@ class TranslateDocumentTest {
             "formality", "prefer_more",
             "glossary_id", "g1",
             "style_id", "s1",
+            "style_profile_id", "sp1",
             "translation_memory_id", "tm1",
             "translation_memory_threshold", "80",
             "output_format", "pdf"));
@@ -143,6 +144,7 @@ class TranslateDocumentTest {
             .setFormality(Formality.PreferMore)
             .setGlossaryId("g1")
             .setStyleId("s1")
+            .setStyleProfileId("sp1")
             .setTranslationMemoryId("tm1")
             .setTranslationMemoryThreshold(80)
             .setOutputFormat("pdf"));
@@ -154,6 +156,7 @@ class TranslateDocumentTest {
         "formality",
         "glossary_id",
         "style_id",
+        "style_profile_id",
         "translation_memory_id",
         "translation_memory_threshold",
         "output_format");
@@ -239,6 +242,55 @@ class TranslateDocumentTest {
         "de",
         new DocumentTranslationOptions().setStyleRule(rule).setTranslationMemory(memory));
     assertPartNames("/v2/document", "file", "target_lang", "style_id", "translation_memory_id");
+  }
+
+  @Test
+  void sendsStyleProfileIdAsOneField() throws Exception {
+    File input = writeInput("example.txt", "a");
+    expectUpload(
+        "/v2/document",
+        "example.txt",
+        "a".getBytes(StandardCharsets.UTF_8),
+        fields("target_lang", "de", "style_profile_id", "sp1"));
+    client.translateDocumentUpload(
+        input, null, "de", new DocumentTranslationOptions().setStyleProfileId("sp1"));
+    assertPartNames("/v2/document", "file", "target_lang", "style_profile_id");
+  }
+
+  @Test
+  void sendsTheIdOfAStyleProfile() throws Exception {
+    File input = writeInput("example.txt", "a");
+    StyleProfile profile =
+        new StyleProfile("sp2", "n", null, null, null, null, null, false, null, null);
+    expectUpload(
+        "/v2/document",
+        "example.txt",
+        "a".getBytes(StandardCharsets.UTF_8),
+        fields("target_lang", "de", "style_profile_id", "sp2"));
+    client.translateDocumentUpload(
+        input, null, "de", new DocumentTranslationOptions().setStyleProfile(profile));
+    assertPartNames("/v2/document", "file", "target_lang", "style_profile_id");
+  }
+
+  @Test
+  void omitsStyleProfileIdWhenUnset() throws Exception {
+    File input = writeInput("example.txt", "a");
+    DocumentTranslationOptions options = new DocumentTranslationOptions().setStyleId("s1");
+    assertNull(options.getStyleProfileId());
+    expectUpload(
+        "/v2/document",
+        "example.txt",
+        "a".getBytes(StandardCharsets.UTF_8),
+        fields("target_lang", "de", "style_id", "s1"));
+    client.translateDocumentUpload(input, null, "de", options);
+    assertPartNames("/v2/document", "file", "target_lang", "style_id");
+  }
+
+  @Test
+  void rejectsANullStyleProfile() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new DocumentTranslationOptions().setStyleProfile(null));
   }
 
   @Test
