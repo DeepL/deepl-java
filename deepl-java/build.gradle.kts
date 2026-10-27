@@ -40,7 +40,7 @@ dependencies {
 
 jacoco { toolVersion = "0.8.12" }
 
-// offlineTest needs no key and no network; realApiTest needs DEEPL_AUTH_KEY.
+// offlineTest needs no key and no network; realApiTest needs DEEPL_AUTH_KEY and DEEPL_ADMIN_KEY.
 testing {
     suites {
         val offlineTest by registering(JvmTestSuite::class) {

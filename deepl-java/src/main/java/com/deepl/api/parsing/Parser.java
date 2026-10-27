@@ -7,6 +7,7 @@ import com.deepl.api.*;
 import com.google.gson.*;
 import com.google.gson.reflect.*;
 import java.lang.reflect.*;
+import java.time.*;
 import java.util.*;
 import org.jetbrains.annotations.*;
 
@@ -17,6 +18,7 @@ import org.jetbrains.annotations.*;
  */
 public class Parser {
   private final Gson gson;
+  private final AdminResponseParser adminParser;
 
   public Gson getGson() {
     return gson;
@@ -30,6 +32,12 @@ public class Parser {
     gsonBuilder.registerTypeAdapter(
         TranslationMemoryJob.class, new TranslationMemoryJobDeserializer());
     gson = gsonBuilder.create();
+    adminParser =
+        new AdminResponseParser(
+            gson.newBuilder()
+                .registerTypeAdapter(Date.class, new LenientDateDeserializer())
+                .registerTypeAdapter(LocalDate.class, new LocalDateDeserializer())
+                .create());
   }
 
   public List<TextResult> parseTextResult(String json) {
@@ -205,6 +213,32 @@ public class Parser {
       }
     }
     return new SpokenTermsEntries(response.getLang(), entries);
+  }
+
+  public DeveloperKey parseDeveloperKey(String json) throws DeepLException {
+    return parseAdmin(json, adminParser::parseDeveloperKey);
+  }
+
+  public List<DeveloperKey> parseDeveloperKeyList(String json) throws DeepLException {
+    return parseAdmin(json, adminParser::parseDeveloperKeys);
+  }
+
+  public AdminUsageReport parseAdminUsageReport(String json) throws DeepLException {
+    return parseAdmin(json, adminParser::parseUsageReport);
+  }
+
+  public CustomTagUsageReport parseCustomTagUsageReport(String json) throws DeepLException {
+    return parseAdmin(json, adminParser::parseCustomTagUsageReport);
+  }
+
+  private <T> T parseAdmin(String json, java.util.function.Function<JsonElement, T> parse)
+      throws DeepLException {
+    try {
+      return parse.apply(json == null ? JsonNull.INSTANCE : JsonParser.parseString(json));
+    } catch (JsonParseException e) {
+      throw new DeepLException(
+          "Failed to parse the response of the DeepL API: " + e.getMessage(), e);
+    }
   }
 
   public String parseErrorMessage(String json) {

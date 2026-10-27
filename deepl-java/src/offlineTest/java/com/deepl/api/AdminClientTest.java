@@ -1,0 +1,477 @@
+// Copyright 2026 DeepL SE (https://www.deepl.com)
+// Use of this source code is governed by an MIT
+// license that can be found in the LICENSE file.
+package com.deepl.api;
+
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.matching;
+import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.put;
+import static com.github.tomakehurst.wiremock.client.WireMock.putRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.github.tomakehurst.wiremock.http.Fault;
+import com.github.tomakehurst.wiremock.stubbing.Scenario;
+import java.lang.reflect.Field;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.util.Date;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
+
+class AdminClientTest {
+  @RegisterExtension static OfflineServer wm = new OfflineServer();
+
+  private static final String KEY_ID =
+      "ca7d5694-96eb-4263-a9a4-7f7e4211529e:20c2abcf-4c3c-4cd6-8ae8-8bd2a7d4da38";
+  private static final String DEVELOPER_KEY =
+      "{\"key_id\":\""
+          + KEY_ID
+          + "\",\"label\":\"developer key prod\",\"creation_time\":\"2025-07-08T08:15:29.362Z\","
+          + "\"deactivated_time\":null,\"is_deactivated\":false,"
+          + "\"usage_limits\":{\"characters\":5000,\"speech_to_text_milliseconds\":null,"
+          + "\"speech_to_speech_milliseconds\":60000}}";
+
+  private final DeepLAdminClient client = OfflineClient.createAdminClient(wm);
+
+  @Test
+  void rejectsAnEmptyAdminKey() {
+    assertThrows(IllegalArgumentException.class, () -> new DeepLAdminClient(""));
+    assertThrows(IllegalArgumentException.class, () -> new DeepLAdminClient(" "));
+    assertThrows(
+        IllegalArgumentException.class, () -> new DeepLAdminClient(OfflineClient.ADMIN_KEY, null));
+  }
+
+  @Test
+  void rejectsMissingDatesWithoutSendingThem() {
+    LocalDate date = LocalDate.of(2025, 10, 1);
+    assertThrows(IllegalArgumentException.class, () -> client.getUsageAnalytics(null, date));
+    assertThrows(
+        IllegalArgumentException.class, () -> client.getCustomTagUsageAnalytics(date, null));
+  }
+
+  @Test
+  void leavesInvalidDateRangesToTheApi() {
+    wm.stubFor(
+        get("/v2/admin/analytics?start_date=2025-10-01&end_date=2025-10-01")
+            .willReturn(
+                aResponse()
+                    .withStatus(400)
+                    .withBody("{\"message\":\"start_date must be before end_date\"}")));
+    LocalDate date = LocalDate.of(2025, 10, 1);
+    DeepLException thrown =
+        assertThrows(DeepLException.class, () -> client.getUsageAnalytics(date, date));
+    assertTrue(thrown.getMessage().contains("must be before"), thrown.getMessage());
+  }
+
+  @Test
+  void parsesMalformedValuesTolerantly() throws Exception {
+    wm.stubFor(
+        get("/v2/admin/developer-keys")
+            .willReturn(
+                okJson(
+                    "[1,null,{},{\"key_id\":\"\"},{\"key_id\":\"k\",\"label\":\"l\","
+                        + "\"creation_time\":\"not a timestamp\",\"is_deactivated\":true,"
+                        + "\"usage_limits\":\"x\"}]")));
+    wm.stubFor(
+        get("/v2/admin/analytics?start_date=2025-09-29&end_date=2025-10-01&group_by=key")
+            .willReturn(
+                okJson(
+                    "{\"usage_report\":{\"total_usage\":{\"total_characters\":\"many\","
+                        + "\"speech_to_text_minutes\":{},\"speech_to_speech_minutes\":2.5},"
+                        + "\"start_date\":\"garbage\","
+                        + "\"end_date\":\"2025-10-01T00:00:00\",\"key_usages\":[7,{},"
+                        + "{\"api_key\":\"a\",\"usage\":{\"total_characters\":5}}]}}")));
+    wm.stubFor(
+        get("/v2/admin/analytics/custom-tags?start_date=2025-09-29&end_date=2025-10-01")
+            .willReturn(
+                okJson(
+                    "{\"custom_tag_usage_report\":{\"next_page\":null,\"usage\":[\"x\","
+                        + "{\"custom_tag\":\"t\",\"usage_date\":\"bad\","
+                        + "\"breakdown\":{\"total_characters\":4}}]}}")));
+
+    List<DeveloperKey> keys = client.getDeveloperKeys();
+    assertEquals(1, keys.size());
+    assertEquals("k", keys.get(0).getKeyId());
+    assertNull(keys.get(0).getCreationTime());
+    assertTrue(keys.get(0).isDeactivated());
+    assertNull(keys.get(0).getUsageLimits().getCharacters());
+
+    LocalDate start = LocalDate.of(2025, 9, 29);
+    LocalDate end = LocalDate.of(2025, 10, 1);
+    AdminUsageReport report =
+        client.getUsageAnalytics(
+            start, end, new AdminUsageAnalyticsOptions().setGroupBy(AdminUsageGroupBy.Key));
+    assertEquals(0, report.getTotalUsage().getTotalCharacters());
+    assertEquals(0, report.getTotalUsage().getSpeechToTextMinutes());
+    assertEquals(2.5, report.getTotalUsage().getSpeechToSpeechMinutes());
+    assertEquals(0, report.getKeyUsages().get(1).getUsage().getSpeechToSpeechMinutes());
+    assertNull(report.getStartDate());
+    assertEquals(end, report.getEndDate());
+    assertEquals(2, report.getKeyUsages().size());
+    assertEquals(5, report.getKeyUsages().get(1).getUsage().getTotalCharacters());
+
+    CustomTagUsageReport tagReport = client.getCustomTagUsageAnalytics(start, end);
+    assertNull(tagReport.getNextPage());
+    assertEquals(1, tagReport.getUsage().size());
+    assertNull(tagReport.getUsage().get(0).getUsageDate());
+    assertEquals(4, tagReport.getUsage().get(0).getBreakdown().getTotalCharacters());
+  }
+
+  @Test
+  void throwsDeepLExceptionIfAKeyResponseHasNoKeyId() {
+    wm.stubFor(post("/v2/admin/developer-keys").willReturn(okJson("{\"label\":\"l\"}")));
+    assertThrows(DeepLException.class, client::createDeveloperKey);
+    wm.stubFor(post("/v2/admin/developer-keys").willReturn(okJson("{\"key_id\":\"\"}")));
+    assertThrows(DeepLException.class, client::createDeveloperKey);
+    wm.stubFor(post("/v2/admin/developer-keys").willReturn(okJson("[]")));
+    assertThrows(DeepLException.class, client::createDeveloperKey);
+    wm.stubFor(post("/v2/admin/developer-keys").willReturn(aResponse().withStatus(200)));
+    assertThrows(DeepLException.class, client::createDeveloperKey);
+  }
+
+  @Test
+  void throwsDeepLExceptionIfTheListOrAnalyticsAreOfTheWrongShape() {
+    wm.stubFor(get("/v2/admin/developer-keys").willReturn(okJson("{\"keys\":[]}")));
+    assertThrows(DeepLException.class, client::getDeveloperKeys);
+    wm.stubFor(get(urlPathEqualTo("/v2/admin/analytics")).willReturn(okJson("[]")));
+    assertThrows(
+        DeepLException.class,
+        () -> client.getUsageAnalytics(LocalDate.of(2025, 9, 29), LocalDate.of(2025, 10, 1)));
+  }
+
+  @Test
+  void readsIsDeactivatedOnlyFromJsonTrue() throws Exception {
+    wm.stubFor(
+        get("/v2/admin/developer-keys")
+            .willReturn(
+                okJson(
+                    "["
+                        + DEVELOPER_KEY.replace(
+                            "\"is_deactivated\":false", "\"is_deactivated\":\"true\"")
+                        + ","
+                        + DEVELOPER_KEY.replace(
+                            "\"is_deactivated\":false", "\"is_deactivated\":null")
+                        + ","
+                        + DEVELOPER_KEY.replace("\"is_deactivated\":false", "\"is_deactivated\":1")
+                        + "]")));
+    for (DeveloperKey key : client.getDeveloperKeys()) {
+      assertFalse(key.isDeactivated());
+    }
+  }
+
+  @Test
+  void dropsANextPageOutsideTheIntRange() throws Exception {
+    wm.stubFor(
+        get(urlPathEqualTo("/v2/admin/analytics/custom-tags"))
+            .willReturn(okJson("{\"custom_tag_usage_report\":{\"next_page\":4294967297}}")));
+    CustomTagUsageReport report =
+        client.getCustomTagUsageAnalytics(LocalDate.of(2025, 9, 29), LocalDate.of(2025, 10, 1));
+    assertNull(report.getNextPage());
+  }
+
+  @Test
+  void passesLabelAndLimitValuesThroughToTheApi() throws Exception {
+    wm.stubFor(
+        post("/v2/admin/developer-keys")
+            .withRequestBody(equalToJson("{\"label\":\"\"}"))
+            .willReturn(okJson(DEVELOPER_KEY)));
+    client.createDeveloperKey("");
+    wm.stubFor(
+        put("/v2/admin/developer-keys/limits")
+            .withRequestBody(equalToJson("{\"key_id\":\"" + KEY_ID + "\"}"))
+            .willReturn(okJson(DEVELOPER_KEY)));
+    client.setDeveloperKeyUsageLimits(KEY_ID, new DeveloperKeyUsageLimitsUpdate());
+  }
+
+  @Test
+  void throwsDeepLExceptionIfTheResponseIsNotJson() {
+    wm.stubFor(get("/v2/admin/developer-keys").willReturn(okJson("{not json")));
+    assertThrows(DeepLException.class, client::getDeveloperKeys);
+  }
+
+  @Test
+  void acceptsALongDateRangeAndLeavesItToTheApi() throws Exception {
+    wm.stubFor(
+        get("/v2/admin/analytics?start_date=2024-01-01&end_date=2026-01-01")
+            .willReturn(okJson("{\"usage_report\":{}}")));
+    client.getUsageAnalytics(LocalDate.of(2024, 1, 1), LocalDate.of(2026, 1, 1));
+  }
+
+  @Test
+  void acceptsIsoStringDatesForBothAnalyticsMethods() throws Exception {
+    wm.stubFor(
+        get("/v2/admin/analytics?start_date=2026-10-19&end_date=2026-10-20&group_by=key")
+            .willReturn(okJson("{\"usage_report\":{}}")));
+    wm.stubFor(
+        get("/v2/admin/analytics/custom-tags?start_date=2026-10-19&end_date=2026-10-20")
+            .willReturn(okJson("{\"custom_tag_usage_report\":{}}")));
+    client.getUsageAnalytics(
+        "2026-10-19",
+        "2026-10-20",
+        new AdminUsageAnalyticsOptions().setGroupBy(AdminUsageGroupBy.Key));
+    client.getCustomTagUsageAnalytics("2026-10-19", "2026-10-20");
+  }
+
+  @Test
+  void sendsTheUtcDayOfAnInstantConvertedByTheCaller() throws Exception {
+    wm.stubFor(
+        get("/v2/admin/analytics?start_date=2026-10-19&end_date=2026-10-21")
+            .willReturn(okJson("{\"usage_report\":{}}")));
+    LocalDate start = Instant.parse("2026-10-19T22:00:00Z").atZone(ZoneOffset.UTC).toLocalDate();
+    client.getUsageAnalytics(start, LocalDate.of(2026, 10, 21));
+  }
+
+  @Test
+  void rejectsInvalidStringDatesWithoutSendingThem() {
+    for (String invalid : new String[] {"2026-10-1", "2026-02-30", "20261019", "", "x"}) {
+      assertThrows(
+          IllegalArgumentException.class, () -> client.getUsageAnalytics(invalid, "2026-10-20"));
+      assertThrows(
+          IllegalArgumentException.class,
+          () -> client.getCustomTagUsageAnalytics("2026-10-19", invalid));
+    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> client.getUsageAnalytics((String) null, "2026-10-20"));
+    assertEquals(0, wm.getAllServeEvents().size());
+  }
+
+  @Test
+  void rejectsAnEmptyKeyIdWithoutSendingIt() {
+    assertThrows(IllegalArgumentException.class, () -> client.deactivateDeveloperKey(""));
+    assertThrows(
+        IllegalArgumentException.class, () -> client.deactivateDeveloperKey((DeveloperKey) null));
+    assertThrows(IllegalArgumentException.class, () -> client.renameDeveloperKey("", "label"));
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            client.setDeveloperKeyUsageLimits(
+                "", new DeveloperKeyUsageLimitsUpdate().setCharacters(1L)));
+  }
+
+  @Test
+  void usesTheProServerByDefault() throws Exception {
+    Field wrapperField = DeepLAdminClient.class.getDeclaredField("httpClientWrapper");
+    wrapperField.setAccessible(true);
+    Field serverUrlField = HttpClientWrapper.class.getDeclaredField("serverUrl");
+    serverUrlField.setAccessible(true);
+    Object wrapper = wrapperField.get(new DeepLAdminClient(OfflineClient.ADMIN_KEY));
+    assertEquals("https://api.deepl.com", serverUrlField.get(wrapper));
+  }
+
+  @Test
+  void sendsTheAdminKeyAndUserAgent() throws Exception {
+    wm.stubFor(
+        get("/v2/admin/developer-keys")
+            .withHeader("Authorization", equalTo("DeepL-Auth-Key " + OfflineClient.ADMIN_KEY))
+            .withHeader("User-Agent", matching("deepl-java/.*"))
+            .willReturn(okJson("[]")));
+    assertTrue(client.getDeveloperKeys().isEmpty());
+  }
+
+  @Test
+  void getsUsageAnalyticsAndParsesTheDates() throws Exception {
+    wm.stubFor(
+        get("/v2/admin/analytics?start_date=2025-09-29&end_date=2025-10-01&group_by=key_and_day")
+            .willReturn(
+                okJson(
+                    "{\"usage_report\":{\"total_usage\":{\"total_characters\":9619},"
+                        + "\"group_by\":\"key_and_day\",\"start_date\":\"2025-09-29T00:00:00\","
+                        + "\"end_date\":\"2025-10-01T00:00:00\",\"key_and_day_usages\":[{"
+                        + "\"api_key\":\"dc88****3a2c\",\"api_key_label\":\"Staging API Key\","
+                        + "\"usage_date\":\"2025-09-29T00:00:00Z\","
+                        + "\"usage\":{\"total_characters\":315}}]}}")));
+    AdminUsageReport report =
+        client.getUsageAnalytics(
+            LocalDate.of(2025, 9, 29),
+            LocalDate.of(2025, 10, 1),
+            new AdminUsageAnalyticsOptions().setGroupBy(AdminUsageGroupBy.KeyAndDay));
+
+    assertEquals(LocalDate.of(2025, 9, 29), report.getStartDate());
+    assertEquals(LocalDate.of(2025, 10, 1), report.getEndDate());
+    assertTrue(report.getKeyUsages().isEmpty());
+    assertEquals(LocalDate.of(2025, 9, 29), report.getKeyAndDayUsages().get(0).getUsageDate());
+  }
+
+  @Test
+  void getsCustomTagUsageAnalytics() throws Exception {
+    wm.stubFor(
+        get("/v2/admin/analytics/custom-tags"
+                + "?start_date=2026-05-03&end_date=2026-05-15&aggregate_by=day&page=2")
+            .willReturn(
+                okJson(
+                    "{\"custom_tag_usage_report\":{\"aggregate_by\":\"day\","
+                        + "\"start_date\":\"2026-05-03T00:00:00\","
+                        + "\"end_date\":\"2026-05-15T00:00:00\",\"next_page\":3,\"usage\":[{"
+                        + "\"custom_tag\":\"t\",\"usage_date\":\"2026-05-04T00:00:00Z\","
+                        + "\"breakdown\":{\"total_characters\":380}}]}}")));
+    CustomTagUsageReport report =
+        client.getCustomTagUsageAnalytics(
+            LocalDate.of(2026, 5, 3),
+            LocalDate.of(2026, 5, 15),
+            new CustomTagUsageAnalyticsOptions()
+                .setAggregateBy(CustomTagUsageAggregateBy.Day)
+                .setPage(2));
+
+    assertEquals(3, report.getNextPage());
+    assertEquals(LocalDate.of(2026, 5, 4), report.getUsage().get(0).getUsageDate());
+  }
+
+  @Test
+  void createsADeveloperKey() throws Exception {
+    wm.stubFor(
+        post("/v2/admin/developer-keys")
+            .withRequestBody(equalToJson("{\"label\":\"developer key prod\"}"))
+            .willReturn(okJson(DEVELOPER_KEY)));
+    DeveloperKey key = client.createDeveloperKey("developer key prod");
+
+    assertEquals(Date.from(Instant.parse("2025-07-08T08:15:29.362Z")), key.getCreationTime());
+    assertNull(key.getDeactivatedTime());
+    assertFalse(key.isDeactivated());
+    assertEquals(5000L, key.getUsageLimits().getCharacters());
+    assertNull(key.getUsageLimits().getSpeechToTextMilliseconds());
+    assertEquals(60000L, key.getUsageLimits().getSpeechToSpeechMilliseconds());
+  }
+
+  @Test
+  void parsesADeveloperKeyTimestampWithoutATimeZoneAsUtc() throws Exception {
+    wm.stubFor(
+        post("/v2/admin/developer-keys")
+            .willReturn(
+                okJson(DEVELOPER_KEY.replace("2025-07-08T08:15:29.362Z", "2025-07-08T08:15:29"))));
+    DeveloperKey key = client.createDeveloperKey();
+
+    assertEquals(Date.from(Instant.parse("2025-07-08T08:15:29Z")), key.getCreationTime());
+  }
+
+  @Test
+  void retriesKeyCreationAfterTooManyRequests() throws Exception {
+    wm.stubFor(
+        post("/v2/admin/developer-keys")
+            .inScenario("429")
+            .whenScenarioStateIs(Scenario.STARTED)
+            .willSetStateTo("recovered")
+            .willReturn(aResponse().withStatus(429)));
+    wm.stubFor(
+        post("/v2/admin/developer-keys")
+            .inScenario("429")
+            .whenScenarioStateIs("recovered")
+            .willReturn(okJson(DEVELOPER_KEY)));
+    client.createDeveloperKey();
+    wm.verify(2, postRequestedFor(urlEqualTo("/v2/admin/developer-keys")));
+  }
+
+  @Test
+  void doesNotRetryKeyCreationAfterAServerError() {
+    wm.stubFor(post("/v2/admin/developer-keys").willReturn(aResponse().withStatus(503)));
+    assertThrows(DeepLException.class, client::createDeveloperKey);
+    wm.verify(1, postRequestedFor(urlEqualTo("/v2/admin/developer-keys")));
+  }
+
+  @Test
+  void doesNotRetryKeyCreationAfterATimeoutOrConnectionReset() {
+    DeepLAdminClient timeoutClient =
+        OfflineClient.createAdminClient(
+            wm, new DeepLAdminClientOptions().setTimeout(Duration.ofMillis(200)));
+    wm.stubFor(
+        post("/v2/admin/developer-keys")
+            .withRequestBody(equalToJson("{\"label\":\"slow\"}"))
+            .willReturn(okJson(DEVELOPER_KEY).withFixedDelay(2500)));
+    wm.stubFor(
+        post("/v2/admin/developer-keys")
+            .withRequestBody(equalToJson("{\"label\":\"reset\"}"))
+            .willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)));
+    assertThrows(ConnectionException.class, () -> timeoutClient.createDeveloperKey("slow"));
+    assertThrows(ConnectionException.class, () -> timeoutClient.createDeveloperKey("reset"));
+    wm.verify(2, postRequestedFor(urlEqualTo("/v2/admin/developer-keys")));
+  }
+
+  @Test
+  void retriesOtherRequestsAfterAServerError() throws Exception {
+    wm.stubFor(
+        put("/v2/admin/developer-keys/deactivate")
+            .inScenario("503")
+            .whenScenarioStateIs(Scenario.STARTED)
+            .willSetStateTo("recovered")
+            .willReturn(aResponse().withStatus(503)));
+    wm.stubFor(
+        put("/v2/admin/developer-keys/deactivate")
+            .inScenario("503")
+            .whenScenarioStateIs("recovered")
+            .willReturn(okJson(DEVELOPER_KEY)));
+    client.deactivateDeveloperKey(KEY_ID);
+    wm.verify(2, putRequestedFor(urlEqualTo("/v2/admin/developer-keys/deactivate")));
+  }
+
+  @Test
+  void parsesDeactivatedKeys() throws Exception {
+    String deactivated =
+        DEVELOPER_KEY
+            .replace("\"is_deactivated\":false", "\"is_deactivated\":true")
+            .replace("\"deactivated_time\":null", "\"deactivated_time\":\"2025-07-09T08:15:29\"");
+    wm.stubFor(get("/v2/admin/developer-keys").willReturn(okJson("[" + deactivated + "]")));
+    List<DeveloperKey> keys = client.getDeveloperKeys();
+
+    assertTrue(keys.get(0).isDeactivated());
+    assertEquals(
+        Date.from(Instant.parse("2025-07-09T08:15:29Z")), keys.get(0).getDeactivatedTime());
+  }
+
+  @Test
+  void deactivatesADeveloperKey() throws Exception {
+    wm.stubFor(
+        put("/v2/admin/developer-keys/deactivate")
+            .withRequestBody(equalToJson("{\"key_id\":\"" + KEY_ID + "\"}"))
+            .willReturn(okJson(DEVELOPER_KEY)));
+    client.deactivateDeveloperKey(new DeveloperKey(KEY_ID, "label", null, null, false, null));
+  }
+
+  @Test
+  void renamesADeveloperKey() throws Exception {
+    wm.stubFor(
+        put("/v2/admin/developer-keys/label")
+            .withRequestBody(equalToJson("{\"key_id\":\"" + KEY_ID + "\",\"label\":\"renamed\"}"))
+            .willReturn(okJson(DEVELOPER_KEY)));
+    client.renameDeveloperKey(KEY_ID, "renamed");
+  }
+
+  @Test
+  void sendsOnlyTheUsageLimitsThatWereSet() throws Exception {
+    wm.stubFor(
+        put("/v2/admin/developer-keys/limits")
+            .withRequestBody(
+                equalToJson(
+                    "{\"key_id\":\""
+                        + KEY_ID
+                        + "\",\"characters\":0,\"speech_to_speech_milliseconds\":null}"))
+            .willReturn(okJson(DEVELOPER_KEY)));
+    client.setDeveloperKeyUsageLimits(
+        KEY_ID,
+        new DeveloperKeyUsageLimitsUpdate().setCharacters(0L).setSpeechToSpeechMilliseconds(null));
+  }
+
+  @Test
+  void throwsAuthorizationExceptionOnForbidden() {
+    wm.stubFor(
+        get("/v2/admin/developer-keys")
+            .willReturn(aResponse().withStatus(403).withBody("{\"message\":\"Forbidden\"}")));
+    AuthorizationException thrown =
+        assertThrows(AuthorizationException.class, client::getDeveloperKeys);
+    assertTrue(thrown.getMessage().contains("adminKey"), thrown.getMessage());
+  }
+}

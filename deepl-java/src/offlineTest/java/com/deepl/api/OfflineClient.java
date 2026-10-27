@@ -7,6 +7,7 @@ package com.deepl.api;
 @SuppressWarnings("deprecation")
 final class OfflineClient {
   static final String AUTH_KEY = "k";
+  static final String ADMIN_KEY = "admin-key";
 
   private OfflineClient() {}
 
@@ -26,5 +27,14 @@ final class OfflineClient {
   static Translator createTranslator(OfflineServer server, TranslatorOptions options) {
     options.setServerUrl(server.baseUrl());
     return new Translator(AUTH_KEY, options);
+  }
+
+  static DeepLAdminClient createAdminClient(OfflineServer server) {
+    return createAdminClient(server, new DeepLAdminClientOptions());
+  }
+
+  static DeepLAdminClient createAdminClient(OfflineServer server, DeepLAdminClientOptions options) {
+    options.setServerUrl(server.baseUrl());
+    return new DeepLAdminClient(ADMIN_KEY, options);
   }
 }

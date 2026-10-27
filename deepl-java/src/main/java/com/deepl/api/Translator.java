@@ -55,18 +55,8 @@ public class Translator {
                 ? DEEPL_SERVER_URL_FREE
                 : DEEPL_SERVER_URL_PRO);
 
-    Map<String, String> headers = new HashMap<>();
-    if (options.getHeaders() != null) {
-      headers.putAll(options.getHeaders());
-    }
-    headers.putIfAbsent("Authorization", "DeepL-Auth-Key " + sanitizedAuthKey);
-    headers.putIfAbsent(
-        "User-Agent",
-        constructUserAgentString(options.getSendPlatformInfo(), options.getAppInfo()));
-
     this.httpClientWrapper =
-        new HttpClientWrapper(
-            serverUrl, headers, options.getTimeout(), options.getProxy(), options.getMaxRetries());
+        ApiClientHelper.createHttpClientWrapper(sanitizedAuthKey, serverUrl, options);
   }
 
   /**
@@ -90,7 +80,7 @@ public class Translator {
    *
    * @return A string containing the client library version, java version and operating system.
    */
-  private String constructUserAgentString(boolean sendPlatformInfo, AppInfo appInfo) {
+  static String constructUserAgentString(boolean sendPlatformInfo, @Nullable AppInfo appInfo) {
     StringBuilder sb = new StringBuilder();
     sb.append("deepl-java/1.17.0");
     if (sendPlatformInfo) {
@@ -1083,49 +1073,7 @@ public class Translator {
   protected void checkResponse(
       HttpResponse response, boolean inDocumentDownload, boolean usingGlossary)
       throws DeepLException {
-    if (response.getCode() >= 200 && response.getCode() < 300) {
-      return;
-    }
-
-    String messageSuffix = "";
-    String body = response.getBody();
-    if (body != null && !body.isEmpty()) {
-      try {
-        messageSuffix = ", error message: " + jsonParser.parseErrorMessage(body);
-      } catch (JsonSyntaxException ignored) {
-        messageSuffix = ", response: " + body;
-      }
-    }
-
-    switch (response.getCode()) {
-      case HttpURLConnection.HTTP_BAD_REQUEST:
-        throw new DeepLException("Bad request" + messageSuffix);
-      case HttpURLConnection.HTTP_FORBIDDEN:
-        throw new AuthorizationException("Authorization failure, check auth_key" + messageSuffix);
-      case HttpURLConnection.HTTP_NOT_FOUND:
-        if (usingGlossary) {
-          throw new GlossaryNotFoundException("Glossary not found" + messageSuffix);
-        } else {
-          throw new NotFoundException("Not found" + messageSuffix);
-        }
-      case 429:
-        throw new TooManyRequestsException(
-            "Too many requests, DeepL servers are currently experiencing high load"
-                + messageSuffix);
-      case 456:
-        throw new QuotaExceededException(
-            "Quota for this billing period has been exceeded" + messageSuffix);
-      case HttpURLConnection.HTTP_UNAVAILABLE:
-        {
-          if (inDocumentDownload) {
-            throw new DocumentNotReadyException("Document not ready" + messageSuffix);
-          } else {
-            throw new DeepLException("Service unavailable" + messageSuffix);
-          }
-        }
-      default:
-        throw new DeepLException("Unknown error" + messageSuffix);
-    }
+    ApiClientHelper.checkResponse(jsonParser, response, inDocumentDownload, usingGlossary);
   }
 
   private int calculateDocumentWaitTimeMillis(Long secondsRemaining) {

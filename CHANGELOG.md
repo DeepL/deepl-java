@@ -13,6 +13,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `SpokenTerms`, `SpokenTermsList` and `SpokenTermsEntries`. Terms are passed
   and returned as a list of strings and are checked like glossary terms, so a
   term containing a newline throws an `IllegalArgumentException`.
+- Added the `DeepLAdminClient` class for the Admin API. It must be created with
+  an admin API key and supports managing developer keys
+  (`createDeveloperKey()`, `getDeveloperKeys()`, `deactivateDeveloperKey()`,
+  `renameDeveloperKey()`, `setDeveloperKeyUsageLimits()`) and retrieving usage
+  analytics (`getUsageAnalytics()`, `getCustomTagUsageAnalytics()`, with
+  `AdminUsageAnalyticsOptions` and `CustomTagUsageAnalyticsOptions`, which take
+  the `AdminUsageGroupBy` and `CustomTagUsageAggregateBy` enums; the client is
+  configured with `DeepLAdminClientOptions`). Responses
+  are `DeveloperKey`, `DeveloperKeyUsageLimits`, `AdminUsageReport`,
+  `AdminUsageBreakdown` (including `getSpeechToSpeechMinutes()`), `KeyUsage`,
+  `CustomTagUsageReport`, `CustomTagUsage` and `CustomTagUsageBreakdown`.
+  The analytics functions take `LocalDate` or `"YYYY-MM-DD"` strings, which are
+  UTC calendar days; both the start and the end day are included.
+  `setDeveloperKeyUsageLimits()` takes a `DeveloperKeyUsageLimitsUpdate` and
+  changes only the limits set in it, including the speech-to-speech limit.
 - Added the API Pro fields of `GET /v2/usage` to `Usage`:
   `getApiKeyCharacter()` (per-key character usage), `getSpeechToTextMinutes()`,
   `getSpeechToSpeechMinutes()`, `getStartTime()` and `getEndTime()` (billing

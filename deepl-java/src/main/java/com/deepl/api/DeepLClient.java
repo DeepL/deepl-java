@@ -1039,7 +1039,7 @@ public class DeepLClient extends Translator {
       queryParams.add(new KeyValuePair<>("detailed", detailed.toString().toLowerCase()));
     }
 
-    String relativeUrl = "/v3/style_rules" + createQueryString(queryParams);
+    String relativeUrl = "/v3/style_rules" + ApiClientHelper.createQueryString(queryParams);
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
     checkResponse(response, false, false);
     return jsonParser.parseStyleRuleInfoList(response.getBody());
@@ -1079,7 +1079,7 @@ public class DeepLClient extends Translator {
         queryParams.add(new KeyValuePair<>("include", value));
       }
     }
-    String relativeUrl = "/v3/languages" + createQueryString(queryParams);
+    String relativeUrl = "/v3/languages" + ApiClientHelper.createQueryString(queryParams);
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
     checkResponse(response, false, false);
     return jsonParser.parseLanguageSupportList(response.getBody());
@@ -1132,7 +1132,8 @@ public class DeepLClient extends Translator {
       queryParams.add(new KeyValuePair<>("page_size", pageSize.toString()));
     }
 
-    String relativeUrl = "/v3/translation_memories" + createQueryString(queryParams);
+    String relativeUrl =
+        "/v3/translation_memories" + ApiClientHelper.createQueryString(queryParams);
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
     checkResponse(response, false, false);
     return jsonParser.parseTranslationMemoryInfoList(response.getBody());
@@ -1217,7 +1218,7 @@ public class DeepLClient extends Translator {
 
     String relativeUrl =
         String.format("/v3/translation_memories/%s/segments", translationMemoryId)
-            + createQueryString(queryParams);
+            + ApiClientHelper.createQueryString(queryParams);
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
     checkResponse(response, false, false);
     return jsonParser.parseTranslationMemorySegments(response.getBody());
@@ -1716,7 +1717,7 @@ public class DeepLClient extends Translator {
   private static String langQueryString(String lang) {
     List<KeyValuePair<String, String>> queryParams = new ArrayList<>();
     queryParams.add(new KeyValuePair<>("lang", lang));
-    return createQueryString(queryParams);
+    return ApiClientHelper.createQueryString(queryParams);
   }
 
   /**
@@ -2061,36 +2062,6 @@ public class DeepLClient extends Translator {
     } catch (UnsupportedEncodingException exception) {
       throw new DeepLException("Error while URL-encoding request", exception);
     }
-  }
-
-  /** Creates the query string for the given parameters, including the leading "?" if non-empty. */
-  private static String createQueryString(List<KeyValuePair<String, String>> queryParams) {
-    if (queryParams.isEmpty()) {
-      return "";
-    }
-    StringBuilder sb = new StringBuilder("?");
-    for (int i = 0; i < queryParams.size(); i++) {
-      if (i > 0) {
-        sb.append("&");
-      }
-      KeyValuePair<String, String> param = queryParams.get(i);
-      try {
-        sb.append(encodeQueryComponent(param.getKey()))
-            .append("=")
-            .append(encodeQueryComponent(param.getValue()));
-      } catch (java.io.UnsupportedEncodingException e) {
-        throw new RuntimeException("UTF-8 encoding not supported", e);
-      }
-    }
-    return sb.toString();
-  }
-
-  // URLEncoder encodes a space as "+", which is correct for a form body but not for a URI query
-  // string. Any literal "+" is already escaped as %2B by URLEncoder, so every remaining "+" is a
-  // space.
-  private static String encodeQueryComponent(String value)
-      throws java.io.UnsupportedEncodingException {
-    return URLEncoder.encode(value, StandardCharsets.UTF_8.name()).replace("+", "%20");
   }
 
   private void validateParameter(String paramName, String value) throws IllegalArgumentException {

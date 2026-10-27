@@ -91,6 +91,18 @@ class HttpClientWrapper {
     return sendRequestWithBackoff(POST, relativeUrl, content).toStringResponse();
   }
 
+  /**
+   * Sends a JSON POST request that must not be repeated if the server may have processed it, such
+   * as creating a resource. It is retried only after HTTP 429 or a DNS resolution failure, because
+   * in both cases the request was not processed.
+   */
+  public HttpResponse sendJsonRequestRetryingOnlyUnprocessed(String relativeUrl, String jsonBody)
+      throws InterruptedException, DeepLException {
+    HttpContent content = HttpContent.buildJsonContent(jsonBody);
+    return sendRequestToUrlWithBackoff(POST, serverUrl + relativeUrl, content, this.headers, true)
+        .toStringResponse();
+  }
+
   public HttpResponse sendJsonRequestWithBackoff(String method, String relativeUrl, String jsonBody)
       throws InterruptedException, DeepLException {
     HttpContent content = HttpContent.buildJsonContent(jsonBody);
@@ -239,19 +251,41 @@ class HttpClientWrapper {
   private HttpResponseStream sendRequestToUrlWithBackoff(
       String method, String url, @Nullable HttpContent content, Map<String, String> requestHeaders)
       throws InterruptedException, DeepLException {
+    return sendRequestToUrlWithBackoff(method, url, content, requestHeaders, false);
+  }
+
+  private HttpResponseStream sendRequestToUrlWithBackoff(
+      String method,
+      String url,
+      @Nullable HttpContent content,
+      Map<String, String> requestHeaders,
+      boolean retryOnlyUnprocessed)
+      throws InterruptedException, DeepLException {
     BackoffTimer backoffTimer = new BackoffTimer(this.minTimeout);
     while (true) {
       try {
         HttpResponseStream response =
-            sendRequest(method, url, backoffTimer.getTimeoutMillis(), content, requestHeaders);
+            sendRequest(
+                method,
+                url,
+                backoffTimer.getTimeoutMillis(),
+                content,
+                requestHeaders,
+                retryOnlyUnprocessed);
         if (backoffTimer.getNumRetries() >= this.maxRetries) {
           return response;
-        } else if (response.getCode() != 429 && response.getCode() < 500) {
+        } else if (response.getCode() != 429
+            && (retryOnlyUnprocessed || response.getCode() < 500)) {
           return response;
         }
         response.close();
       } catch (ConnectionException exception) {
-        if (!exception.getShouldRetry() || backoffTimer.getNumRetries() >= this.maxRetries) {
+        // A failed DNS lookup means the request was never sent, so a retry cannot duplicate it.
+        boolean shouldRetry =
+            retryOnlyUnprocessed
+                ? exception.getCause() instanceof UnknownHostException
+                : exception.getShouldRetry();
+        if (!shouldRetry || backoffTimer.getNumRetries() >= this.maxRetries) {
           throw exception;
         }
       }
@@ -264,7 +298,8 @@ class HttpClientWrapper {
       String urlString,
       long timeoutMs,
       @Nullable HttpContent content,
-      Map<String, String> requestHeaders)
+      Map<String, String> requestHeaders,
+      boolean retryOnlyUnprocessed)
       throws ConnectionException {
     try {
       URL url = new URL(urlString);
@@ -283,6 +318,12 @@ class HttpClientWrapper {
       if (content != null) {
         connection.setDoOutput(true);
         connection.setRequestProperty(CONTENT_TYPE, content.getContentType());
+        if (retryOnlyUnprocessed) {
+          // Stops HttpURLConnection from silently resending the POST (sun.net.http.retryPost)
+          // after a connection failure the server may have processed. Trade-off: redirects (and,
+          // over plain HTTP, 407 challenges) cannot be replayed from a streamed body.
+          connection.setFixedLengthStreamingMode(content.getContent().length);
+        }
 
         try (OutputStream output = connection.getOutputStream()) {
           output.write(content.getContent());

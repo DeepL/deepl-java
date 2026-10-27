@@ -1271,6 +1271,140 @@ Note that glossaries work for all target regional-variants: a glossary for the
 target language English (`"en"`) supports translations to both American English
 (`"en-US"`) and British English (`"en-GB"`).
 
+### Admin API
+
+The Admin API lets you manage the developer keys of your organization and
+retrieve usage analytics. It requires an admin API key, which you can create in
+the "Admin API Keys" tab of your DeepL account. Admin keys cannot be used for
+translation; developer keys cannot access the Admin API.
+
+Create a `DeepLAdminClient` with your admin key. It uses the
+`https://api.deepl.com` server by default. You can pass a
+`DeepLAdminClientOptions` object to configure the timeout, retries, proxy,
+headers, server URL and app info, as for `DeepLClient`, see
+[Configuration](#configuration). Developer key creation is retried only after
+HTTP 429 or a DNS resolution failure, when the API cannot have processed the
+request, so that a lost response cannot create several keys. For the same
+reason, this request is sent in streaming mode, so it does not follow HTTP
+redirects: a redirect fails with a `ConnectionException`.
+
+```java
+import com.deepl.api.*;
+
+class AdminExample {
+    DeepLAdminClient adminClient;
+
+    public AdminExample() {
+        adminClient = new DeepLAdminClient("YOUR_ADMIN_KEY");
+    }
+}
+```
+
+#### Managing developer keys
+
+```java
+class AdminExample {  // Continuing class AdminExample from above
+    public void developerKeysExample() throws Exception {
+        DeveloperKey key = adminClient.createDeveloperKey("Staging Team Key");
+        System.out.printf("Created %s (%s)%n", key.getLabel(), key.getKeyId());
+
+        for (DeveloperKey developerKey : adminClient.getDeveloperKeys()) {
+            System.out.printf("%s: deactivated=%b%n",
+                              developerKey.getLabel(),
+                              developerKey.isDeactivated());
+        }
+
+        key = adminClient.renameDeveloperKey(key, "Production Team Key");
+
+        // Changes only the limits you set; the other limits keep their value.
+        // null removes a limit (unlimited) and 0 blocks that usage.
+        key = adminClient.setDeveloperKeyUsageLimits(
+                key,
+                new DeveloperKeyUsageLimitsUpdate()
+                        .setCharacters(500000L)
+                        .setSpeechToSpeechMilliseconds(null));
+
+        // Deactivation is permanent.
+        adminClient.deactivateDeveloperKey(key);
+    }
+}
+```
+
+`deactivateDeveloperKey()`, `renameDeveloperKey()` and
+`setDeveloperKeyUsageLimits()` accept either a key ID or a `DeveloperKey`
+object and return the updated `DeveloperKey`. The API validates labels and
+limit values.
+
+#### Retrieving usage analytics
+
+`getUsageAnalytics()` returns an `AdminUsageReport` for a date range. Dates are
+UTC calendar days, and both the start and the end day are included. Pass them
+as `java.time.LocalDate` objects, which are used as they are, or as
+`"YYYY-MM-DD"` strings (an invalid string throws an `IllegalArgumentException`).
+To get a date from a moment in time, convert it in UTC, for example with
+`instant.atZone(ZoneOffset.UTC).toLocalDate()`: `2026-10-20T00:00+02:00` is the
+UTC day `2026-10-19`. The API requires the end date to be after the start date
+(so a report covers at least two days) and at most 366 days after it;
+otherwise both analytics functions throw a `DeepLException`. Dates in the
+reports are `LocalDate` objects.
+Pass an `AdminUsageAnalyticsOptions` to break the usage down by key
+(`AdminUsageGroupBy.Key`, see `getKeyUsages()`) or by key and day
+(`AdminUsageGroupBy.KeyAndDay`, see `getKeyAndDayUsages()`). These lists are
+empty if the report uses a different grouping.
+`getGroupBy()` returns the grouping as the API sends it, for example `"key"` or
+`"keyAndDay"`. Each usage breakdown has the characters used in total and per
+product, `getSpeechToTextMinutes()` and `getSpeechToSpeechMinutes()`.
+
+```java
+import com.deepl.api.*;
+import java.time.LocalDate;
+
+class AdminExample {  // Continuing class AdminExample from above
+    public void usageAnalyticsExample() throws Exception {
+        AdminUsageReport report = adminClient.getUsageAnalytics(
+                LocalDate.of(2026, 6, 1), LocalDate.of(2026, 7, 1),
+                new AdminUsageAnalyticsOptions()
+                        .setGroupBy(AdminUsageGroupBy.Key));
+        System.out.printf("Total characters: %d%n",
+                          report.getTotalUsage().getTotalCharacters());
+        for (KeyUsage keyUsage : report.getKeyUsages()) {
+            System.out.printf("%s: %d%n",
+                              keyUsage.getApiKeyLabel(),
+                              keyUsage.getUsage().getTotalCharacters());
+        }
+    }
+}
+```
+
+`getCustomTagUsageAnalytics()` returns a `CustomTagUsageReport` with the
+usage per custom tag. Use `CustomTagUsageAnalyticsOptions.setAggregateBy()` to
+choose between the whole period (`CustomTagUsageAggregateBy.Period`, the
+default) and per-day usage (`CustomTagUsageAggregateBy.Day`). The results are
+paginated: pass the `getNextPage()` value of a report to `setPage()` to get the
+next page.
+
+```java
+import com.deepl.api.*;
+import java.time.LocalDate;
+
+class AdminExample {  // Continuing class AdminExample from above
+    public void customTagUsageExample() throws Exception {
+        Integer page = null;
+        do {
+            CustomTagUsageReport report = adminClient.getCustomTagUsageAnalytics(
+                    LocalDate.of(2026, 6, 1), LocalDate.of(2026, 7, 1),
+                    new CustomTagUsageAnalyticsOptions().setPage(page));
+            for (CustomTagUsage tagUsage : report.getUsage()) {
+                System.out.printf("%s: %d%n",
+                                  tagUsage.getCustomTag(),
+                                  tagUsage.getBreakdown().getTotalCharacters());
+            }
+            page = report.getNextPage();
+        } while (page != null);
+    }
+}
+```
+
 ### Exceptions
 
 All module functions may raise `DeepLException` or one of its subclasses. If
@@ -1382,7 +1516,10 @@ API, using the auth key defined by the `DEEPL_AUTH_KEY` environment variable.
 Set `DEEPL_SERVER_URL` to test against another server, for example the test
 API. Execute them using `./gradlew realApiTest`, with Java 11 or newer. They
 create glossaries, style rules and translation memories named
-`sdktest-java-...` and delete them again.
+`sdktest-java-...` and delete them again. The real-API suite also requires the
+admin key defined by the `DEEPL_ADMIN_KEY` environment variable for the Admin
+API tests, which create a developer key named `sdktest-java-...`, rename it,
+set its usage limits and deactivate it again.
 
 Be aware that the real-API tests make DeepL API requests that contribute
 toward your API usage.

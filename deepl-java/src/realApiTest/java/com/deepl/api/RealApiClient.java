@@ -5,16 +5,23 @@ package com.deepl.api;
 
 import java.util.concurrent.Callable;
 
-/** Creates clients for the API at DEEPL_SERVER_URL, using DEEPL_AUTH_KEY. */
+/**
+ * Creates clients for the API at DEEPL_SERVER_URL, using DEEPL_AUTH_KEY, or DEEPL_ADMIN_KEY for the
+ * Admin API.
+ */
 final class RealApiClient {
   private RealApiClient() {}
 
   static String authKey() {
-    String key = System.getenv("DEEPL_AUTH_KEY");
-    if (key == null || key.isEmpty()) {
-      throw new IllegalStateException("The DEEPL_AUTH_KEY environment variable must be set");
+    return requireEnv("DEEPL_AUTH_KEY");
+  }
+
+  private static String requireEnv(String name) {
+    String value = System.getenv(name);
+    if (value == null || value.isEmpty()) {
+      throw new IllegalStateException("The " + name + " environment variable must be set");
     }
-    return key;
+    return value;
   }
 
   /** The URL of the API the tests talk to: DEEPL_SERVER_URL, or else the SDK's default. */
@@ -35,6 +42,15 @@ final class RealApiClient {
   static DeepLClient createClient(DeepLClientOptions options) {
     options.setServerUrl(serverUrl());
     return new DeepLClient(authKey(), options);
+  }
+
+  static DeepLAdminClient createAdminClient() {
+    String url = System.getenv("DEEPL_SERVER_URL");
+    DeepLAdminClientOptions options = new DeepLAdminClientOptions();
+    if (url != null && !url.isEmpty()) {
+      options.setServerUrl(url);
+    }
+    return new DeepLAdminClient(requireEnv("DEEPL_ADMIN_KEY"), options);
   }
 
   static Translator createTranslator() {
