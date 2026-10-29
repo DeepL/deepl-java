@@ -226,6 +226,9 @@ The following options are only used if `setTagHandling()` is set to `'xml'`:
   text into sentences. Format and default are the same as for splitting tags.
 - `setIgnoreTags()`: list of XML tags that containing content that should not be
   translated. Format and default are the same as for splitting tags.
+- `setExtraBodyParameters()`: a map of additional parameters added last to the
+  request body, for example to access beta features. They replace built-in
+  parameters with the same name. Further setters can be chained after it.
 
 For a detailed explanation of the XML handling options, see the
 [API documentation][api-docs-xml-handling].
@@ -362,6 +365,8 @@ arguments, `translateDocument()` accepts an optional
   watermark to the translated document. Only supported for `docx` and `pdf`
   output; for other output formats the API ignores it. By default the option
   is not sent and no watermark is added.
+- `setExtraBodyParameters()`: a map of additional parameters added last to the
+  upload request, as for text translation.
 
 ### Glossaries
 
@@ -1551,6 +1556,23 @@ All module functions may raise `DeepLException` or one of its subclasses. If
 invalid arguments are provided, they may raise the standard exceptions
 `IllegalArgumentException`.
 
+- `AuthorizationException`: the key is invalid or not authorized (HTTP 401 or
+  403).
+- `NotFoundException`: the resource does not exist (HTTP 404). The glossary
+  functions throw its subclass `GlossaryNotFoundException`, which is
+  deprecated: catch `NotFoundException` instead.
+- `TooManyRequestsException`: HTTP 429 after all retries.
+- `QuotaExceededException`: the quota is exceeded (HTTP 456).
+- `ConnectionException`: no HTTP response was received, for example after a
+  connection, DNS or timeout failure.
+- A malformed API response raises a `DeepLException`.
+
+`DeepLException.getHttpStatusCode()` returns the HTTP status code of the failed
+response, or `null` if there was none. `DeepLException.getShouldRetry()`
+returns `true` for transient errors (HTTP 429, HTTP 5xx, connection, DNS and
+timeout failures); the client has already retried these up to the configured
+maximum number of retries.
+
 ### Writing a Plugin
 
 If you use this library in an application, please identify the application with
@@ -1590,19 +1612,25 @@ class Example {  // Continuing class Example from above
 The available options setters are:
 
 - `setMaxRetries()`: maximum number of failed HTTP requests to retry, the
-  default is 5. Note: only failures due to transient conditions are retried e.g.
-  timeouts or temporary server overload.
+  default is 5. Note: only failures due to transient conditions are retried:
+  HTTP 429, HTTP 5xx, and connection, DNS and timeout failures, including a
+  timeout while reading the response.
 - `setTimeout()`: connection timeout for each HTTP request.
 - `setProxy()`: provide details about a proxy to use for all HTTP requests to
-  DeepL.
-- `setHeaders()`: additional HTTP headers to attach to all requests.
+  DeepL, either as a `java.net.Proxy` or as an HTTP proxy URL such as
+  `"http://proxy.example.com:3128"` (port 80 if omitted; credentials in the
+  URL are not supported).
+- `setHeaders()`: additional HTTP headers to attach to all requests. They may
+  replace the `User-Agent` header, but not the `Authorization` header, which is
+  always built from the auth key.
 - `setServerUrl()`: base URL for DeepL API, may be overridden for testing
   purposes. By default, the correct DeepL API (Free or Pro) is automatically
   selected.
-- `setApiVersion()`: Version of the DeepL API, may be overridden to use e.g.
-  the v1 API. By default, the most recent API version is automatically selected.
-  Please note: The v1 API does not support all features of the API, e.g.
-  document translation or rephrase.
+- `setApiVersion()` (deprecated, removed in the next major version): Version
+  of the DeepL API, may be overridden to use e.g. the v1 API. By default, the
+  most recent API version is automatically selected. Please note: The v1 API
+  does not support all features of the API, e.g. document translation or
+  rephrase.
 
 #### Anonymous platform information
 

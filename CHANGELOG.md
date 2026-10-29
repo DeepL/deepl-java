@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added `DeepLException.getHttpStatusCode()`, the HTTP status code of the
+  failed response (`null` if there was none), and
+  `DeepLException.getShouldRetry()`, which is `true` for HTTP 429, HTTP 5xx and
+  connection, DNS and timeout failures.
+- Added `setProxy(String)` to `DeepLClientOptions` (`TranslatorOptions`) and
+  `DeepLAdminClientOptions`, which takes an HTTP proxy URL such as
+  `http://proxy.example.com:3128`.
+- `TextTranslationOptions.setExtraBodyParameters()` and
+  `DocumentTranslationOptions.setExtraBodyParameters()` now return the options
+  class, so further setters can be chained after them.
 - Added the `setStyleProfile()` / `setStyleProfileId()` option to
   `TextTranslationOptions` and `DocumentTranslationOptions`, sent as
   `style_profile_id` on text and document translation. It accepts a style
@@ -73,6 +83,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   languages, including the bare `en` and `pt` as target languages.
 
 ### Deprecated
+- Deprecated `GlossaryNotFoundException`. Catch its superclass
+  `NotFoundException` instead, which is thrown for HTTP 404 on every endpoint.
+  It will be removed in the next major version.
+- Deprecated `DeepLClientOptions.setApiVersion()` and `getApiVersion()`; the
+  API version will no longer be configurable in the next major version.
 - Deprecated the language code constants in `LanguageCode` (for example
   `LanguageCode.German`). Pass the language code as a string instead, for
   example `"de"`, or use `getSourceLanguages()` / `getTargetLanguages()`.
@@ -80,6 +95,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and its helper methods are not deprecated.
 
 ### Fixed
+- HTTP 401 now throws `AuthorizationException`, like HTTP 403, instead of a
+  `DeepLException` with "Unknown error".
+- Connection failures (refused connections, unreachable hosts) and failed DNS
+  lookups are now retried like timeouts, in all request types including
+  `PATCH`. Developer key creation still retries only after HTTP 429 or a DNS
+  failure.
+- A failure while reading the response body, for example a read timeout, now
+  throws a `ConnectionException` and is retried. It threw a non-retried
+  `DeepLException` before.
+- A whitespace-only auth key is now rejected by the `DeepLClient` and
+  `Translator` constructors with an `IllegalArgumentException`.
+- An `Authorization` header passed with `setHeaders()` no longer replaces the
+  `DeepL-Auth-Key` authorization built from the auth key, in all clients.
+- A malformed or empty API response now throws a `DeepLException` instead of
+  a `JsonSyntaxException` or `NullPointerException`.
 - Fixed the doc comments of `LanguageCode.English` and
   `LanguageCode.Portuguese`, which claimed they may only be used as source
   languages.
