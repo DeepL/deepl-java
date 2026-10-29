@@ -566,6 +566,196 @@ class TranslationMemoriesTest {
     client.getTranslationMemoryJob("j/1 #");
   }
 
+  @Test
+  void sendsTheImportOptionsWithExtraBodyParametersLast() throws Exception {
+    wm.stubFor(
+        post("/v3/translation_memories/import")
+            .withRequestBody(
+                equalToJson(
+                    "{\"source_file\":{\"file_name\":\"example.tmx\",\"content_length\":5,"
+                        + "\"content_type\":\"text/xml\"},"
+                        + "\"parameters\":{\"display_name\":\"Imported TM\"},"
+                        + "\"extra\":\"value\"}"))
+            .willReturn(okJson("{\"job_id\":\"j1\",\"upload_url\":\"u\"}")));
+    TranslationMemoryImport created =
+        client.createTranslationMemoryImport(
+            "example.tmx",
+            5,
+            new CreateTranslationMemoryImportOptions()
+                .setContentType("text/xml")
+                .setDisplayName("Imported TM")
+                .setExtraBodyParameters(Collections.singletonMap("extra", "value")));
+    assertEquals("j1", created.getJobId());
+  }
+
+  @Test
+  void sendsOnlyTheSourceFileWhenCreatingAnImportWithoutOptions() throws Exception {
+    wm.stubFor(
+        post("/v3/translation_memories/import")
+            .withRequestBody(
+                equalToJson(
+                    "{\"source_file\":{\"file_name\":\"example.tmx\",\"content_length\":5}}"))
+            .willReturn(okJson("{\"job_id\":\"j1\",\"upload_url\":\"u\"}")));
+    client.createTranslationMemoryImport("example.tmx", 5);
+  }
+
+  @Test
+  void uploadsToAUrlWithTheDefaultContentType() throws Exception {
+    wm.stubFor(
+        put("/storage")
+            .withHeader("Content-Type", equalTo("application/xml"))
+            .withRequestBody(binaryEqualTo(new byte[] {1, 2}))
+            .willReturn(aResponse().withStatus(200)));
+    client.uploadTranslationMemoryFile(storageUrl(), new byte[] {1, 2});
+  }
+
+  @Test
+  void importsAFileWithTheImportOptions() throws Exception {
+    File tmx = Fixtures.writeFile(tempDir.resolve("example.tmx").toFile(), Fixtures.EXAMPLE_TMX);
+    int length = Fixtures.EXAMPLE_TMX.getBytes(StandardCharsets.UTF_8).length;
+    wm.stubFor(
+        post("/v3/translation_memories/import")
+            .withRequestBody(
+                equalToJson(
+                    "{\"source_file\":{\"file_name\":\"example.tmx\",\"content_length\":"
+                        + length
+                        + ",\"content_type\":\"text/xml\"},"
+                        + "\"parameters\":{\"display_name\":\"Imported TM\"},"
+                        + "\"extra\":\"value\"}"))
+            .willReturn(okJson("{\"job_id\":\"j1\",\"upload_url\":\"" + storageUrl() + "\"}")));
+    wm.stubFor(
+        put("/storage")
+            .withHeader("Content-Type", equalTo("text/xml"))
+            .withRequestBody(binaryEqualTo(Fixtures.EXAMPLE_TMX.getBytes(StandardCharsets.UTF_8)))
+            .willReturn(aResponse().withStatus(200)));
+    wm.stubFor(
+        get("/v3/translation_memories/jobs/j1")
+            .willReturn(okJson(job("import", "awaiting_input", ""))));
+    DeepLException thrown =
+        assertThrows(
+            DeepLException.class,
+            () ->
+                client.importTranslationMemoryFromFilepath(
+                    tmx,
+                    new ImportTranslationMemoryOptions()
+                        .setDisplayName("Imported TM")
+                        .setContentType("text/xml")
+                        .setTimeout(Duration.ofSeconds(1))
+                        .setExtraBodyParameters(Collections.singletonMap("extra", "value"))));
+    assertTrue(thrown.getMessage().contains("Manual timeout of 1s exceeded"));
+  }
+
+  @Test
+  void releasedImportOverloadsCallTheOverridableStepMethods() throws Exception {
+    File tmx = Fixtures.writeFile(tempDir.resolve("example.tmx").toFile(), Fixtures.EXAMPLE_TMX);
+    List<String> calls = new java.util.ArrayList<>();
+    DeepLClientOptions options = new DeepLClientOptions();
+    options.setServerUrl(wm.baseUrl());
+    DeepLClient recording =
+        new DeepLClient(OfflineClient.AUTH_KEY, options) {
+          @Override
+          public TranslationMemoryImport createTranslationMemoryImport(
+              String fileName, long contentLength, String contentType, String displayName) {
+            calls.add("create:" + fileName + ":" + contentType + ":" + displayName);
+            return new TranslationMemoryImport("j1", storageUrl(), null);
+          }
+
+          @Override
+          public void uploadTranslationMemoryFile(
+              TranslationMemoryImport translationMemoryImport, byte[] fileContent) {
+            calls.add("upload:" + translationMemoryImport.getJobId());
+          }
+
+          @Override
+          public TranslationMemoryJob waitUntilTranslationMemoryJobDone(
+              String jobId, Duration timeout) {
+            calls.add("wait:" + jobId + ":" + timeout);
+            return completedExport();
+          }
+        };
+    recording.importTranslationMemoryFromFilepath(tmx, "TM", Duration.ofSeconds(9));
+    recording.importTranslationMemoryFromFilepath(tmx, "TM");
+    recording.importTranslationMemoryFromFilepath(tmx);
+    assertEquals(
+        java.util.Arrays.asList(
+            "create:example.tmx:null:TM",
+            "upload:j1",
+            "wait:j1:PT9S",
+            "create:example.tmx:null:TM",
+            "upload:j1",
+            "wait:j1:null",
+            "create:example.tmx:null:null",
+            "upload:j1",
+            "wait:j1:null"),
+        calls);
+  }
+
+  @Test
+  void importsFileContentUnderTheGivenFileName() throws Exception {
+    byte[] content = "<tmx/>".getBytes(StandardCharsets.UTF_8);
+    wm.stubFor(
+        post("/v3/translation_memories/import")
+            .withRequestBody(
+                equalToJson(
+                    "{\"source_file\":{\"file_name\":\"memory.tmx\",\"content_length\":6}}"))
+            .willReturn(okJson("{\"job_id\":\"j1\",\"upload_url\":\"" + storageUrl() + "\"}")));
+    wm.stubFor(
+        put("/storage")
+            .withHeader("Content-Type", equalTo("application/xml"))
+            .withRequestBody(binaryEqualTo(content))
+            .willReturn(aResponse().withStatus(200)));
+    wm.stubFor(
+        get("/v3/translation_memories/jobs/j1")
+            .willReturn(okJson(job("import", "completed", ",\"translation_memory_id\":\"tm9\""))));
+    TranslationMemoryJob finished =
+        client.importTranslationMemoryFromFilepath(content, "memory.tmx");
+    assertEquals("tm9", finished.getResult().getTranslationMemoryId());
+  }
+
+  @Test
+  void sendsTheIdOfAJobObject() throws Exception {
+    wm.stubFor(
+        get("/v3/translation_memories/jobs/j1").willReturn(okJson(job("export", "completed", ""))));
+    TranslationMemoryJob job = pendingExport();
+    assertEquals("j1", client.getTranslationMemoryJob(job).getJobId());
+    assertTrue(client.waitUntilTranslationMemoryJobDone(job).done());
+    assertTrue(client.waitUntilTranslationMemoryJobDone(job, Duration.ofSeconds(1)).done());
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> client.getTranslationMemoryJob((TranslationMemoryJob) null));
+  }
+
+  @Test
+  void exportsATranslationMemoryToAStreamOrWithATimeout() throws Exception {
+    wm.stubFor(
+        post("/v3/translation_memories/tm1/export")
+            .willReturn(
+                okJson("{\"job_id\":\"j1\",\"parameters\":{\"translation_memory_id\":\"tm1\"}}")));
+    wm.stubFor(
+        get("/v3/translation_memories/jobs/j1")
+            .willReturn(
+                okJson(
+                    job(
+                        "export",
+                        "completed",
+                        ",\"download_url\":\"" + wm.baseUrl() + "/storage/export\""))));
+    wm.stubFor(get("/storage/export").willReturn(aResponse().withStatus(200).withBody("<tmx/>")));
+    TranslationMemoryInfo memory =
+        new TranslationMemoryInfo("tm1", "n", "de", Collections.singletonList("en"), 1);
+
+    ByteArrayOutputStream stream = new ByteArrayOutputStream();
+    client.exportTranslationMemoryToFilepath("tm1", stream);
+    assertEquals("<tmx/>", new String(stream.toByteArray(), StandardCharsets.UTF_8));
+
+    ByteArrayOutputStream memoryStream = new ByteArrayOutputStream();
+    client.exportTranslationMemoryToFilepath(memory, memoryStream, Duration.ofSeconds(10));
+    assertEquals("<tmx/>", new String(memoryStream.toByteArray(), StandardCharsets.UTF_8));
+
+    File output = tempDir.resolve("export.tmx").toFile();
+    client.exportTranslationMemoryToFilepath(memory, output, Duration.ofSeconds(10));
+    assertEquals("<tmx/>", Fixtures.readFile(output));
+  }
+
   private TranslationMemoryJob completedExport() {
     return exportJob(TranslationMemoryJobResult.Status.Completed, wm.baseUrl() + "/storage/export");
   }

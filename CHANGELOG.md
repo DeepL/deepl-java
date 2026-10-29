@@ -6,6 +6,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added `CreateTranslationMemoryImportOptions` (content type, display name,
+  extra body parameters) and `createTranslationMemoryImport()` overloads taking
+  only the file name and size, or an options object; extra body parameters are
+  added to the request last.
+- Added `ImportTranslationMemoryOptions` (display name, content type, timeout,
+  extra body parameters) and `importTranslationMemoryFromFilepath()` overloads
+  taking it, with a `File` or with the file content as `byte[]` plus a file
+  name. The content type is declared on the import job and sent with the upload.
+- Added `exportTranslationMemoryToFilepath()` overloads that write to an
+  `OutputStream`, and one taking a `TranslationMemoryInfo`, a `File` and a
+  timeout.
+- Added `getTranslationMemoryJob()` and `waitUntilTranslationMemoryJobDone()`
+  overloads that take a `TranslationMemoryJob` object.
+- Added `uploadTranslationMemoryFile(String uploadUrl, byte[] fileContent)`,
+  which uploads with the content type `application/xml`.
 - Added overloads of `getStyleRule()`, `updateStyleRuleName()`,
   `deleteStyleRule()`, `updateStyleRuleConfiguredRules()` and the four style
   rule custom instruction methods that take a `StyleRuleInfo` object, and
@@ -163,6 +178,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `setExtraBodyParameters()`, added last to the `rephraseText()` request body.
 
 ### Changed
+- `TranslationMemoryJob.getProduct()`, `getOperation()`, `getCreationTime()`
+  and `getUpdatedTime()` are no longer annotated `@Nullable`, as the API always
+  returns these fields.
 - The bare target languages `en` and `pt` are no longer rejected
   client-side in text translation, document translation and rephrasing. The
   API translates them to `en-US` and `pt-PT` respectively.

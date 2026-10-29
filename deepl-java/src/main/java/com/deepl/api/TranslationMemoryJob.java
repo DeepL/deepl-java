@@ -11,11 +11,11 @@ import org.jetbrains.annotations.Nullable;
 /** Status of a translation memory import or export job. */
 public class TranslationMemoryJob {
   private final String jobId;
-  private final @Nullable String product;
-  private final @Nullable Operation operation;
+  private final String product;
+  private final Operation operation;
   private final List<TranslationMemoryJobResult> results;
-  private final @Nullable Date creationTime;
-  private final @Nullable Date updatedTime;
+  private final Date creationTime;
+  private final Date updatedTime;
   private final @Nullable String translationMemoryId;
   private final @Nullable String displayName;
   private final @Nullable String sourceContentType;
@@ -47,11 +47,11 @@ public class TranslationMemoryJob {
    */
   public TranslationMemoryJob(
       String jobId,
-      @Nullable String product,
-      @Nullable Operation operation,
+      String product,
+      Operation operation,
       List<TranslationMemoryJobResult> results,
-      @Nullable Date creationTime,
-      @Nullable Date updatedTime,
+      Date creationTime,
+      Date updatedTime,
       @Nullable String translationMemoryId,
       @Nullable String displayName,
       @Nullable String sourceContentType,
@@ -73,13 +73,13 @@ public class TranslationMemoryJob {
     return jobId;
   }
 
-  /** @return Product the job belongs to, or <code>null</code> if not provided by the API. */
-  public @Nullable String getProduct() {
+  /** @return Product the job belongs to, always "translation_memory". */
+  public String getProduct() {
     return product;
   }
 
-  /** @return Operation the job performs, or <code>null</code> if not provided by the API. */
-  public @Nullable Operation getOperation() {
+  /** @return Operation the job performs. */
+  public Operation getOperation() {
     return operation;
   }
 
@@ -114,18 +114,13 @@ public class TranslationMemoryJob {
     return result == null || result.ok();
   }
 
-  /**
-   * @return Timestamp when the job was created, or <code>null</code> if not provided by the API.
-   */
-  public @Nullable Date getCreationTime() {
+  /** @return Timestamp when the job was created. */
+  public Date getCreationTime() {
     return creationTime;
   }
 
-  /**
-   * @return Timestamp when the job was last updated, or <code>null</code> if not provided by the
-   *     API.
-   */
-  public @Nullable Date getUpdatedTime() {
+  /** @return Timestamp when the job was last updated. */
+  public Date getUpdatedTime() {
     return updatedTime;
   }
 

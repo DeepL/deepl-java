@@ -1315,6 +1315,29 @@ The optional timeout is the maximum time to wait for the import to finish; omit
 it to wait indefinitely. The job status is polled every 5 seconds, so the
 timeout is not accurate to the millisecond.
 
+`ImportTranslationMemoryOptions` groups the import options: `setDisplayName()`,
+`setContentType()` (declared when the job is created and sent with the upload;
+the file is uploaded as `application/xml` if unset), `setTimeout()` and
+`setExtraBodyParameters()`, whose parameters are added to the import request
+body last. Instead of a `File`, you can pass the file content as a `byte[]`
+together with a file name:
+
+```java
+class Example {  // Continuing class Example from above
+    public void importTranslationMemoryOptionsExample() throws Exception {
+        ImportTranslationMemoryOptions options = new ImportTranslationMemoryOptions()
+            .setDisplayName("Legal TM")
+            .setContentType("application/xml")
+            .setTimeout(Duration.ofSeconds(300));
+        TranslationMemoryJob job = client.importTranslationMemoryFromFilepath(
+            new File("/path/to/legal.tmx"), options);
+        byte[] fileContent = Files.readAllBytes(Paths.get("/path/to/other.tmx"));
+        TranslationMemoryJob other = client.importTranslationMemoryFromFilepath(
+            fileContent, "other.tmx", options);
+    }
+}
+```
+
 The three steps are also available separately, for example to upload the file
 yourself or to poll for progress. `createTranslationMemoryImport()` returns an
 upload URL that the file must be uploaded to before processing starts, then
@@ -1327,7 +1350,8 @@ class Example {  // Continuing class Example from above
         byte[] fileContent = Files.readAllBytes(inputFile.toPath());
 
         TranslationMemoryImport created = client.createTranslationMemoryImport(
-            inputFile.getName(), fileContent.length, null, "Legal TM");
+            inputFile.getName(), fileContent.length,
+            new CreateTranslationMemoryImportOptions().setDisplayName("Legal TM"));
         // Until the file is uploaded, the job status is AwaitingInput
         client.uploadTranslationMemoryFile(created, fileContent);
 
@@ -1336,6 +1360,14 @@ class Example {  // Continuing class Example from above
     }
 }
 ```
+
+`CreateTranslationMemoryImportOptions` takes the optional `setContentType()`,
+`setDisplayName()` and `setExtraBodyParameters()`; the overload taking only the
+file name and size uses none of them. `uploadTranslationMemoryFile()` accepts the
+`TranslationMemoryImport` or its upload URL, and an optional content type that
+defaults to `application/xml`. `getTranslationMemoryJob()` and
+`waitUntilTranslationMemoryJobDone()` accept a job ID or a `TranslationMemoryJob`
+object.
 
 Note that an import job keeps reporting `AwaitingInput` for a while after its
 file has been uploaded, because the API detects the upload asynchronously.
@@ -1358,7 +1390,18 @@ class Example {  // Continuing class Example from above
 }
 ```
 
-As with import, the timeout is optional; omit it to wait indefinitely.
+As with import, the timeout is optional; omit it to wait indefinitely. Instead of
+a `File`, you can pass an `OutputStream`, which is not closed:
+
+```java
+class Example {  // Continuing class Example from above
+    public void exportTranslationMemoryToStreamExample() throws Exception {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        TranslationMemoryJob job = client.exportTranslationMemoryToFilepath(
+            "YOUR_TM_ID", outputStream, Duration.ofSeconds(300));
+    }
+}
+```
 
 As with import, the individual steps are available separately. Note that the API
 may reuse a previously completed export of an unchanged translation memory,
