@@ -5,7 +5,6 @@ package com.deepl.api;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -124,19 +123,10 @@ public class TextTranslationOptions extends BaseRequestOptions {
    * Sets the list of glossaries to use with the translation, up to a maximum of 5. Glossaries are
    * applied in the order provided (first match wins). By default, this value is <code>null</code>
    * and no glossaries are used. This option requires a source language to be set and cannot be
-   * combined with {@link #setGlossary}.
+   * combined with {@link #setGlossary}. To pass a list, use <code>
+   * list.toArray(new IGlossary[0])</code>.
    */
   public TextTranslationOptions setGlossaryIds(IGlossary... glossaries) {
-    return setGlossaryIds(Arrays.asList(glossaries));
-  }
-
-  /**
-   * Sets the list of glossaries to use with the translation, up to a maximum of 5. Glossaries are
-   * applied in the order provided (first match wins). By default, this value is <code>null</code>
-   * and no glossaries are used. This option requires a source language to be set and cannot be
-   * combined with {@link #setGlossary}.
-   */
-  public TextTranslationOptions setGlossaryIds(Collection<? extends IGlossary> glossaries) {
     List<String> ids = new ArrayList<>();
     for (IGlossary glossary : glossaries) {
       if (glossary == null) {

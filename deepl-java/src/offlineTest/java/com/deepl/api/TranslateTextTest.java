@@ -590,7 +590,8 @@ class TranslateTextTest {
         "Hello",
         "en",
         "de",
-        new TextTranslationOptions().setGlossaryIds(Arrays.asList(glossary, multilingual)));
+        new TextTranslationOptions()
+            .setGlossaryIds(Arrays.asList(glossary, multilingual).toArray(new IGlossary[0])));
   }
 
   @Test

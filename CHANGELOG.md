@@ -32,8 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `TextTranslationOptions.setStyleRule(String)` and
   `setTranslationMemory(String)`, taking the style rule or translation memory
   ID.
-- Added `TextTranslationOptions.setGlossaryIds(IGlossary...)` and
-  `setGlossaryIds(Collection<? extends IGlossary>)`, taking glossary objects.
+- Added `TextTranslationOptions.setGlossaryIds(IGlossary...)`, taking glossary
+  objects.
 - Added `TextResult.getTagHandlingVersion()`, the tag handling version the API
   used (`tag_handling_version`); `null` when the response does not contain it.
 - Added style profile support to `DeepLClient` (`/v3/style_profiles`):
