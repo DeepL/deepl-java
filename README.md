@@ -910,27 +910,38 @@ your account, each with a user-specified name and a uniquely-assigned ID.
 
 Use `createStyleRule()` to create a new style rule. You must specify a name and
 language code. You may optionally provide configured rules and custom
-instructions:
+instructions. Configured rules are a `Map<String, Map<String, String>>` from
+category to rule to value, in the API's snake_case form (for example
+`"dates_and_times"` → `"calendar_era"` → `"use_bc_and_ad"`), and are sent as
+given, so new categories and rules can be used as soon as the API supports
+them. The last argument is a `CreateStyleRuleOptions` object or `null`; its
+`setExtraBodyParameters()` adds further body parameters, sent last. The
+overload taking a `ConfiguredRules` object is deprecated; use the `Map`
+overload instead.
 
 ```java
 class Example {  // Continuing class Example from above
     public void createStyleRuleExample() throws Exception {
         // Create a simple style rule
-        StyleRuleInfo rule = client.createStyleRule("My Style", "en", null, null);
+        StyleRuleInfo rule = client.createStyleRule("My Style", "en", null, null, null);
         System.out.println("Created: " + rule.getStyleId());
 
-        // Create with custom instructions
+        // Create with configured rules and custom instructions
+        Map<String, Map<String, String>> configuredRules = new HashMap<>();
+        configuredRules.put("dates_and_times",
+            Collections.singletonMap("calendar_era", "use_bc_and_ad"));
         List<CustomInstruction> instructions = new ArrayList<>();
         instructions.add(new CustomInstruction("Formal tone", "Use formal language", null));
         StyleRuleInfo ruleWithInstructions = client.createStyleRule(
-            "Formal Style", "en", null, instructions);
+            "Formal Style", "en", configuredRules, instructions, null);
     }
 }
 ```
 
 #### Retrieving and listing style rules
 
-`getStyleRule()` retrieves a single style rule by its ID. `getAllStyleRules()`
+`getStyleRule()` retrieves a single style rule by its ID or `StyleRuleInfo`
+object. `getAllStyleRules()`
 returns a list of `StyleRuleInfo` objects corresponding to all of your stored
 style rules. The method accepts optional parameters: `page` (page number for
 pagination, 0-indexed), `pageSize` (number of items per page), and `detailed`.
@@ -966,7 +977,18 @@ class Example {  // Continuing class Example from above
 #### Updating a style rule
 
 Use `updateStyleRuleName()` to rename a style rule, and
-`updateStyleRuleConfiguredRules()` to replace its configured rules:
+`updateStyleRuleConfiguredRules()` to replace its configured rules. The
+configured rules are a `Map<String, Map<String, String>>` sent as given as the
+request body; the overload taking a `ConfiguredRules` object is deprecated.
+Both methods have overloads that take an options object
+(`UpdateStyleRuleNameOptions`, `UpdateStyleRuleConfiguredRulesOptions`) whose
+extra body parameters are sent last; for configured rules they are added to the
+body as further top-level keys.
+
+Every method that takes a style rule ID (`getStyleRule()`,
+`updateStyleRuleName()`, `updateStyleRuleConfiguredRules()`, `deleteStyleRule()`
+and the custom instruction methods) also accepts a `StyleRuleInfo` object. IDs
+are URL-encoded in the request path.
 
 ```java
 class Example {  // Continuing class Example from above
@@ -977,10 +999,17 @@ class Example {  // Continuing class Example from above
         StyleRuleInfo updated = client.updateStyleRuleName(styleId, "New Name");
         System.out.println("Updated name: " + updated.getName());
 
-        // Update configured rules
-        ConfiguredRules configuredRules = new ConfiguredRules();
+        // Rename, passing the StyleRuleInfo object and extra body parameters
+        client.updateStyleRuleName(updated, "Newer Name",
+            new UpdateStyleRuleNameOptions().setExtraBodyParameters(
+                Collections.singletonMap("param", "value")));
+
+        // Replace the configured rules
+        Map<String, Map<String, String>> configuredRules = new HashMap<>();
+        configuredRules.put("punctuation",
+            Collections.singletonMap("periods_in_academic_degrees", "do_not_use"));
         StyleRuleInfo updatedRules = client.updateStyleRuleConfiguredRules(
-            styleId, configuredRules);
+            styleId, configuredRules, null);
     }
 }
 ```
@@ -988,7 +1017,13 @@ class Example {  // Continuing class Example from above
 #### Managing custom instructions
 
 Custom instructions can be created, retrieved, updated, and deleted individually
-within a style rule:
+within a style rule. The style rule can be given as an ID or a `StyleRuleInfo`
+object, and the custom instruction as an ID or a `CustomInstruction` object.
+`createStyleRuleCustomInstruction()` and `updateStyleRuleCustomInstruction()`
+have overloads that take an options object
+(`CreateStyleRuleCustomInstructionOptions`,
+`UpdateStyleRuleCustomInstructionOptions`) whose extra body parameters are sent
+last:
 
 ```java
 class Example {  // Continuing class Example from above
@@ -1009,8 +1044,8 @@ class Example {  // Continuing class Example from above
         CustomInstruction updated = client.updateStyleRuleCustomInstruction(
             styleId, instructionId, "Updated label", "Updated prompt", null);
 
-        // Delete the custom instruction
-        client.deleteStyleRuleCustomInstruction(styleId, instructionId);
+        // Delete the custom instruction, passing the object instead of its ID
+        client.deleteStyleRuleCustomInstruction(styleId, updated);
     }
 }
 ```

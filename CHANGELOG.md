@@ -6,6 +6,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added overloads of `getStyleRule()`, `updateStyleRuleName()`,
+  `deleteStyleRule()`, `updateStyleRuleConfiguredRules()` and the four style
+  rule custom instruction methods that take a `StyleRuleInfo` object, and
+  overloads of `getStyleRuleCustomInstruction()`,
+  `updateStyleRuleCustomInstruction()` and `deleteStyleRuleCustomInstruction()`
+  that take a `CustomInstruction` object.
+- Added `createStyleRule()` and `updateStyleRuleConfiguredRules()` overloads
+  that take the configured rules as a `Map<String, Map<String, String>>`, sent
+  as given, so categories and rules beyond the fields of `ConfiguredRules` can
+  be sent.
+- Added `CreateStyleRuleOptions`, `UpdateStyleRuleNameOptions`,
+  `UpdateStyleRuleConfiguredRulesOptions`,
+  `CreateStyleRuleCustomInstructionOptions` and
+  `UpdateStyleRuleCustomInstructionOptions`, and overloads of the matching style
+  rule methods that take them; their extra body parameters are added to the
+  request last.
 - Added `DeepLClient.updateMultilingualGlossary()` and
   `UpdateMultilingualGlossaryOptions`, which rename a glossary and merge
   dictionaries into it in one request, sending only the fields that are set.
@@ -156,6 +172,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   languages, including the bare `en` and `pt` as target languages.
 
 ### Deprecated
+- `createStyleRule(String, String, ConfiguredRules, List)` and
+  `updateStyleRuleConfiguredRules(String, ConfiguredRules)` are deprecated; use
+  the overloads that take a `Map<String, Map<String, String>>` instead.
 - Deprecated `Translator.getLanguages(LanguageType)` and the `LanguageType`
   enum. Use `getSourceLanguages()` or `getTargetLanguages()` instead. They
   will be removed in the next major version.

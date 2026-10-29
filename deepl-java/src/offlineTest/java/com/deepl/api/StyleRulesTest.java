@@ -20,6 +20,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -224,6 +226,19 @@ class StyleRulesTest {
     client.deleteStyleRuleCustomInstruction("s1", "i1");
   }
 
+  private static final StyleRuleInfo RULE_OBJECT =
+      new StyleRuleInfo("s1", "n", new Date(0), new Date(0), "en", 3, null, null);
+  private static final CustomInstruction INSTRUCTION_OBJECT =
+      new CustomInstruction("i1", "L", "P", null);
+  private static final Map<String, String> EXTRA = Collections.singletonMap("extra", "x");
+
+  private static Map<String, Map<String, String>> rulesMap() {
+    Map<String, Map<String, String>> rules = new LinkedHashMap<>();
+    rules.put("dates_and_times", Collections.singletonMap("calendar_era", "use_bc_and_ad"));
+    rules.put("new_category", Collections.singletonMap("new_rule", "on"));
+    return rules;
+  }
+
   @Test
   void encodesTheIdsInStyleRulePaths() throws Exception {
     String rulePath = "/v3/style_rules/a%2Fb%20c%3F";
@@ -245,6 +260,152 @@ class StyleRulesTest {
     client.getStyleRuleCustomInstruction(id, "i/1#");
     client.updateStyleRuleCustomInstruction(id, "i/1#", "L", "P", null);
     client.deleteStyleRuleCustomInstruction(id, "i/1#");
+  }
+
+  @Test
+  void acceptsStyleRuleAndCustomInstructionObjects() throws Exception {
+    String instructionPath = "/v3/style_rules/s1/custom_instructions/i1";
+    wm.stubFor(get(urlEqualTo("/v3/style_rules/s1")).willReturn(okJson(RULE)));
+    wm.stubFor(
+        patch(urlEqualTo("/v3/style_rules/s1"))
+            .withRequestBody(equalToJson("{\"name\":\"N\"}"))
+            .willReturn(okJson(RULE)));
+    wm.stubFor(delete(urlEqualTo("/v3/style_rules/s1")).willReturn(aResponse().withStatus(204)));
+    wm.stubFor(
+        put(urlEqualTo("/v3/style_rules/s1/configured_rules"))
+            .withRequestBody(
+                equalToJson("{\"dates_and_times\":{\"calendar_era\":\"use_bc_and_ad\"}}"))
+            .willReturn(okJson(RULE)));
+    wm.stubFor(
+        post(urlEqualTo("/v3/style_rules/s1/custom_instructions"))
+            .withRequestBody(equalToJson("{\"label\":\"L\",\"prompt\":\"P\"}"))
+            .willReturn(okJson(INSTRUCTION)));
+    wm.stubFor(get(urlEqualTo(instructionPath)).willReturn(okJson(INSTRUCTION)));
+    wm.stubFor(
+        put(urlEqualTo(instructionPath))
+            .withRequestBody(equalToJson("{\"label\":\"L2\",\"prompt\":\"P2\"}"))
+            .willReturn(okJson(INSTRUCTION)));
+    wm.stubFor(delete(urlEqualTo(instructionPath)).willReturn(aResponse().withStatus(204)));
+    Map<String, Map<String, String>> rules =
+        Collections.singletonMap(
+            "dates_and_times", Collections.singletonMap("calendar_era", "use_bc_and_ad"));
+
+    assertEquals("s1", client.getStyleRule(RULE_OBJECT).getStyleId());
+    client.updateStyleRuleName(RULE_OBJECT, "N");
+    client.updateStyleRuleName(RULE_OBJECT, "N", null);
+    client.deleteStyleRule(RULE_OBJECT);
+    client.updateStyleRuleConfiguredRules(RULE_OBJECT, rules, null);
+    client.createStyleRuleCustomInstruction(RULE_OBJECT, "L", "P", null);
+    client.createStyleRuleCustomInstruction(RULE_OBJECT, "L", "P", null, null);
+    client.getStyleRuleCustomInstruction(RULE_OBJECT, "i1");
+    client.getStyleRuleCustomInstruction("s1", INSTRUCTION_OBJECT);
+    client.getStyleRuleCustomInstruction(RULE_OBJECT, INSTRUCTION_OBJECT);
+    client.updateStyleRuleCustomInstruction(RULE_OBJECT, "i1", "L2", "P2", null);
+    client.updateStyleRuleCustomInstruction(RULE_OBJECT, "i1", "L2", "P2", null, null);
+    client.updateStyleRuleCustomInstruction("s1", INSTRUCTION_OBJECT, "L2", "P2", null);
+    client.updateStyleRuleCustomInstruction("s1", INSTRUCTION_OBJECT, "L2", "P2", null, null);
+    client.updateStyleRuleCustomInstruction(RULE_OBJECT, INSTRUCTION_OBJECT, "L2", "P2", null);
+    client.updateStyleRuleCustomInstruction(
+        RULE_OBJECT, INSTRUCTION_OBJECT, "L2", "P2", null, null);
+    client.deleteStyleRuleCustomInstruction(RULE_OBJECT, "i1");
+    client.deleteStyleRuleCustomInstruction("s1", INSTRUCTION_OBJECT);
+    client.deleteStyleRuleCustomInstruction(RULE_OBJECT, INSTRUCTION_OBJECT);
+  }
+
+  @Test
+  void throwsIllegalArgumentForNullOrIdlessObjects() {
+    CustomInstruction noId = new CustomInstruction("L", "P", null);
+    assertThrows(IllegalArgumentException.class, () -> client.getStyleRule((StyleRuleInfo) null));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> client.deleteStyleRuleCustomInstruction("s1", (CustomInstruction) null));
+    assertThrows(
+        IllegalArgumentException.class, () -> client.getStyleRuleCustomInstruction("s1", noId));
+  }
+
+  @Test
+  void sendsConfiguredRulesMapAsGivenWhenCreatingAStyleRule() throws Exception {
+    wm.stubFor(
+        post("/v3/style_rules")
+            .withRequestBody(
+                equalToJson(
+                    "{\"name\":\"Rule\",\"language\":\"en\",\"configured_rules\":"
+                        + "{\"dates_and_times\":{\"calendar_era\":\"use_bc_and_ad\"},"
+                        + "\"new_category\":{\"new_rule\":\"on\"}}}"))
+            .willReturn(okJson(RULE)));
+    client.createStyleRule("Rule", "en", rulesMap(), null, null);
+  }
+
+  @Test
+  void sendsConfiguredRulesMapAsGivenWhenUpdatingConfiguredRules() throws Exception {
+    wm.stubFor(
+        put("/v3/style_rules/s1/configured_rules")
+            .withHeader("Content-Type", equalTo(JSON))
+            .withRequestBody(
+                equalToJson(
+                    "{\"dates_and_times\":{\"calendar_era\":\"use_bc_and_ad\"},"
+                        + "\"new_category\":{\"new_rule\":\"on\"}}"))
+            .willReturn(okJson(RULE)));
+    client.updateStyleRuleConfiguredRules("s1", rulesMap(), null);
+  }
+
+  @Test
+  void addsExtraBodyParametersToStyleRuleRequests() throws Exception {
+    wm.stubFor(
+        post("/v3/style_rules")
+            .withRequestBody(
+                equalToJson(
+                    "{\"name\":\"Rule\",\"language\":\"en\",\"custom_instructions\":"
+                        + "[{\"label\":\"L\",\"prompt\":\"P\"}],\"extra\":\"x\"}"))
+            .willReturn(okJson(RULE)));
+    wm.stubFor(
+        patch(urlEqualTo("/v3/style_rules/s1"))
+            .withRequestBody(equalToJson("{\"name\":\"N\",\"extra\":\"x\"}"))
+            .willReturn(okJson(RULE)));
+    wm.stubFor(
+        put("/v3/style_rules/s1/configured_rules")
+            .withRequestBody(
+                equalToJson(
+                    "{\"dates_and_times\":{\"calendar_era\":\"use_bc_and_ad\"},"
+                        + "\"new_category\":{\"new_rule\":\"on\"},\"extra\":\"x\"}"))
+            .willReturn(okJson(RULE)));
+    wm.stubFor(
+        post("/v3/style_rules/s1/custom_instructions")
+            .withRequestBody(
+                equalToJson(
+                    "{\"label\":\"L\",\"prompt\":\"P\",\"source_language\":\"de\","
+                        + "\"extra\":\"x\"}"))
+            .willReturn(okJson(INSTRUCTION)));
+    wm.stubFor(
+        put("/v3/style_rules/s1/custom_instructions/i1")
+            .withRequestBody(equalToJson("{\"label\":\"L\",\"prompt\":\"P\",\"extra\":\"x\"}"))
+            .willReturn(okJson(INSTRUCTION)));
+
+    client.createStyleRule(
+        "Rule",
+        "en",
+        null,
+        Collections.singletonList(new CustomInstruction("L", "P", null)),
+        new CreateStyleRuleOptions().setExtraBodyParameters(EXTRA));
+    client.updateStyleRuleName(
+        "s1", "N", new UpdateStyleRuleNameOptions().setExtraBodyParameters(EXTRA));
+    client.updateStyleRuleConfiguredRules(
+        "s1",
+        rulesMap(),
+        new UpdateStyleRuleConfiguredRulesOptions().setExtraBodyParameters(EXTRA));
+    client.createStyleRuleCustomInstruction(
+        "s1",
+        "L",
+        "P",
+        "de",
+        new CreateStyleRuleCustomInstructionOptions().setExtraBodyParameters(EXTRA));
+    client.updateStyleRuleCustomInstruction(
+        "s1",
+        "i1",
+        "L",
+        "P",
+        null,
+        new UpdateStyleRuleCustomInstructionOptions().setExtraBodyParameters(EXTRA));
   }
 
   @Test
