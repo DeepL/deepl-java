@@ -8,7 +8,7 @@ import com.google.gson.annotations.SerializedName;
 /**
  * Handle to an in-progress document translation.
  *
- * @see Translator#translateDocumentStatus(DocumentHandle)
+ * @see Translator#translateDocumentGetStatus(DocumentHandle)
  */
 public class DocumentHandle {
   @SerializedName(value = "document_id")

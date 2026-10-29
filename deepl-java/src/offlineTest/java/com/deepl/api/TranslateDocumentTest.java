@@ -29,6 +29,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -144,7 +145,7 @@ class TranslateDocumentTest {
             .setFormality(Formality.PreferMore)
             .setGlossaryId("g1")
             .setStyleId("s1")
-            .setStyleProfileId("sp1")
+            .setStyleProfile("sp1")
             .setTranslationMemoryId("tm1")
             .setTranslationMemoryThreshold(80)
             .setOutputFormat("pdf"));
@@ -252,7 +253,7 @@ class TranslateDocumentTest {
         "a".getBytes(StandardCharsets.UTF_8),
         fields("target_lang", "de", "style_profile_id", "sp1"));
     client.translateDocumentUpload(
-        input, null, "de", new DocumentTranslationOptions().setStyleProfileId("sp1"));
+        input, null, "de", new DocumentTranslationOptions().setStyleProfile("sp1"));
     assertPartNames("/v2/document", "file", "target_lang", "style_profile_id");
   }
 
@@ -289,7 +290,7 @@ class TranslateDocumentTest {
   void rejectsANullStyleProfile() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> new DocumentTranslationOptions().setStyleProfile(null));
+        () -> new DocumentTranslationOptions().setStyleProfile((StyleProfile) null));
   }
 
   @Test
@@ -320,7 +321,7 @@ class TranslateDocumentTest {
                 okJson(
                     "{\"document_id\":\"D1\",\"status\":\"translating\","
                         + "\"seconds_remaining\":7,\"billed_characters\":3}")));
-    DocumentStatus status = client.translateDocumentStatus(HANDLE_OBJECT);
+    DocumentStatus status = client.translateDocumentGetStatus(HANDLE_OBJECT);
     assertEquals(DocumentStatus.StatusCode.Translating, status.getStatus());
     assertTrue(status.ok());
     assertFalse(status.done());
@@ -335,7 +336,7 @@ class TranslateDocumentTest {
             .willReturn(
                 okJson(
                     "{\"document_id\":\"D1\",\"status\":\"error\",\"error_message\":\"boom\"}")));
-    DocumentStatus status = client.translateDocumentStatus(HANDLE_OBJECT);
+    DocumentStatus status = client.translateDocumentGetStatus(HANDLE_OBJECT);
     assertFalse(status.ok());
     assertFalse(status.done());
     assertEquals("boom", status.getErrorMessage());
@@ -558,5 +559,115 @@ class TranslateDocumentTest {
     assertNotNull(handle);
     assertEquals(2, wm.getAllServeEvents().size());
     assertPartNames("/v2/document", "file", "target_lang");
+  }
+
+  @Test
+  void sendsAFormalityStringAsGiven() throws Exception {
+    File input = writeInput("example.txt", "a");
+    expectUpload(
+        "/v2/document",
+        "example.txt",
+        "a".getBytes(StandardCharsets.UTF_8),
+        fields("target_lang", "de", "formality", "prefer_less_new"));
+    client.translateDocumentUpload(
+        input, null, "de", new DocumentTranslationOptions().setFormality("prefer_less_new"));
+    assertPartNames("/v2/document", "file", "target_lang", "formality");
+  }
+
+  @Test
+  void sendsTheIdsGivenToSetStyleRuleAndSetTranslationMemory() throws Exception {
+    File input = writeInput("example.txt", "a");
+    expectUpload(
+        "/v2/document",
+        "example.txt",
+        "a".getBytes(StandardCharsets.UTF_8),
+        fields("target_lang", "de", "style_id", "s3", "translation_memory_id", "tm3"));
+    client.translateDocumentUpload(
+        input,
+        null,
+        "de",
+        new DocumentTranslationOptions().setStyleRule("s3").setTranslationMemory("tm3"));
+    assertPartNames("/v2/document", "file", "target_lang", "style_id", "translation_memory_id");
+  }
+
+  @Test
+  void sendsTheIdsOfGlossaryObjectsGivenToSetGlossaryIds() throws Exception {
+    File input = writeInput("example.txt", "a");
+    GlossaryInfo glossary = new GlossaryInfo("g1", "n", true, "en", "de", new java.util.Date(), 1);
+    MultilingualGlossaryInfo multilingual =
+        new MultilingualGlossaryInfo("g2", "n", new java.util.Date(), new ArrayList<>());
+    expectUpload(
+        "/v2/document",
+        "example.txt",
+        "a".getBytes(StandardCharsets.UTF_8),
+        fields("source_lang", "en", "target_lang", "de", "glossary_ids", "g1,g2"));
+    client.translateDocumentUpload(
+        input, "en", "de", new DocumentTranslationOptions().setGlossaryIds(glossary, multilingual));
+    assertPartNames("/v2/document", "file", "source_lang", "target_lang", "glossary_ids");
+  }
+
+  @Test
+  void sendsTheFilenameOptionInPlaceOfTheFileName() throws Exception {
+    File input = writeInput("example.txt", "a");
+    expectUpload(
+        "/v2/document",
+        "renamed.txt",
+        "a".getBytes(StandardCharsets.UTF_8),
+        fields("target_lang", "de"));
+    client.translateDocumentUpload(
+        input, null, "de", new DocumentTranslationOptions().setFilename("renamed.txt"));
+    assertPartNames("/v2/document", "file", "target_lang");
+  }
+
+  @Test
+  void sendsTheFilenameOptionInPlaceOfTheFileNameArgumentOfAStreamUpload() throws Exception {
+    expectUpload(
+        "/v2/document/",
+        "renamed.txt",
+        "abc".getBytes(StandardCharsets.UTF_8),
+        fields("target_lang", "de"));
+    client.translateDocumentUpload(
+        new ByteArrayInputStream("abc".getBytes(StandardCharsets.UTF_8)),
+        "stream.txt",
+        null,
+        "de",
+        new DocumentTranslationOptions().setFilename("renamed.txt"));
+    assertPartNames("/v2/document/", "file", "target_lang");
+  }
+
+  @Test
+  void throwsDeepLExceptionWhenTheWaitTimeoutExpires() {
+    wm.stubFor(
+        post("/v2/document/D1")
+            .willReturn(okJson("{\"document_id\":\"D1\",\"status\":\"queued\"}")));
+    DeepLException thrown =
+        assertThrows(
+            DeepLException.class,
+            () -> client.translateDocumentWaitUntilDone(HANDLE_OBJECT, Duration.ofMillis(50)));
+    assertTrue(thrown.getMessage().contains("Timed out"));
+  }
+
+  @Test
+  void throwsDocumentTranslationExceptionWithTheHandleWhenTheTimeoutOptionExpires()
+      throws Exception {
+    File input = writeInput("example.txt", "a");
+    File output = tempDir.resolve("out.txt").toFile();
+    wm.stubFor(post("/v2/document/").willReturn(okJson(HANDLE)));
+    wm.stubFor(
+        post("/v2/document/D1")
+            .willReturn(okJson("{\"document_id\":\"D1\",\"status\":\"queued\"}")));
+    DocumentTranslationException thrown =
+        assertThrows(
+            DocumentTranslationException.class,
+            () ->
+                client.translateDocument(
+                    input,
+                    output,
+                    null,
+                    "de",
+                    new DocumentTranslationOptions().setTimeout(Duration.ofMillis(50))));
+    assertTrue(thrown.getMessage().contains("Timed out"));
+    assertEquals("D1", thrown.getHandle().getDocumentId());
+    assertFalse(output.exists());
   }
 }

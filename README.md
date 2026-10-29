@@ -346,6 +346,11 @@ the following functions directly:
   `translateDocumentWaitUntilDone()`), and
 - `translateDocumentDownload()`
 
+`translateDocumentStatus()` is deprecated; use `translateDocumentGetStatus()`
+instead. `translateDocumentWaitUntilDone()` polls the status every 5 seconds
+until the document is done; an overload taking a `Duration` timeout throws a
+`DeepLException` when the timeout expires.
+
 #### Document translation options
 
 In addition to the input file, output file, `sourceLang` and `targetLang`
@@ -356,22 +361,32 @@ arguments, `translateDocument()` accepts an optional
   in [Text translation options](#text-translation-options).
 - `setGlossary()`: same as
   in [Text translation options](#text-translation-options).
-- `setGlossaryId()`: same as
-  in [Text translation options](#text-translation-options).
-- `setGlossaryIds()`/`setGlossaries()`: same as
+    - `setGlossaryId()` is deprecated; use `setGlossary()` instead.
+- `setGlossaryIds()`: same as
   in [Text translation options](#text-translation-options). Specifies multiple
-  glossaries (up to 5) to use with document translation.
-- `setStyleRule()`/`setStyleId()`: same as
-  in [Text translation options](#text-translation-options). Document translation
-  now supports style rules.
-- `setStyleProfile()`/`setStyleProfileId()`: same as
+  glossaries (up to 5) to use with document translation, as glossary IDs or
+  `IGlossary` objects.
+    - `setGlossaries()` is deprecated; use `setGlossaryIds()` instead.
+- `setStyleRule()`: same as
+  in [Text translation options](#text-translation-options), taking a style rule
+  ID or a `StyleRuleInfo` object.
+    - `setStyleId()` is deprecated; use `setStyleRule()` instead.
+- `setStyleProfile()`: same as
   in [Text translation options](#text-translation-options). An unknown style
   profile is not rejected at upload; the document status reports an error and
   a `DocumentTranslationException` is thrown with the message
   `Style profile not found.`
-- `setTranslationMemory()`/`setTranslationMemoryId()`/`setTranslationMemoryThreshold()`:
-  same as in [Text translation options](#text-translation-options). Document
-  translation now supports translation memories.
+- `setTranslationMemory()`/`setTranslationMemoryThreshold()`:
+  same as in [Text translation options](#text-translation-options), taking a
+  translation memory ID or a `TranslationMemoryInfo` object.
+    - `setTranslationMemoryId()` is deprecated; use `setTranslationMemory()` instead.
+- `setFilename()`: the file name sent with the upload, for example
+  `report.docx`; its extension determines the document type. Used in place of
+  the input file's name and of the `fileName` argument of the stream overloads.
+- `setTimeout()`: a `Duration` limiting how long `translateDocument()` waits
+  for the translation after the upload. When it expires, a
+  `DocumentTranslationException` with the document handle is thrown. Not sent
+  to the API; by default there is no limit.
 - `setOutputFormat()`: the file format of the translated document, as a file
   extension, for example `docx`. By default the translated document has the
   same format as the input document.
@@ -1067,7 +1082,7 @@ class Example {  // Continuing class Example from above
 #### Using a style profile in translations
 
 Pass a `StyleProfile` or an ID to `setStyleProfile()` in `TextTranslationOptions`
-(in `DocumentTranslationOptions`, pass an ID to `setStyleProfileId()`) to
+(the same in `DocumentTranslationOptions`) to
 translate with all of the profile's components through one ID:
 
 ```java

@@ -10,6 +10,7 @@ import com.deepl.api.utils.*;
 import com.google.gson.*;
 import java.io.*;
 import java.net.HttpURLConnection;
+import java.time.Duration;
 import java.util.*;
 import org.jetbrains.annotations.Nullable;
 
@@ -394,7 +395,8 @@ public class Translator {
     DocumentHandle handle = null;
     try {
       handle = translateDocumentUpload(inputStream, fileName, sourceLang, targetLang, options);
-      DocumentStatus status = translateDocumentWaitUntilDone(handle);
+      DocumentStatus status =
+          translateDocumentWaitUntilDone(handle, options != null ? options.getTimeout() : null);
       translateDocumentDownload(handle, outputStream);
       return status;
     } catch (Exception exception) {
@@ -448,7 +450,10 @@ public class Translator {
     try (FileInputStream inputStream = new FileInputStream(inputFile)) {
       HttpResponse response =
           httpClientWrapper.uploadWithBackoff(
-              String.format("/%s/document", apiVersion), params, inputFile.getName(), inputStream);
+              String.format("/%s/document", apiVersion),
+              params,
+              uploadFileName(inputFile.getName(), options),
+              inputStream);
       checkResponse(response, false, false);
       return jsonParser.parseDocumentHandle(response.getBody());
     }
@@ -493,7 +498,10 @@ public class Translator {
         createHttpParams(sourceLang, targetLang, options);
     HttpResponse response =
         httpClientWrapper.uploadWithBackoff(
-            String.format("/%s/document/", apiVersion), params, fileName, inputStream);
+            String.format("/%s/document/", apiVersion),
+            params,
+            uploadFileName(fileName, options),
+            inputStream);
     checkResponse(response, false, false);
     return jsonParser.parseDocumentHandle(response.getBody());
   }
@@ -519,7 +527,7 @@ public class Translator {
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
-  public DocumentStatus translateDocumentStatus(DocumentHandle handle)
+  public DocumentStatus translateDocumentGetStatus(DocumentHandle handle)
       throws DeepLException, InterruptedException {
     ArrayList<KeyValuePair<String, String>> params = new ArrayList<>();
     params.add(new KeyValuePair<>("document_key", handle.getDocumentKey()));
@@ -527,6 +535,17 @@ public class Translator {
     HttpResponse response = httpClientWrapper.sendRequestWithBackoff(relativeUrl, params);
     checkResponse(response, false, false);
     return jsonParser.parseDocumentStatus(response.getBody());
+  }
+
+  /**
+   * Retrieve the status of in-progress document translation associated with specified handle.
+   *
+   * @deprecated Use {@link #translateDocumentGetStatus(DocumentHandle)} instead.
+   */
+  @Deprecated
+  public DocumentStatus translateDocumentStatus(DocumentHandle handle)
+      throws DeepLException, InterruptedException {
+    return translateDocumentGetStatus(handle);
   }
 
   /**
@@ -542,10 +561,40 @@ public class Translator {
    */
   public DocumentStatus translateDocumentWaitUntilDone(DocumentHandle handle)
       throws InterruptedException, DeepLException {
-    DocumentStatus status = translateDocumentStatus(handle);
+    return translateDocumentWaitUntilDone(handle, null);
+  }
+
+  /**
+   * Checks document translation status and waits until document translation is complete, fails due
+   * to an error, or the given timeout expires. A status not known to this version of the library
+   * counts as in progress, so waiting continues.
+   *
+   * @param handle Handle associated with document translation to wait for.
+   * @param timeout Maximum time to wait, or <code>null</code> to wait without limit.
+   * @return Status when document translation completed, this allows the number of billed characters
+   *     to be queried.
+   * @throws InterruptedException If the thread is interrupted while waiting for the document
+   *     translation to complete.
+   * @throws DeepLException If the document translation failed, the timeout expired, or any error
+   *     occurs while communicating with the DeepL API.
+   */
+  public DocumentStatus translateDocumentWaitUntilDone(
+      DocumentHandle handle, @Nullable Duration timeout)
+      throws InterruptedException, DeepLException {
+    long deadline = timeout != null ? System.nanoTime() + timeout.toNanos() : 0;
+    DocumentStatus status = translateDocumentGetStatus(handle);
     while (status.ok() && !status.done()) {
-      Thread.sleep(calculateDocumentWaitTimeMillis(status.getSecondsRemaining()));
-      status = translateDocumentStatus(handle);
+      long sleepMillis = calculateDocumentWaitTimeMillis(status.getSecondsRemaining());
+      if (timeout != null) {
+        long remainingMillis = (deadline - System.nanoTime()) / 1_000_000;
+        if (remainingMillis <= 0) {
+          throw new DeepLException(
+              "Timed out after " + timeout + " waiting for the document translation");
+        }
+        sleepMillis = Math.min(sleepMillis, remainingMillis);
+      }
+      Thread.sleep(sleepMillis);
+      status = translateDocumentGetStatus(handle);
     }
 
     if (!status.ok()) {
@@ -886,11 +935,18 @@ public class Translator {
    */
   protected static ArrayList<KeyValuePair<String, String>> createHttpParams(
       String sourceLang, String targetLang, DocumentTranslationOptions options) {
+    String formality = null;
+    if (options != null) {
+      formality =
+          options.getFormalityString() != null
+              ? options.getFormalityString()
+              : formalityValue(options.getFormality());
+    }
     ArrayList<KeyValuePair<String, String>> params =
-        createHttpParamsCommon(
+        createHttpParamsCommonWithFormalityValue(
             sourceLang,
             targetLang,
-            options != null ? options.getFormality() : null,
+            formality,
             options != null ? options.getGlossaryId() : null,
             options != null ? options.getGlossaryIds() : null);
 
@@ -1102,6 +1158,12 @@ public class Translator {
       HttpResponse response, boolean inDocumentDownload, boolean usingGlossary)
       throws DeepLException {
     ApiClientHelper.checkResponse(jsonParser, response, inDocumentDownload, usingGlossary);
+  }
+
+  /** The file name of an upload: the filename option if set, else the given name. */
+  private static String uploadFileName(
+      String fileName, @Nullable DocumentTranslationOptions options) {
+    return options != null && options.getFilename() != null ? options.getFilename() : fileName;
   }
 
   private int calculateDocumentWaitTimeMillis(Long secondsRemaining) {

@@ -3,6 +3,7 @@
 // license that can be found in the LICENSE file.
 package com.deepl.api;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -16,11 +17,12 @@ import org.jetbrains.annotations.Nullable;
  * <p>All properties have corresponding setters in fluent-style, so the following is possible:
  * <code>
  *      DocumentTranslationOptions options = new DocumentTranslationOptions()
- *          .setFormality(Formality.Less).setGlossaryId("f63c02c5-f056-..");
+ *          .setFormality(Formality.Less).setGlossary("f63c02c5-f056-..");
  * </code>
  */
 public class DocumentTranslationOptions extends BaseRequestOptions {
   private Formality formality;
+  private String formalityString;
   private String glossaryId;
   private List<String> glossaryIds;
   private String styleId;
@@ -29,6 +31,8 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
   private Integer translationMemoryThreshold;
   private String outputFormat;
   private @Nullable Boolean enableWatermark;
+  private @Nullable String filename;
+  private @Nullable Duration timeout;
 
   /**
    * Sets whether translations should lean toward formal or informal language. This option is only
@@ -40,13 +44,30 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
    */
   public DocumentTranslationOptions setFormality(Formality formality) {
     this.formality = formality;
+    this.formalityString = null;
+    return this;
+  }
+
+  /**
+   * Sets the formality as a string, which is sent to the API as given, for example <code>"less"
+   * </code>. Use this for values not yet in {@link Formality}. By default, this value is <code>null
+   * </code> and translations use the default formality.
+   *
+   * @see #setFormality(Formality)
+   */
+  public DocumentTranslationOptions setFormality(String formality) {
+    this.formalityString = formality;
+    this.formality = null;
     return this;
   }
 
   /**
    * Sets the ID of a glossary to use with the translation. By default, this value is <code>
    * null</code> and no glossary is used.
+   *
+   * @deprecated Use {@link #setGlossary(String)} instead.
    */
+  @Deprecated
   public DocumentTranslationOptions setGlossaryId(String glossaryId) {
     this.glossaryId = glossaryId;
     return this;
@@ -73,7 +94,7 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
    * Sets the list of glossary IDs to use with the translation, up to a maximum of 5. Glossaries are
    * applied in the order provided (first match wins). By default, this value is <code>null</code>
    * and no glossaries are used. This option requires a source language to be set and cannot be
-   * combined with {@link #setGlossaryId} or {@link #setGlossary}.
+   * combined with {@link #setGlossary}.
    */
   public DocumentTranslationOptions setGlossaryIds(List<String> glossaryIds) {
     this.glossaryIds = glossaryIds;
@@ -84,7 +105,7 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
    * Sets the list of glossary IDs to use with the translation, up to a maximum of 5. Glossaries are
    * applied in the order provided (first match wins). By default, this value is <code>null</code>
    * and no glossaries are used. This option requires a source language to be set and cannot be
-   * combined with {@link #setGlossaryId} or {@link #setGlossary}.
+   * combined with {@link #setGlossary}.
    */
   public DocumentTranslationOptions setGlossaryIds(String... glossaryIds) {
     this.glossaryIds = Arrays.asList(glossaryIds);
@@ -95,9 +116,9 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
    * Sets the list of glossaries to use with the translation, up to a maximum of 5. Glossaries are
    * applied in the order provided (first match wins). By default, this value is <code>null</code>
    * and no glossaries are used. This option requires a source language to be set and cannot be
-   * combined with {@link #setGlossaryId} or {@link #setGlossary}.
+   * combined with {@link #setGlossary}.
    */
-  public DocumentTranslationOptions setGlossaries(IGlossary... glossaries) {
+  public DocumentTranslationOptions setGlossaryIds(IGlossary... glossaries) {
     List<String> ids = new ArrayList<>();
     for (IGlossary glossary : glossaries) {
       if (glossary == null) {
@@ -110,11 +131,33 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
   }
 
   /**
+   * Sets the list of glossaries to use with the translation, up to a maximum of 5.
+   *
+   * @deprecated Use {@link #setGlossaryIds(IGlossary...)} instead.
+   */
+  @Deprecated
+  public DocumentTranslationOptions setGlossaries(IGlossary... glossaries) {
+    return setGlossaryIds(glossaries);
+  }
+
+  /**
+   * Sets the ID of a style rule to use with the translation. By default, this value is <code>
+   * null</code> and no style rule is used.
+   *
+   * @deprecated Use {@link #setStyleRule(String)} instead.
+   */
+  @Deprecated
+  public DocumentTranslationOptions setStyleId(String styleId) {
+    this.styleId = styleId;
+    return this;
+  }
+
+  /**
    * Sets the ID of a style rule to use with the translation. By default, this value is <code>
    * null</code> and no style rule is used.
    */
-  public DocumentTranslationOptions setStyleId(String styleId) {
-    this.styleId = styleId;
+  public DocumentTranslationOptions setStyleRule(String styleRuleId) {
+    this.styleId = styleRuleId;
     return this;
   }
 
@@ -126,7 +169,7 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
     if (styleRule == null) {
       throw new IllegalArgumentException("styleRule must not be null");
     }
-    return setStyleId(styleRule.getStyleId());
+    return setStyleRule(styleRule.getStyleId());
   }
 
   /**
@@ -136,27 +179,39 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
    * used. The API rejects combining a style profile with glossaries, a style rule, a translation
    * memory or a translation memory threshold.
    */
-  public DocumentTranslationOptions setStyleProfileId(String styleProfileId) {
+  public DocumentTranslationOptions setStyleProfile(String styleProfileId) {
     this.styleProfileId = styleProfileId;
     return this;
   }
 
   /**
    * Sets the style profile to use with the translation. By default, this value is <code>null
-   * </code> and no style profile is used. See {@link #setStyleProfileId}.
+   * </code> and no style profile is used. See {@link #setStyleProfile(String)}.
    */
   public DocumentTranslationOptions setStyleProfile(StyleProfile styleProfile) {
     if (styleProfile == null) {
       throw new IllegalArgumentException("styleProfile must not be null");
     }
-    return setStyleProfileId(styleProfile.getStyleProfileId());
+    return setStyleProfile(styleProfile.getStyleProfileId());
+  }
+
+  /**
+   * Sets the ID of a translation memory to use with the translation. By default, this value is
+   * <code>null</code> and no translation memory is used.
+   *
+   * @deprecated Use {@link #setTranslationMemory(String)} instead.
+   */
+  @Deprecated
+  public DocumentTranslationOptions setTranslationMemoryId(String translationMemoryId) {
+    this.translationMemoryId = translationMemoryId;
+    return this;
   }
 
   /**
    * Sets the ID of a translation memory to use with the translation. By default, this value is
    * <code>null</code> and no translation memory is used.
    */
-  public DocumentTranslationOptions setTranslationMemoryId(String translationMemoryId) {
+  public DocumentTranslationOptions setTranslationMemory(String translationMemoryId) {
     this.translationMemoryId = translationMemoryId;
     return this;
   }
@@ -169,14 +224,13 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
     if (translationMemory == null) {
       throw new IllegalArgumentException("translationMemory must not be null");
     }
-    return setTranslationMemoryId(translationMemory.getTranslationMemoryId());
+    return setTranslationMemory(translationMemory.getTranslationMemoryId());
   }
 
   /**
    * Sets the threshold for translation memory matches. By default, this value is <code>null</code>
-   * and the API default threshold is used. Note: a translation memory ID must also be set via
-   * {@link #setTranslationMemoryId} or {@link #setTranslationMemory}, otherwise an error will be
-   * thrown at translation time.
+   * and the API default threshold is used. Note: a translation memory must also be set via {@link
+   * #setTranslationMemory}, otherwise an error will be thrown at translation time.
    */
   public DocumentTranslationOptions setTranslationMemoryThreshold(
       Integer translationMemoryThreshold) {
@@ -209,9 +263,37 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
     return this;
   }
 
+  /**
+   * Sets the file name sent with the upload, for example <code>"report.docx"</code>. The file
+   * extension determines the document type. It is used in place of the input file's name and of the
+   * <code>fileName</code> argument of the stream overloads. By default, this value is <code>null
+   * </code> and the file name of the input is used.
+   */
+  public DocumentTranslationOptions setFilename(@Nullable String filename) {
+    this.filename = filename;
+    return this;
+  }
+
+  /**
+   * Sets the maximum time {@link Translator#translateDocument} waits for the translation to finish
+   * after the upload. When it expires, <code>translateDocument</code> throws a {@link
+   * DocumentTranslationException} that carries the document handle, so the document can still be
+   * retrieved. This is a client-side limit and is not sent to the API. By default, this value is
+   * <code>null</code> and there is no limit.
+   */
+  public DocumentTranslationOptions setTimeout(@Nullable Duration timeout) {
+    this.timeout = timeout;
+    return this;
+  }
+
   /** Gets the current formality setting. */
   public Formality getFormality() {
     return formality;
+  }
+
+  /** The formality set as a string, sent in place of {@link #getFormality()}. */
+  String getFormalityString() {
+    return formalityString;
   }
 
   /** Gets the current glossary ID. */
@@ -252,6 +334,16 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
   /** Gets the current watermark setting, or <code>null</code> if it is not set. */
   public @Nullable Boolean getEnableWatermark() {
     return enableWatermark;
+  }
+
+  /** Gets the file name set with {@link #setFilename}, or <code>null</code> if it is not set. */
+  public @Nullable String getFilename() {
+    return filename;
+  }
+
+  /** Gets the wait limit of {@link Translator#translateDocument}, or <code>null</code> if unset. */
+  public @Nullable Duration getTimeout() {
+    return timeout;
   }
 
   /** {@inheritDoc} */

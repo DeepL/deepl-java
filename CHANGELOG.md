@@ -17,8 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DocumentTranslationOptions.setExtraBodyParameters()` now return the options
   class, so further setters can be chained after them.
 - Added the `setStyleProfile()` option to `TextTranslationOptions` and
-  `setStyleProfile()` / `setStyleProfileId()` to `DocumentTranslationOptions`,
-  sent as `style_profile_id` on text and document translation. It accepts a
+  `DocumentTranslationOptions`, sent as `style_profile_id` on text and document translation. It accepts a
   style profile ID or a `StyleProfile` object.
 - Added the `TagHandlingMode`, `TagHandlingVersion` and `ModelType` enums and
   `TextTranslationOptions.setTagHandling()`, `setTagHandlingVersion()` and
@@ -34,6 +33,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ID.
 - Added `TextTranslationOptions.setGlossaryIds(IGlossary...)`, taking glossary
   objects.
+- Added `Translator.translateDocumentGetStatus()`, which returns the status of
+  a document translation.
+- Added a `translateDocumentWaitUntilDone(DocumentHandle, Duration)` overload
+  that throws a `DeepLException` when the timeout expires, and
+  `DocumentTranslationOptions.setTimeout(Duration)`, which limits how long
+  `translateDocument()` waits for the translation; on expiry it throws a
+  `DocumentTranslationException` with the document handle.
+- Added `DocumentTranslationOptions.setFilename()`, the file name sent with the
+  upload in place of the input file's name.
+- Added `DocumentTranslationOptions.setFormality(String)`, which sends the
+  string as given.
+- Added `DocumentTranslationOptions.setStyleRule(String)`,
+  `setTranslationMemory(String)` and `setGlossaryIds(IGlossary...)`.
 - Added `TextResult.getTagHandlingVersion()`, the tag handling version the API
   used (`tag_handling_version`); `null` when the response does not contain it.
 - Added style profile support to `DeepLClient` (`/v3/style_profiles`):
@@ -111,6 +123,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and its helper methods are not deprecated.
 - Deprecated `TextTranslationOptions.setGlossaryId()`, `setGlossaries()`,
   `setStyleId()` and `setTranslationMemoryId()`. Use `setGlossary()`,
+  `setGlossaryIds()`, `setStyleRule()` and `setTranslationMemory()` instead.
+  They will be removed in the next major version.
+- Deprecated `Translator.translateDocumentStatus()`; use
+  `translateDocumentGetStatus()` instead. Deprecated
+  `DocumentTranslationOptions.setGlossaryId()`, `setGlossaries()`,
+  `setStyleId()` and `setTranslationMemoryId()`; use `setGlossary()`,
   `setGlossaryIds()`, `setStyleRule()` and `setTranslationMemory()` instead.
   They will be removed in the next major version.
 
