@@ -121,7 +121,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `DeepLClient.getLanguageResources()`, which calls
   `GET /v3/languages/resources` and returns `LanguageResource` objects
   describing each resource's features and whether they need source and/or
-  target language support.
+  target language support (`false` when the API omits the flag).
 - Added `correctText()` to the `DeepLClient` class, which corrects grammar, spelling
   and punctuation using the `/v2/write/correct` endpoint. It accepts a single
   text or a list of texts, an optional target language and an optional

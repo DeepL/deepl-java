@@ -41,22 +41,18 @@ public class ResourceFeature {
   }
 
   /**
-   * @return <code>true</code> if the source language must support this feature, <code>false
-   *     </code> if not, or <code>null</code> if the API omitted the flag (the API treats this as
-   *     <code>false</code>).
+   * @return <code>true</code> if the source language must support this feature, otherwise <code>
+   *     false</code>, including when the API omits the flag.
    */
-  @Nullable
   public Boolean getNeedsSourceSupport() {
-    return needsSourceSupport;
+    return Boolean.TRUE.equals(needsSourceSupport);
   }
 
   /**
-   * @return <code>true</code> if the target language must support this feature, <code>false
-   *     </code> if not, or <code>null</code> if the API omitted the flag (the API treats this as
-   *     <code>false</code>).
+   * @return <code>true</code> if the target language must support this feature, otherwise <code>
+   *     false</code>, including when the API omits the flag.
    */
-  @Nullable
   public Boolean getNeedsTargetSupport() {
-    return needsTargetSupport;
+    return Boolean.TRUE.equals(needsTargetSupport);
   }
 }

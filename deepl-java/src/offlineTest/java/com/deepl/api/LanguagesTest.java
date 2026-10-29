@@ -146,7 +146,8 @@ class LanguagesTest {
     assertEquals(Boolean.TRUE, glossary.getNeedsSourceSupport());
     assertEquals(Boolean.TRUE, glossary.getNeedsTargetSupport());
     ResourceFeature formality = translateText.getFeatures().get(LanguageFeature.FEATURE_FORMALITY);
-    assertNull(formality.getNeedsSourceSupport());
+    assertEquals(Boolean.FALSE, formality.getNeedsSourceSupport());
+    assertEquals(Boolean.FALSE, formality.getNeedsTargetSupport());
     assertTrue(translateText.supports(LanguageFeature.FEATURE_FORMALITY));
     assertTrue(resources.get(1).getFeatures().isEmpty());
   }
