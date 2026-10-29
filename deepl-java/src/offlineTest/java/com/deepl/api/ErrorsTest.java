@@ -27,6 +27,7 @@ class ErrorsTest {
   @ParameterizedTest
   @CsvSource({
     "400,com.deepl.api.DeepLException,Bad request",
+    "401,com.deepl.api.AuthorizationException,Authorization failure",
     "403,com.deepl.api.AuthorizationException,Authorization failure",
     "404,com.deepl.api.NotFoundException,Not found",
     "429,com.deepl.api.TooManyRequestsException,Too many requests",
@@ -40,6 +41,14 @@ class ErrorsTest {
     DeepLException thrown = assertThrows(expected, translator::getUsage);
     assertEquals(expected, thrown.getClass());
     assertEquals(true, thrown.getMessage().startsWith(messagePrefix), thrown.getMessage());
+  }
+
+  @Test
+  void throwsAuthorizationExceptionForHttp401OfTheAdminClient() {
+    wm.stubFor(get("/v2/admin/developer-keys").willReturn(aResponse().withStatus(401)));
+    DeepLAdminClient admin =
+        OfflineClient.createAdminClient(wm, new DeepLAdminClientOptions().setMaxRetries(0));
+    assertThrows(AuthorizationException.class, admin::getDeveloperKeys);
   }
 
   @Test

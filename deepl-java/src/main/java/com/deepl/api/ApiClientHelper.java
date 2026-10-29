@@ -107,6 +107,7 @@ final class ApiClientHelper {
     switch (response.getCode()) {
       case HttpURLConnection.HTTP_BAD_REQUEST:
         throw new DeepLException("Bad request" + messageSuffix);
+      case HttpURLConnection.HTTP_UNAUTHORIZED:
       case HttpURLConnection.HTTP_FORBIDDEN:
         throw new AuthorizationException("Authorization failure, check " + keyName + messageSuffix);
       case HttpURLConnection.HTTP_NOT_FOUND:
