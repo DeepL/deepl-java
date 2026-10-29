@@ -4,7 +4,6 @@
 package com.deepl.api;
 
 import com.google.gson.annotations.*;
-import java.time.LocalDate;
 import java.util.*;
 import org.jetbrains.annotations.*;
 
@@ -17,17 +16,17 @@ public class CustomTagUsage {
   private final CustomTagUsageBreakdown breakdown;
 
   @SerializedName(value = "usage_date")
-  private final @Nullable LocalDate usageDate;
+  private final @Nullable Date usageDate;
 
   /**
    * Initializes a new {@link CustomTagUsage}.
    *
    * @param customTag The custom tag.
    * @param breakdown Usage of the custom tag.
-   * @param usageDate Day of the usage, present when aggregated by day.
+   * @param usageDate Day of the usage as midnight UTC, present when aggregated by day.
    */
   public CustomTagUsage(
-      String customTag, CustomTagUsageBreakdown breakdown, @Nullable LocalDate usageDate) {
+      String customTag, CustomTagUsageBreakdown breakdown, @Nullable Date usageDate) {
     this.customTag = customTag;
     this.breakdown = breakdown;
     this.usageDate = usageDate;
@@ -43,8 +42,11 @@ public class CustomTagUsage {
     return breakdown;
   }
 
-  /** @return Day of the usage, or <code>null</code> if the report is not aggregated by day. */
-  public @Nullable LocalDate getUsageDate() {
+  /**
+   * @return Day of the usage as midnight UTC of that day, or <code>null</code> if the report is not
+   *     aggregated by day.
+   */
+  public @Nullable Date getUsageDate() {
     return usageDate;
   }
 }

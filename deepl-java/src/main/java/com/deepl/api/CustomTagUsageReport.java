@@ -4,7 +4,6 @@
 package com.deepl.api;
 
 import com.google.gson.annotations.*;
-import java.time.LocalDate;
 import java.util.*;
 import org.jetbrains.annotations.*;
 
@@ -17,10 +16,10 @@ public class CustomTagUsageReport {
   private final @Nullable String aggregateBy;
 
   @SerializedName(value = "start_date")
-  private final @Nullable LocalDate startDate;
+  private final @Nullable Date startDate;
 
   @SerializedName(value = "end_date")
-  private final @Nullable LocalDate endDate;
+  private final @Nullable Date endDate;
 
   @SerializedName(value = "next_page")
   private final @Nullable Integer nextPage;
@@ -32,15 +31,15 @@ public class CustomTagUsageReport {
    * Initializes a new {@link CustomTagUsageReport}.
    *
    * @param aggregateBy Aggregation used for the report.
-   * @param startDate Start of the report period.
-   * @param endDate End of the report period.
+   * @param startDate Start day of the report period, as midnight UTC.
+   * @param endDate End day of the report period, as midnight UTC.
    * @param nextPage Page number of the next page, or <code>null</code> if this is the last page.
    * @param usage Usage entries per custom tag.
    */
   public CustomTagUsageReport(
       @Nullable String aggregateBy,
-      @Nullable LocalDate startDate,
-      @Nullable LocalDate endDate,
+      @Nullable Date startDate,
+      @Nullable Date endDate,
       @Nullable Integer nextPage,
       List<CustomTagUsage> usage) {
     this.aggregateBy = aggregateBy;
@@ -58,13 +57,13 @@ public class CustomTagUsageReport {
     return aggregateBy;
   }
 
-  /** @return Start of the report period. */
-  public @Nullable LocalDate getStartDate() {
+  /** @return Start day of the report period, as midnight UTC of that day. */
+  public @Nullable Date getStartDate() {
     return startDate;
   }
 
-  /** @return End of the report period. */
-  public @Nullable LocalDate getEndDate() {
+  /** @return End day of the report period, as midnight UTC of that day. */
+  public @Nullable Date getEndDate() {
     return endDate;
   }
 

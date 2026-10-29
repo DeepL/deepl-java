@@ -1511,10 +1511,11 @@ class AdminExample {
 ```java
 class AdminExample {  // Continuing class AdminExample from above
     public void developerKeysExample() throws Exception {
-        DeveloperKey key = adminClient.createDeveloperKey("Staging Team Key");
+        DeveloperKey key = adminClient.createDeveloperKey(
+                new CreateDeveloperKeyOptions().setLabel("Staging Team Key"));
         System.out.printf("Created %s (%s)%n", key.getLabel(), key.getKeyId());
 
-        for (DeveloperKey developerKey : adminClient.getDeveloperKeys()) {
+        for (DeveloperKey developerKey : adminClient.listDeveloperKeys()) {
             System.out.printf("%s: deactivated=%b%n",
                               developerKey.getLabel(),
                               developerKey.isDeactivated());
@@ -1541,21 +1542,30 @@ class AdminExample {  // Continuing class AdminExample from above
 object and return the updated `DeveloperKey`. The API validates labels and
 limit values.
 
+`createDeveloperKey()` takes a `CreateDeveloperKeyOptions` (`setLabel()`), and
+`deactivateDeveloperKey()`, `renameDeveloperKey()` and
+`setDeveloperKeyUsageLimits()` have overloads taking a
+`DeactivateDeveloperKeyOptions`, `RenameDeveloperKeyOptions` or
+`SetDeveloperKeyUsageLimitsOptions`. All four options classes support
+`setExtraBodyParameters()`; these parameters are added to the JSON body last
+and replace a field with the same key.
+
 #### Retrieving usage analytics
 
 `getUsageAnalytics()` returns an `AdminUsageReport` for a date range. Dates are
 UTC calendar days, and both the start and the end day are included. Pass them
-as `java.time.LocalDate` objects, which are used as they are, or as
-`"YYYY-MM-DD"` strings (an invalid string throws an `IllegalArgumentException`).
-To get a date from a moment in time, convert it in UTC, for example with
-`instant.atZone(ZoneOffset.UTC).toLocalDate()`: `2026-10-20T00:00+02:00` is the
-UTC day `2026-10-19`. The API requires the end date to be after the start date
+as `java.time.LocalDate` objects, which are used as they are, as
+`"YYYY-MM-DD"` strings (an invalid string throws an `IllegalArgumentException`),
+or as `java.util.Date` or `java.time.Instant` values, of which the UTC day is
+sent: `2026-10-20T00:00+02:00` is the UTC day `2026-10-19`. The API requires the end date to be after the start date
 (so a report covers at least two days) and at most 366 days after it;
 otherwise both analytics functions throw a `DeepLException`. Dates in the
-reports are `LocalDate` objects.
-Pass an `AdminUsageAnalyticsOptions` to break the usage down by key
+reports (`getStartDate()`, `getEndDate()`, `getUsageDate()`) are
+`java.util.Date` values at midnight UTC of the day.
+Pass a `groupBy` argument to break the usage down by key
 (`AdminUsageGroupBy.Key`, see `getKeyUsages()`) or by key and day
-(`AdminUsageGroupBy.KeyAndDay`, see `getKeyAndDayUsages()`). These lists are
+(`AdminUsageGroupBy.KeyAndDay`, see `getKeyAndDayUsages()`); a string is sent
+as given, for values not yet in the enum. These lists are
 empty if the report uses a different grouping.
 `getGroupBy()` returns the grouping as the API sends it, for example `"key"` or
 `"keyAndDay"`. Each usage breakdown has the characters used in total and per
@@ -1569,8 +1579,7 @@ class AdminExample {  // Continuing class AdminExample from above
     public void usageAnalyticsExample() throws Exception {
         AdminUsageReport report = adminClient.getUsageAnalytics(
                 LocalDate.of(2026, 6, 1), LocalDate.of(2026, 7, 1),
-                new AdminUsageAnalyticsOptions()
-                        .setGroupBy(AdminUsageGroupBy.Key));
+                AdminUsageGroupBy.Key);
         System.out.printf("Total characters: %d%n",
                           report.getTotalUsage().getTotalCharacters());
         for (KeyUsage keyUsage : report.getKeyUsages()) {
@@ -1583,11 +1592,11 @@ class AdminExample {  // Continuing class AdminExample from above
 ```
 
 `getCustomTagUsageAnalytics()` returns a `CustomTagUsageReport` with the
-usage per custom tag. Use `CustomTagUsageAnalyticsOptions.setAggregateBy()` to
-choose between the whole period (`CustomTagUsageAggregateBy.Period`, the
-default) and per-day usage (`CustomTagUsageAggregateBy.Day`). The results are
-paginated: pass the `getNextPage()` value of a report to `setPage()` to get the
-next page.
+usage per custom tag. It takes the same date types. Its `aggregateBy` argument
+chooses between the whole period (`CustomTagUsageAggregateBy.Period`, the
+default) and per-day usage (`CustomTagUsageAggregateBy.Day`); a string is sent
+as given. The results are paginated: pass the `getNextPage()` value of a report
+as the `page` argument to get the next page.
 
 ```java
 import com.deepl.api.*;
@@ -1599,7 +1608,7 @@ class AdminExample {  // Continuing class AdminExample from above
         do {
             CustomTagUsageReport report = adminClient.getCustomTagUsageAnalytics(
                     LocalDate.of(2026, 6, 1), LocalDate.of(2026, 7, 1),
-                    new CustomTagUsageAnalyticsOptions().setPage(page));
+                    CustomTagUsageAggregateBy.Period, page);
             for (CustomTagUsage tagUsage : report.getUsage()) {
                 System.out.printf("%s: %d%n",
                                   tagUsage.getCustomTag(),

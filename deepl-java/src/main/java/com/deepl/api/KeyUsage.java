@@ -4,7 +4,6 @@
 package com.deepl.api;
 
 import com.google.gson.annotations.*;
-import java.time.LocalDate;
 import java.util.*;
 import org.jetbrains.annotations.*;
 
@@ -20,7 +19,7 @@ public class KeyUsage {
   private final AdminUsageBreakdown usage;
 
   @SerializedName(value = "usage_date")
-  private final @Nullable LocalDate usageDate;
+  private final @Nullable Date usageDate;
 
   /**
    * Initializes a new {@link KeyUsage}.
@@ -28,10 +27,10 @@ public class KeyUsage {
    * @param apiKey Masked API key.
    * @param apiKeyLabel Label of the API key.
    * @param usage Usage of the API key.
-   * @param usageDate Day of the usage, present when grouped by key and day.
+   * @param usageDate Day of the usage as midnight UTC, present when grouped by key and day.
    */
   public KeyUsage(
-      String apiKey, String apiKeyLabel, AdminUsageBreakdown usage, @Nullable LocalDate usageDate) {
+      String apiKey, String apiKeyLabel, AdminUsageBreakdown usage, @Nullable Date usageDate) {
     this.apiKey = apiKey;
     this.apiKeyLabel = apiKeyLabel;
     this.usage = usage;
@@ -53,8 +52,11 @@ public class KeyUsage {
     return usage;
   }
 
-  /** @return Day of the usage, or <code>null</code> if the report is not grouped by day. */
-  public @Nullable LocalDate getUsageDate() {
+  /**
+   * @return Day of the usage as midnight UTC of that day, or <code>null</code> if the report is not
+   *     grouped by day.
+   */
+  public @Nullable Date getUsageDate() {
     return usageDate;
   }
 }

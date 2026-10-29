@@ -6,6 +6,7 @@ package com.deepl.api.parsing;
 import com.deepl.api.*;
 import com.google.gson.*;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.*;
 import org.jetbrains.annotations.*;
 
@@ -77,8 +78,8 @@ class AdminResponseParser {
     JsonObject report = asObject(requireObject(json, "Usage report").get("usage_report"));
     return new AdminUsageReport(
         parseBreakdown(report.get("total_usage")),
-        localDate(report, "start_date"),
-        localDate(report, "end_date"),
+        utcDay(report, "start_date"),
+        utcDay(report, "end_date"),
         stringOrNull(report, "group_by"),
         parseKeyUsages(report.get("key_usages")),
         parseKeyUsages(report.get("key_and_day_usages")));
@@ -93,13 +94,13 @@ class AdminResponseParser {
           new CustomTagUsage(
               string(entry, "custom_tag"),
               parseCustomTagBreakdown(entry.get("breakdown")),
-              localDate(entry, "usage_date")));
+              utcDay(entry, "usage_date")));
     }
     Long nextPage = longOrNull(report, "next_page");
     return new CustomTagUsageReport(
         stringOrNull(report, "aggregate_by"),
-        localDate(report, "start_date"),
-        localDate(report, "end_date"),
+        utcDay(report, "start_date"),
+        utcDay(report, "end_date"),
         nextPage != null && nextPage >= Integer.MIN_VALUE && nextPage <= Integer.MAX_VALUE
             ? Integer.valueOf((int) (long) nextPage)
             : null,
@@ -114,7 +115,7 @@ class AdminResponseParser {
               string(entry, "api_key"),
               string(entry, "api_key_label"),
               parseBreakdown(entry.get("usage")),
-              localDate(entry, "usage_date")));
+              utcDay(entry, "usage_date")));
     }
     return usages;
   }
@@ -203,7 +204,9 @@ class AdminResponseParser {
     return gson.fromJson(object.get(name), Date.class);
   }
 
-  private @Nullable LocalDate localDate(JsonObject object, String name) {
-    return gson.fromJson(object.get(name), LocalDate.class);
+  /** Parses a report day, sent as a date-time, into midnight UTC of its UTC day. */
+  private @Nullable Date utcDay(JsonObject object, String name) {
+    LocalDate day = gson.fromJson(object.get(name), LocalDate.class);
+    return day != null ? Date.from(day.atStartOfDay(ZoneOffset.UTC).toInstant()) : null;
   }
 }

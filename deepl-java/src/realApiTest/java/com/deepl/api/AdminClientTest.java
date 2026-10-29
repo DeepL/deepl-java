@@ -19,10 +19,7 @@ class AdminClientTest {
   @Test
   void getsTheUsageAnalytics() throws Exception {
     AdminUsageReport report =
-        client.getUsageAnalytics(
-            today.minusDays(7),
-            today,
-            new AdminUsageAnalyticsOptions().setGroupBy(AdminUsageGroupBy.KeyAndDay));
+        client.getUsageAnalytics(today.minusDays(7), today, AdminUsageGroupBy.KeyAndDay);
     assertNotNull(report.getTotalUsage());
     assertNotNull(report.getStartDate());
     assertNotNull(report.getEndDate());
@@ -33,16 +30,14 @@ class AdminClientTest {
   void getsTheCustomTagUsageAnalytics() throws Exception {
     CustomTagUsageReport report =
         client.getCustomTagUsageAnalytics(
-            today.minusDays(7),
-            today,
-            new CustomTagUsageAnalyticsOptions().setAggregateBy(CustomTagUsageAggregateBy.Day));
+            today.minusDays(7), today, CustomTagUsageAggregateBy.Day, null);
     assertEquals("day", report.getAggregateBy());
   }
 
   @Test
   void createsListsAndDeactivatesADeveloperKey() throws Exception {
     String label = RealApiNames.getUniqueName("admin-key");
-    DeveloperKey key = client.createDeveloperKey(label);
+    DeveloperKey key = client.createDeveloperKey(new CreateDeveloperKeyOptions().setLabel(label));
     boolean deactivated = false;
     try {
       assertEquals(label, key.getLabel());
@@ -70,14 +65,14 @@ class AdminClientTest {
       }
     }
     assertTrue(
-        client.getDeveloperKeys().stream()
+        client.listDeveloperKeys().stream()
             .anyMatch(
                 listed -> listed.getKeyId().equals(key.getKeyId()) && listed.isDeactivated()));
   }
 
   private boolean isListedEventually(DeveloperKey key) throws Exception {
     for (int attempt = 1; attempt <= 5; attempt++) {
-      if (client.getDeveloperKeys().stream()
+      if (client.listDeveloperKeys().stream()
           .anyMatch(listed -> listed.getKeyId().equals(key.getKeyId()))) {
         return true;
       }

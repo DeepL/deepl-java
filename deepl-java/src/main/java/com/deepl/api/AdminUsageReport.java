@@ -4,7 +4,6 @@
 package com.deepl.api;
 
 import com.google.gson.annotations.*;
-import java.time.LocalDate;
 import java.util.*;
 import org.jetbrains.annotations.*;
 
@@ -14,10 +13,10 @@ public class AdminUsageReport {
   private final AdminUsageBreakdown totalUsage;
 
   @SerializedName(value = "start_date")
-  private final @Nullable LocalDate startDate;
+  private final @Nullable Date startDate;
 
   @SerializedName(value = "end_date")
-  private final @Nullable LocalDate endDate;
+  private final @Nullable Date endDate;
 
   @SerializedName(value = "group_by")
   private final @Nullable String groupBy;
@@ -32,16 +31,16 @@ public class AdminUsageReport {
    * Initializes a new {@link AdminUsageReport}.
    *
    * @param totalUsage Usage totals over the whole date range.
-   * @param startDate Start of the report period.
-   * @param endDate End of the report period.
+   * @param startDate Start day of the report period, as midnight UTC.
+   * @param endDate End day of the report period, as midnight UTC.
    * @param groupBy Grouping used for the report, if any.
    * @param keyUsages Usage per key, present when grouped by key.
    * @param keyAndDayUsages Usage per key and day, present when grouped by key and day.
    */
   public AdminUsageReport(
       AdminUsageBreakdown totalUsage,
-      @Nullable LocalDate startDate,
-      @Nullable LocalDate endDate,
+      @Nullable Date startDate,
+      @Nullable Date endDate,
       @Nullable String groupBy,
       @Nullable List<KeyUsage> keyUsages,
       @Nullable List<KeyUsage> keyAndDayUsages) {
@@ -58,13 +57,13 @@ public class AdminUsageReport {
     return totalUsage;
   }
 
-  /** @return Start of the report period. */
-  public @Nullable LocalDate getStartDate() {
+  /** @return Start day of the report period, as midnight UTC of that day. */
+  public @Nullable Date getStartDate() {
     return startDate;
   }
 
-  /** @return End of the report period. */
-  public @Nullable LocalDate getEndDate() {
+  /** @return End day of the report period, as midnight UTC of that day. */
+  public @Nullable Date getEndDate() {
     return endDate;
   }
 

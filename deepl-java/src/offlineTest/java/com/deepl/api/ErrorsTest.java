@@ -58,7 +58,7 @@ class ErrorsTest {
     DeepLAdminClient admin =
         OfflineClient.createAdminClient(wm, new DeepLAdminClientOptions().setMaxRetries(0));
     AuthorizationException thrown =
-        assertThrows(AuthorizationException.class, admin::getDeveloperKeys);
+        assertThrows(AuthorizationException.class, admin::listDeveloperKeys);
     assertEquals(401, thrown.getHttpStatusCode());
   }
 

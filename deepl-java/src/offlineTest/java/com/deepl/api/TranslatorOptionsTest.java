@@ -66,7 +66,7 @@ class TranslatorOptionsTest {
             wm,
             new DeepLAdminClientOptions()
                 .setHeaders(Collections.singletonMap("Authorization", "Bearer token")))
-        .getDeveloperKeys();
+        .listDeveloperKeys();
   }
 
   @Test
@@ -90,7 +90,7 @@ class TranslatorOptionsTest {
             new DeepLAdminClientOptions()
                 .setServerUrl("http://example.invalid")
                 .setProxyUrl("http://127.0.0.1:" + wm.getPort()))
-        .getDeveloperKeys();
+        .listDeveloperKeys();
   }
 
   @ParameterizedTest

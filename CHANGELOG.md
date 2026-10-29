@@ -79,17 +79,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   term, so a term containing a newline throws an `IllegalArgumentException`.
 - Added the `DeepLAdminClient` class for the Admin API. It must be created with
   an admin API key and supports managing developer keys
-  (`createDeveloperKey()`, `getDeveloperKeys()`, `deactivateDeveloperKey()`,
+  (`createDeveloperKey()`, `listDeveloperKeys()`, `deactivateDeveloperKey()`,
   `renameDeveloperKey()`, `setDeveloperKeyUsageLimits()`) and retrieving usage
-  analytics (`getUsageAnalytics()`, `getCustomTagUsageAnalytics()`, with
-  `AdminUsageAnalyticsOptions` and `CustomTagUsageAnalyticsOptions`, which take
-  the `AdminUsageGroupBy` and `CustomTagUsageAggregateBy` enums; the client is
-  configured with `DeepLAdminClientOptions`). Responses
+  analytics (`getUsageAnalytics()` with an optional `groupBy` argument and
+  `getCustomTagUsageAnalytics()` with optional `aggregateBy` and `page`
+  arguments; `groupBy` and `aggregateBy` take the `AdminUsageGroupBy` and
+  `CustomTagUsageAggregateBy` enums or a string, sent as given; the client is
+  configured with `DeepLAdminClientOptions`). `createDeveloperKey()` takes a
+  `CreateDeveloperKeyOptions` with the label; the other key functions have
+  overloads taking `DeactivateDeveloperKeyOptions`,
+  `RenameDeveloperKeyOptions` and `SetDeveloperKeyUsageLimitsOptions`. All
+  four support `setExtraBodyParameters()`, added to the JSON body last.
+  Responses
   are `DeveloperKey`, `DeveloperKeyUsageLimits`, `AdminUsageReport`,
   `AdminUsageBreakdown` (including `getSpeechToSpeechMinutes()`), `KeyUsage`,
   `CustomTagUsageReport`, `CustomTagUsage` and `CustomTagUsageBreakdown`.
-  The analytics functions take `LocalDate` or `"YYYY-MM-DD"` strings, which are
-  UTC calendar days; both the start and the end day are included.
+  The analytics functions take `LocalDate`, `"YYYY-MM-DD"` strings, or `Date`
+  and `Instant` values, of which the UTC day is sent; both the start and the
+  end day are included. Report dates are `Date` values at midnight UTC.
   `setDeveloperKeyUsageLimits()` takes a `DeveloperKeyUsageLimitsUpdate` and
   changes only the limits set in it, including the speech-to-speech limit.
 - Added the API Pro fields of `GET /v2/usage` to `Usage`:
