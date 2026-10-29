@@ -1113,7 +1113,7 @@ public class Translator {
    * @param params List of HTTP parameters to add to.
    * @param extraBodyParameters Map of extra parameters to add (can be null).
    */
-  private static void addExtraBodyParameters(
+  static void addExtraBodyParameters(
       ArrayList<KeyValuePair<String, String>> params, Map<String, String> extraBodyParameters) {
     if (extraBodyParameters != null) {
       params.removeIf(pair -> extraBodyParameters.containsKey(pair.getKey()));

@@ -75,6 +75,15 @@ public class DeepLClient extends Translator {
     super(authKey, options);
   }
 
+  /**
+   * Improves the given text, optionally in the given writing style or tone.
+   *
+   * @param text Text to improve, must not be empty.
+   * @param targetLang Optional language code the improved text should be in, e.g. "EN-US".
+   * @param options Optional {@link TextRephraseOptions}, may be <code>null</code>.
+   * @throws IllegalArgumentException If text is empty.
+   * @throws DeepLException If the request fails or the response contains no improvement.
+   */
   public WriteResult rephraseText(
       String text, @Nullable String targetLang, @Nullable TextRephraseOptions options)
       throws InterruptedException, DeepLException {
@@ -83,16 +92,26 @@ public class DeepLClient extends Translator {
     return this.rephraseText(texts, targetLang, options).get(0);
   }
 
+  /**
+   * Improves the given texts, optionally in the given writing style or tone.
+   *
+   * @param texts Texts to improve, none may be empty.
+   * @param targetLang Optional language code the improved texts should be in, e.g. "EN-US".
+   * @param options Optional {@link TextRephraseOptions}, may be <code>null</code>.
+   * @return One {@link WriteResult} per input text, in the same order.
+   * @throws IllegalArgumentException If a text is empty.
+   * @throws DeepLException If the request fails or the response does not contain one improvement
+   *     per input text.
+   */
   public List<WriteResult> rephraseText(
       List<String> texts, @Nullable String targetLang, @Nullable TextRephraseOptions options)
       throws InterruptedException, DeepLException {
-    Iterable<KeyValuePair<String, String>> params =
+    ArrayList<KeyValuePair<String, String>> params =
         createWriteHttpParams(texts, targetLang, options);
-    HttpResponse response =
-        httpClientWrapper.sendRequestWithBackoff(
-            String.format("/%s/write/rephrase", apiVersion), params);
-    checkResponse(response, false, false);
-    return jsonParser.parseWriteResult(response.getBody());
+    if (options != null) {
+      addExtraBodyParameters(params, options.getExtraBodyParameters());
+    }
+    return sendWriteRequest("rephrase", params, texts.size());
   }
 
   /**
@@ -100,21 +119,45 @@ public class DeepLClient extends Translator {
    *
    * @param text Text to correct, must not be empty.
    * @param targetLang Optional language code the corrected text should be in, e.g. "EN-US".
+   * @param options Optional {@link CorrectTextOptions}, may be <code>null</code>.
    * @throws IllegalArgumentException If text is empty.
+   * @throws DeepLException If the request fails or the response contains no correction.
    */
-  public WriteResult correctText(String text, @Nullable String targetLang)
+  public WriteResult correctText(
+      String text, @Nullable String targetLang, @Nullable CorrectTextOptions options)
       throws InterruptedException, DeepLException {
     ArrayList<String> texts = new ArrayList<>();
     texts.add(text);
-    return this.correctText(texts, targetLang).get(0);
+    return this.correctText(texts, targetLang, options).get(0);
   }
 
-  public List<WriteResult> correctText(List<String> texts, @Nullable String targetLang)
+  /**
+   * Corrects grammar, spelling and punctuation of the given texts without rewriting them.
+   *
+   * @param texts Texts to correct, none may be empty.
+   * @param targetLang Optional language code the corrected texts should be in, e.g. "EN-US".
+   * @param options Optional {@link CorrectTextOptions}, may be <code>null</code>.
+   * @return One {@link WriteResult} per input text, in the same order.
+   * @throws IllegalArgumentException If a text is empty.
+   * @throws DeepLException If the request fails or the response does not contain one correction per
+   *     input text.
+   */
+  public List<WriteResult> correctText(
+      List<String> texts, @Nullable String targetLang, @Nullable CorrectTextOptions options)
       throws InterruptedException, DeepLException {
-    Iterable<KeyValuePair<String, String>> params = createWriteHttpParams(texts, targetLang, null);
+    ArrayList<KeyValuePair<String, String>> params = createWriteHttpParams(texts, targetLang, null);
+    if (options != null) {
+      addExtraBodyParameters(params, options.getExtraBodyParameters());
+    }
+    return sendWriteRequest("correct", params, texts.size());
+  }
+
+  private List<WriteResult> sendWriteRequest(
+      String operation, Iterable<KeyValuePair<String, String>> params, int textCount)
+      throws InterruptedException, DeepLException {
     HttpResponse response =
         httpClientWrapper.sendRequestWithBackoff(
-            String.format("/%s/write/correct", apiVersion), params);
+            String.format("/%s/write/%s", apiVersion, operation), params);
     checkResponse(response, false, false);
     return jsonParser.parseWriteResult(response.getBody());
   }

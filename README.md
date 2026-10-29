@@ -293,13 +293,30 @@ styles and tones will fail. The current list of supported languages can be found
 [API documentation][api-docs]. We plan to also expose this information via an API endpoint
 in the future.
 
-You can use the predefined constants in the library to use a style:
+`setWritingStyle()` and `setTone()` take the `WritingStyle` and `WritingTone`
+enums or a string, which is sent as given:
 
 ```java
-TextRephraseOptions options = (new TextRephraseOptions()).setWritingStyle(WritingStyle.Business.getValue());
+TextRephraseOptions options = (new TextRephraseOptions()).setWritingStyle(WritingStyle.Business);
 WriteResult result = client.rephraseText("A rainbouw has seven colours.", "EN-US", options);
 System.out.println(result.getText);
 ```
+
+`TextRephraseOptions` also supports `setExtraBodyParameters()`: a map of
+additional parameters added last to the request body. They replace built-in
+parameters with the same name.
+
+To correct grammar, spelling and punctuation without rewriting the text, use
+`correctText()`. It takes a string or a list of strings, an optional target
+language and an optional `CorrectTextOptions`, which supports
+`setExtraBodyParameters()`:
+
+```java
+WriteResult result = client.correctText("A rainbouw has seven colours.", "EN-US", null);
+System.out.println(result.getText());
+```
+
+Both functions return one `WriteResult` per input text.
 
 ### Translating documents
 

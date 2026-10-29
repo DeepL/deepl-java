@@ -10,7 +10,8 @@ import org.junit.jupiter.api.Test;
 class CorrectTextTest {
   @Test
   void sendsPostV2WriteCorrectAndParsesTheResult() throws Exception {
-    WriteResult result = RealApiClient.createClient().correctText(Fixtures.EXAMPLE_TEXT, "EN-GB");
+    WriteResult result =
+        RealApiClient.createClient().correctText(Fixtures.EXAMPLE_TEXT, "EN-GB", null);
 
     assertFalse(result.getText().isEmpty());
     assertFalse(result.getDetectedSourceLanguage().isEmpty());

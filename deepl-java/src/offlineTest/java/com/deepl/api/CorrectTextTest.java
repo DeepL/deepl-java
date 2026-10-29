@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.github.tomakehurst.wiremock.matching.StringValuePattern;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -35,13 +36,23 @@ class CorrectTextTest {
   @Test
   void sendsTextAndStandardizedTargetLanguage() throws Exception {
     expectBody(FormBody.of("target_lang", "en-GB", "text", "a b"));
-    client.correctText("a b", "EN-gb");
+    client.correctText("a b", "EN-gb", null);
   }
 
   @Test
   void sendsNoTargetLanguageWhenItIsNull() throws Exception {
     expectBody(FormBody.of("text", "Hello"));
-    client.correctText("Hello", null);
+    client.correctText("Hello", null, null);
+  }
+
+  @Test
+  void sendsExtraBodyParametersLastReplacingSameKeyFields() throws Exception {
+    expectBody(FormBody.of("text", "Hi", "target_lang", "de"));
+    client.correctText(
+        "Hi",
+        "en-GB",
+        new CorrectTextOptions()
+            .setExtraBodyParameters(Collections.singletonMap("target_lang", "de")));
   }
 
   @Test
@@ -54,19 +65,19 @@ class CorrectTextTest {
                     "{\"improvements\":[{\"text\":\"x\",\"detected_source_language\":\"EN\","
                         + "\"target_language\":\"EN-GB\"},{\"text\":\"y\","
                         + "\"detected_source_language\":\"DE\",\"target_language\":\"EN-GB\"}]}")));
-    List<WriteResult> results = client.correctText(Arrays.asList("a", "b"), "en-GB");
+    List<WriteResult> results = client.correctText(Arrays.asList("a", "b"), "en-GB", null);
     assertEquals(2, results.size());
   }
 
   @Test
   void parsesTheDetectedSourceLanguageInStandardForm() throws Exception {
     wm.stubFor(post("/v2/write/correct").willReturn(okJson(REPLY)));
-    WriteResult result = client.correctText("Hello", "en-GB");
+    WriteResult result = client.correctText("Hello", "en-GB", null);
     assertEquals("en", result.getDetectedSourceLanguage());
   }
 
   @Test
   void throwsIllegalArgumentWhenTextIsEmpty() {
-    assertThrows(IllegalArgumentException.class, () -> client.correctText("", null));
+    assertThrows(IllegalArgumentException.class, () -> client.correctText("", null, null));
   }
 }

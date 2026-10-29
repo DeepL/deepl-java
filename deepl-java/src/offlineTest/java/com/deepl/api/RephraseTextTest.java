@@ -11,7 +11,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.github.tomakehurst.wiremock.matching.StringValuePattern;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -68,6 +70,30 @@ class RephraseTextTest {
         new TextRephraseOptions()
             .setWritingStyle(WritingStyle.Business.getValue())
             .setTone(WritingTone.Friendly.getValue()));
+  }
+
+  @Test
+  void sendsWritingStyleAndToneEnumValues() throws Exception {
+    expectBody(FormBody.of("writing_style", "prefer_simple", "tone", "diplomatic", "text", "Hi"));
+    client.rephraseText(
+        "Hi",
+        null,
+        new TextRephraseOptions()
+            .setWritingStyle(WritingStyle.PreferSimple)
+            .setTone(WritingTone.Diplomatic));
+  }
+
+  @Test
+  void sendsExtraBodyParametersLastReplacingSameKeyFields() throws Exception {
+    expectBody(
+        FormBody.of("target_lang", "en-GB", "text", "Hi", "tone", "friendly", "beta_flag", "x y"));
+    Map<String, String> extra = new LinkedHashMap<>();
+    extra.put("tone", "friendly");
+    extra.put("beta_flag", "x y");
+    client.rephraseText(
+        "Hi",
+        "en-GB",
+        new TextRephraseOptions().setTone(WritingTone.Confident).setExtraBodyParameters(extra));
   }
 
   @Test

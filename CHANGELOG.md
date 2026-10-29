@@ -124,7 +124,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   target language support.
 - Added `correctText()` to the `DeepLClient` class, which corrects grammar, spelling
   and punctuation using the `/v2/write/correct` endpoint. It accepts a single
-  text or a list of texts and an optional target language.
+  text or a list of texts, an optional target language and an optional
+  `CorrectTextOptions`, which supports `setExtraBodyParameters()`.
+- Added `TextRephraseOptions.setWritingStyle(WritingStyle)` and
+  `setTone(WritingTone)` overloads; the string setters remain.
+- `TextRephraseOptions` now extends `BaseRequestOptions` and supports
+  `setExtraBodyParameters()`, added last to the `rephraseText()` request body.
 
 ### Changed
 - The bare target languages `en` and `pt` are no longer rejected
