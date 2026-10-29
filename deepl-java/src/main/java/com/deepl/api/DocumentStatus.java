@@ -11,8 +11,9 @@ public class DocumentStatus {
   @SerializedName(value = "document_id")
   private final String documentId;
 
+  // Kept as the wire string so that a status value unknown to this version is not lost.
   @SerializedName(value = "status")
-  private final StatusCode status;
+  private final @Nullable String status;
 
   @SerializedName(value = "billed_characters")
   private final @Nullable Long billedCharacters;
@@ -23,7 +24,10 @@ public class DocumentStatus {
   @SerializedName(value = "error_message")
   private final @Nullable String errorMessage;
 
-  /** Status code indicating status of the document translation. */
+  /**
+   * Status code indicating status of the document translation. The API may add values; see {@link
+   * #getStatusString()}.
+   */
   public enum StatusCode {
     /** Document translation has not yet started, but will begin soon. */
     @SerializedName("queued")
@@ -48,7 +52,7 @@ public class DocumentStatus {
       @Nullable Long secondsRemaining,
       @Nullable String errorMessage) {
     this.documentId = documentId;
-    this.status = status;
+    this.status = statusValue(status);
     this.billedCharacters = billedCharacters;
     this.secondsRemaining = secondsRemaining;
     this.errorMessage = errorMessage;
@@ -59,17 +63,44 @@ public class DocumentStatus {
     return documentId;
   }
 
-  /** @return Status of the document translation. */
-  public StatusCode getStatus() {
+  /**
+   * @return Status of the document translation, or <code>null</code> if the API returned a status
+   *     not in {@link StatusCode}; {@link #getStatusString()} returns it as sent.
+   */
+  public @Nullable StatusCode getStatus() {
+    if (status == null) {
+      return null;
+    }
+    switch (status) {
+      case "queued":
+        return StatusCode.Queued;
+      case "translating":
+        return StatusCode.Translating;
+      case "done":
+        return StatusCode.Done;
+      case "error":
+        return StatusCode.Error;
+      default:
+        return null;
+    }
+  }
+
+  /**
+   * @return Status of the document translation as the API sent it, for example <code>"translating"
+   *     </code>, including values not in {@link StatusCode}; <code>null</code> if the response had
+   *     no status.
+   */
+  public @Nullable String getStatusString() {
     return status;
   }
 
   /**
    * @return <code>true</code> if no error has occurred during document translation, otherwise
-   *     <code>false</code>.
+   *     <code>false</code>. Also <code>true</code> while the document is queued or translating, and
+   *     for a status not in {@link StatusCode}.
    */
   public boolean ok() {
-    return status != null && status != StatusCode.Error;
+    return status != null && !status.equals("error");
   }
 
   /**
@@ -77,7 +108,25 @@ public class DocumentStatus {
    *     false</code>.
    */
   public boolean done() {
-    return status != null && status == StatusCode.Done;
+    return "done".equals(status);
+  }
+
+  private static @Nullable String statusValue(@Nullable StatusCode status) {
+    if (status == null) {
+      return null;
+    }
+    switch (status) {
+      case Queued:
+        return "queued";
+      case Translating:
+        return "translating";
+      case Done:
+        return "done";
+      case Error:
+        return "error";
+      default:
+        return null;
+    }
   }
 
   /**

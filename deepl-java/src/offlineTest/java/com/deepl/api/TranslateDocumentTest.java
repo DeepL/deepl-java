@@ -294,9 +294,9 @@ class TranslateDocumentTest {
   }
 
   @Test
-  void sendsStreamUploadsToThePathWithATrailingSlash() throws Exception {
+  void sendsStreamUploadsToThePathWithoutATrailingSlash() throws Exception {
     expectUpload(
-        "/v2/document/",
+        "/v2/document",
         "stream.txt",
         "abc".getBytes(StandardCharsets.UTF_8),
         fields("target_lang", "de"));
@@ -306,7 +306,7 @@ class TranslateDocumentTest {
             "stream.txt",
             null,
             "de");
-    assertPartNames("/v2/document/", "file", "target_lang");
+    assertPartNames("/v2/document", "file", "target_lang");
     assertEquals("D1", handle.getDocumentId());
     assertEquals("K1", handle.getDocumentKey());
   }
@@ -427,7 +427,7 @@ class TranslateDocumentTest {
     File input = writeInput("example.txt", "proton beam");
     File output = tempDir.resolve("out.txt").toFile();
     expectUpload(
-        "/v2/document/",
+        "/v2/document",
         "example.txt",
         "proton beam".getBytes(StandardCharsets.UTF_8),
         fields("source_lang", "en", "target_lang", "de"));
@@ -440,7 +440,7 @@ class TranslateDocumentTest {
             .withRequestBody(FormBody.of("document_key", "K1"))
             .willReturn(aResponse().withStatus(200).withBody("Protonenstrahl")));
     DocumentStatus status = client.translateDocument(input, output, "en", "de");
-    assertPartNames("/v2/document/", "file", "source_lang", "target_lang");
+    assertPartNames("/v2/document", "file", "source_lang", "target_lang");
     assertTrue(status.done());
     assertEquals("Protonenstrahl", Fixtures.readFile(output));
   }
@@ -450,7 +450,7 @@ class TranslateDocumentTest {
     File input = writeInput("example.txt", "a");
     File output = tempDir.resolve("out.txt").toFile();
     expectUpload(
-        "/v2/document/",
+        "/v2/document",
         "example.txt",
         "a".getBytes(StandardCharsets.UTF_8),
         fields("target_lang", "de", "enable_watermark", "true"));
@@ -459,13 +459,13 @@ class TranslateDocumentTest {
         post("/v2/document/D1/result").willReturn(aResponse().withStatus(200).withBody("b")));
     client.translateDocument(
         input, output, null, "de", new DocumentTranslationOptions().setEnableWatermark(true));
-    assertPartNames("/v2/document/", "file", "target_lang", "enable_watermark");
+    assertPartNames("/v2/document", "file", "target_lang", "enable_watermark");
   }
 
   @Test
-  void uploadsStreamsToThePathWithATrailingSlashWhenTranslatingStreams() throws Exception {
+  void uploadsStreamsToThePathWithoutATrailingSlashWhenTranslatingStreams() throws Exception {
     expectUpload(
-        "/v2/document/",
+        "/v2/document",
         "stream.txt",
         "abc".getBytes(StandardCharsets.UTF_8),
         fields("target_lang", "de"));
@@ -480,7 +480,7 @@ class TranslateDocumentTest {
         null,
         "de",
         null);
-    assertPartNames("/v2/document/", "file", "target_lang");
+    assertPartNames("/v2/document", "file", "target_lang");
     assertEquals("xyz", new String(output.toByteArray(), StandardCharsets.UTF_8));
   }
 
@@ -488,7 +488,7 @@ class TranslateDocumentTest {
   void throwsDocumentTranslationExceptionWithTheHandleWhenTheTranslationFails() throws Exception {
     File input = writeInput("example.txt", "a");
     File output = tempDir.resolve("out.txt").toFile();
-    wm.stubFor(post("/v2/document/").willReturn(okJson(HANDLE)));
+    wm.stubFor(post("/v2/document").willReturn(okJson(HANDLE)));
     wm.stubFor(
         post("/v2/document/D1")
             .willReturn(
@@ -509,7 +509,7 @@ class TranslateDocumentTest {
     File input = writeInput("example.xyz", "a");
     File output = tempDir.resolve("out.xyz").toFile();
     wm.stubFor(
-        post("/v2/document/")
+        post("/v2/document")
             .willReturn(aResponse().withStatus(400).withBody("{\"message\":\"Invalid file\"}")));
     DocumentTranslationException thrown =
         assertThrows(
@@ -607,6 +607,18 @@ class TranslateDocumentTest {
   }
 
   @Test
+  void sendsLanguageCodesWithOnlyTheBaseSubtagLowerCased() throws Exception {
+    File input = writeInput("example.txt", "a");
+    expectUpload(
+        "/v2/document",
+        "example.txt",
+        "a".getBytes(StandardCharsets.UTF_8),
+        fields("source_lang", "en", "target_lang", "zh-Hans"));
+    client.translateDocumentUpload(input, "EN", "ZH-Hans");
+    assertPartNames("/v2/document", "file", "source_lang", "target_lang");
+  }
+
+  @Test
   void sendsTheFilenameOptionInPlaceOfTheFileName() throws Exception {
     File input = writeInput("example.txt", "a");
     expectUpload(
@@ -622,7 +634,7 @@ class TranslateDocumentTest {
   @Test
   void sendsTheFilenameOptionInPlaceOfTheFileNameArgumentOfAStreamUpload() throws Exception {
     expectUpload(
-        "/v2/document/",
+        "/v2/document",
         "renamed.txt",
         "abc".getBytes(StandardCharsets.UTF_8),
         fields("target_lang", "de"));
@@ -632,7 +644,58 @@ class TranslateDocumentTest {
         null,
         "de",
         new DocumentTranslationOptions().setFilename("renamed.txt"));
-    assertPartNames("/v2/document/", "file", "target_lang");
+    assertPartNames("/v2/document", "file", "target_lang");
+  }
+
+  @Test
+  void urlEncodesTheDocumentIdInTheStatusPath() throws Exception {
+    wm.stubFor(
+        post("/v2/document/D%201%2Fx")
+            .withRequestBody(FormBody.of("document_key", "K1"))
+            .willReturn(okJson(DONE)));
+    DocumentStatus status = client.translateDocumentGetStatus(new DocumentHandle("D 1/x", "K1"));
+    assertTrue(status.done());
+  }
+
+  @Test
+  void urlEncodesTheDocumentIdInTheDownloadPath() throws Exception {
+    wm.stubFor(
+        post("/v2/document/D%201%2Fx/result")
+            .withRequestBody(FormBody.of("document_key", "K1"))
+            .willReturn(aResponse().withStatus(200).withBody("b")));
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    client.translateDocumentDownload(new DocumentHandle("D 1/x", "K1"), output);
+    assertEquals("b", new String(output.toByteArray(), StandardCharsets.UTF_8));
+  }
+
+  @Test
+  void keepsAnUnknownStatusAsOkAndNotDone() throws Exception {
+    wm.stubFor(
+        post("/v2/document/D1")
+            .willReturn(okJson("{\"document_id\":\"D1\",\"status\":\"paused\"}")));
+    DocumentStatus status = client.translateDocumentGetStatus(HANDLE_OBJECT);
+    assertEquals("paused", status.getStatusString());
+    assertNull(status.getStatus());
+    assertTrue(status.ok());
+    assertFalse(status.done());
+  }
+
+  @Test
+  void keepsPollingAfterAnUnknownStatus() throws Exception {
+    wm.stubFor(
+        post("/v2/document/D1")
+            .inScenario("unknown")
+            .whenScenarioStateIs(Scenario.STARTED)
+            .willSetStateTo("done")
+            .willReturn(okJson("{\"document_id\":\"D1\",\"status\":\"paused\"}")));
+    wm.stubFor(
+        post("/v2/document/D1")
+            .inScenario("unknown")
+            .whenScenarioStateIs("done")
+            .willReturn(okJson(DONE)));
+    DocumentStatus status = client.translateDocumentWaitUntilDone(HANDLE_OBJECT);
+    assertTrue(status.done());
+    assertEquals("done", status.getStatusString());
   }
 
   @Test
@@ -652,7 +715,7 @@ class TranslateDocumentTest {
       throws Exception {
     File input = writeInput("example.txt", "a");
     File output = tempDir.resolve("out.txt").toFile();
-    wm.stubFor(post("/v2/document/").willReturn(okJson(HANDLE)));
+    wm.stubFor(post("/v2/document").willReturn(okJson(HANDLE)));
     wm.stubFor(
         post("/v2/document/D1")
             .willReturn(okJson("{\"document_id\":\"D1\",\"status\":\"queued\"}")));

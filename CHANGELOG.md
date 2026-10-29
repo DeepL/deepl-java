@@ -46,6 +46,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   string as given.
 - Added `DocumentTranslationOptions.setStyleRule(String)`,
   `setTranslationMemory(String)` and `setGlossaryIds(IGlossary...)`.
+- Added `DocumentStatus.getStatusString()`, the status as the API sent it,
+  including values not in `DocumentStatus.StatusCode`.
 - Added `TextResult.getTagHandlingVersion()`, the tag handling version the API
   used (`tag_handling_version`); `null` when the response does not contain it.
 - Added style profile support to `DeepLClient` (`/v3/style_profiles`):
@@ -133,6 +135,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   They will be removed in the next major version.
 
 ### Fixed
+- A document status the library does not know yet no longer stops
+  `translateDocumentWaitUntilDone()` and `translateDocument()` with
+  "Unknown error": it counts as in progress and polling continues.
+  `DocumentStatus.getStatus()` returns `null` for it.
+- `translateDocumentGetStatus()` and `translateDocumentDownload()` now
+  URL-encode the document ID in the request path.
+- `translateDocumentUpload()` and `translateDocument()` with an input stream
+  now post to `/v2/document` instead of `/v2/document/`.
+- Document translation now sends the source and target language codes with
+  only the language part lower-cased, for example `zh-Hans`; it sent
+  `zh-HANS` before.
 - `translateText()` no longer fails when a translation in the response has no
   `billed_characters` (`getBilledCharacters()` returns 0) or a `null`
   `model_type_used` (`getModelTypeUsed()` returns `null`).

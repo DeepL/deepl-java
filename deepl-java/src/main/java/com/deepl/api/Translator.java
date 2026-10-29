@@ -498,7 +498,7 @@ public class Translator {
         createHttpParams(sourceLang, targetLang, options);
     HttpResponse response =
         httpClientWrapper.uploadWithBackoff(
-            String.format("/%s/document/", apiVersion),
+            String.format("/%s/document", apiVersion),
             params,
             uploadFileName(fileName, options),
             inputStream);
@@ -531,7 +531,8 @@ public class Translator {
       throws DeepLException, InterruptedException {
     ArrayList<KeyValuePair<String, String>> params = new ArrayList<>();
     params.add(new KeyValuePair<>("document_key", handle.getDocumentKey()));
-    String relativeUrl = String.format("/%s/document/%s", apiVersion, handle.getDocumentId());
+    String relativeUrl =
+        String.format("/%s/document/%s", apiVersion, encodePathSegment(handle.getDocumentId()));
     HttpResponse response = httpClientWrapper.sendRequestWithBackoff(relativeUrl, params);
     checkResponse(response, false, false);
     return jsonParser.parseDocumentStatus(response.getBody());
@@ -648,7 +649,8 @@ public class Translator {
     ArrayList<KeyValuePair<String, String>> params = new ArrayList<>();
     params.add(new KeyValuePair<>("document_key", handle.getDocumentKey()));
     String relativeUrl =
-        String.format("/%s/document/%s/result", apiVersion, handle.getDocumentId());
+        String.format(
+            "/%s/document/%s/result", apiVersion, encodePathSegment(handle.getDocumentId()));
     try (HttpResponseStream response = httpClientWrapper.downloadWithBackoff(relativeUrl, params)) {
       checkResponse(response);
       assert response.getBody() != null;
@@ -838,7 +840,8 @@ public class Translator {
             targetLang,
             formality,
             options != null ? options.getGlossaryId() : null,
-            options != null ? options.getGlossaryIds() : null);
+            options != null ? options.getGlossaryIds() : null,
+            true);
     texts.forEach(
         (text) -> {
           if (text.isEmpty()) throw new IllegalArgumentException("text must not be empty");
@@ -944,11 +947,12 @@ public class Translator {
     }
     ArrayList<KeyValuePair<String, String>> params =
         createHttpParamsCommonWithFormalityValue(
-            sourceLang,
-            targetLang,
+            lowerCaseBaseSubtag(sourceLang),
+            lowerCaseBaseSubtag(targetLang),
             formality,
             options != null ? options.getGlossaryId() : null,
-            options != null ? options.getGlossaryIds() : null);
+            options != null ? options.getGlossaryIds() : null,
+            false);
 
     if (options != null) {
       if (options.getStyleId() != null) {
@@ -1003,7 +1007,7 @@ public class Translator {
       @Nullable String glossaryId,
       @Nullable List<String> glossaryIds) {
     return createHttpParamsCommonWithFormalityValue(
-        sourceLang, targetLang, formalityValue(formality), glossaryId, glossaryIds);
+        sourceLang, targetLang, formalityValue(formality), glossaryId, glossaryIds, true);
   }
 
   private static ArrayList<KeyValuePair<String, String>> createHttpParamsCommonWithFormalityValue(
@@ -1011,9 +1015,12 @@ public class Translator {
       String targetLang,
       @Nullable String formality,
       @Nullable String glossaryId,
-      @Nullable List<String> glossaryIds) {
-    targetLang = LanguageCode.standardize(targetLang);
-    sourceLang = sourceLang == null ? null : LanguageCode.standardize(sourceLang);
+      @Nullable List<String> glossaryIds,
+      boolean standardizeLanguages) {
+    if (standardizeLanguages) {
+      targetLang = LanguageCode.standardize(targetLang);
+      sourceLang = sourceLang == null ? null : LanguageCode.standardize(sourceLang);
+    }
     checkValidLanguages(sourceLang, targetLang);
 
     ArrayList<KeyValuePair<String, String>> params = new ArrayList<>();
@@ -1048,6 +1055,20 @@ public class Translator {
     }
 
     return params;
+  }
+
+  /**
+   * Lower-cases the base subtag of a language code and keeps the rest as given, so <code>"EN-gb"
+   * </code> becomes <code>"en-gb"</code> and <code>"zh-Hans"</code> stays <code>"zh-Hans"</code>.
+   */
+  private static @Nullable String lowerCaseBaseSubtag(@Nullable String langCode) {
+    if (langCode == null) {
+      return null;
+    }
+    int dash = langCode.indexOf('-');
+    return dash < 0
+        ? langCode.toLowerCase(Locale.ENGLISH)
+        : langCode.substring(0, dash).toLowerCase(Locale.ENGLISH) + langCode.substring(dash);
   }
 
   /** The wire value of the given formality, or <code>null</code> if it is <code>null</code>. */
@@ -1164,6 +1185,14 @@ public class Translator {
   private static String uploadFileName(
       String fileName, @Nullable DocumentTranslationOptions options) {
     return options != null && options.getFilename() != null ? options.getFilename() : fileName;
+  }
+
+  private static String encodePathSegment(String value) throws DeepLException {
+    try {
+      return ApiClientHelper.encodeQueryComponent(value);
+    } catch (UnsupportedEncodingException exception) {
+      throw new DeepLException("Error while URL-encoding request", exception);
+    }
   }
 
   private int calculateDocumentWaitTimeMillis(Long secondsRemaining) {

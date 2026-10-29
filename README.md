@@ -349,7 +349,14 @@ the following functions directly:
 `translateDocumentStatus()` is deprecated; use `translateDocumentGetStatus()`
 instead. `translateDocumentWaitUntilDone()` polls the status every 5 seconds
 until the document is done; an overload taking a `Duration` timeout throws a
-`DeepLException` when the timeout expires.
+`DeepLException` when the timeout expires. The returned `DocumentStatus` has
+`getStatus()` (a `DocumentStatus.StatusCode`, or `null` for a status the
+library does not know yet), `getStatusString()` (the status as the API sent
+it), `ok()` (not failed) and `done()` (succeeded). An unknown status counts as
+in progress, so waiting continues.
+
+The source and target language codes are sent with the language part
+lower-cased and the rest as given, for example `zh-Hans`.
 
 #### Document translation options
 
