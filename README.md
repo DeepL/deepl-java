@@ -566,7 +566,9 @@ entries, but instead only the number of entries in the `entry_count` property.
 To list the entries contained within a stored glossary, use
 `getMultilingualGlossaryDictionaryEntries()` providing either the 
 `MultilingualGlossaryInfo` object or glossary ID and either a 
-`MultilingualGlossaryDictionaryInfo` or source and target language pair:
+`MultilingualGlossaryDictionaryInfo` or source and target language pair. If the
+glossary has no dictionary for that language pair, a `NotFoundException` is
+thrown:
 
 ```java
 class Example {  // Continuing class Example from above

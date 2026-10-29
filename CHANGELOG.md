@@ -170,6 +170,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   They will be removed in the next major version.
 
 ### Fixed
+- `replaceMultilingualGlossaryDictionary()` and
+  `replaceMultilingualGlossaryDictionaryFromCsv()` now send a JSON body, the
+  only content type the endpoint accepts, instead of a form body.
+- `getMultilingualGlossaryDictionaryEntries()` now throws `NotFoundException`
+  (`GlossaryNotFoundException`) if the response contains no dictionary and
+  `DeepLException` if it is malformed, instead of an
+  `IndexOutOfBoundsException` or `NullPointerException`.
+- `createMultilingualGlossary()`, `createMultilingualGlossaryFromCsv()` and
+  `listMultilingualGlossaries()` now throw `GlossaryNotFoundException` on HTTP
+  404, like the other multilingual glossary methods.
+- Multilingual glossary IDs are now URL-encoded in request paths.
 - `rephraseText()` raises a `DeepLException` when the response does not
   contain one complete result per input text. Before, the single-text
   overload threw an `IndexOutOfBoundsException` or returned `null`, and the

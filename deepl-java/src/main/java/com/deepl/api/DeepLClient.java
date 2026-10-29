@@ -196,7 +196,7 @@ public class DeepLClient extends Translator {
     ArrayList<KeyValuePair<String, String>> bodyParams =
         createGlossaryHttpParams(name, glossaryDicts);
     HttpResponse response = httpClientWrapper.sendRequestWithBackoff("/v3/glossaries", bodyParams);
-    checkResponse(response, false, false);
+    checkResponse(response, false, true);
     return jsonParser.parseMultilingualGlossaryInfo(response.getBody());
   }
 
@@ -266,7 +266,7 @@ public class DeepLClient extends Translator {
    */
   public MultilingualGlossaryInfo getMultilingualGlossary(String glossaryId)
       throws DeepLException, InterruptedException {
-    String relativeUrl = String.format("/v3/glossaries/%s", glossaryId);
+    String relativeUrl = multilingualGlossaryPath(glossaryId);
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
     checkResponse(response, false, true);
     return jsonParser.parseMultilingualGlossaryInfo(response.getBody());
@@ -285,7 +285,7 @@ public class DeepLClient extends Translator {
   public List<MultilingualGlossaryInfo> listMultilingualGlossaries()
       throws DeepLException, InterruptedException {
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff("/v3/glossaries");
-    checkResponse(response, false, false);
+    checkResponse(response, false, true);
     return jsonParser.parseMultilingualGlossaryInfoList(response.getBody());
   }
 
@@ -308,14 +308,10 @@ public class DeepLClient extends Translator {
       throws DeepLException, IllegalArgumentException, InterruptedException {
     validateParameter("glossaryId", glossaryId);
     String queryString = createLanguageQueryParams(sourceLanguageCode, targetLanguageCode);
-    String relativeUrl = String.format("/v3/glossaries/%s/entries%s", glossaryId, queryString);
+    String relativeUrl = multilingualGlossaryPath(glossaryId) + "/entries" + queryString;
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
     checkResponse(response, false, true);
-    return jsonParser
-        .parseMultilingualGlossaryDictionaryListResponse(response.getBody())
-        .getDictionaries()
-        .get(0)
-        .getDictionaryEntries();
+    return jsonParser.parseMultilingualGlossaryDictionaryEntries(response.getBody());
   }
 
   /**
@@ -663,7 +659,7 @@ public class DeepLClient extends Translator {
 
     ArrayList<KeyValuePair<String, String>> bodyParams = new ArrayList<>();
     bodyParams.add(new KeyValuePair<>("name", name));
-    String relativeUrl = String.format("/v3/glossaries/%s", glossaryId);
+    String relativeUrl = multilingualGlossaryPath(glossaryId);
     try {
       HttpResponse response =
           httpClientWrapper.sendPatchRequestWithBackoff(relativeUrl, bodyParams);
@@ -736,7 +732,7 @@ public class DeepLClient extends Translator {
    */
   public void deleteMultilingualGlossary(String glossaryId)
       throws DeepLException, InterruptedException {
-    String relativeUrl = String.format("/v3/glossaries/%s", glossaryId);
+    String relativeUrl = multilingualGlossaryPath(glossaryId);
     HttpResponse response = httpClientWrapper.sendDeleteRequestWithBackoff(relativeUrl);
     this.checkResponse(response, false, true);
   }
@@ -769,7 +765,7 @@ public class DeepLClient extends Translator {
       String glossaryId, String sourceLanguageCode, String targetLanguageCode)
       throws DeepLException, InterruptedException, IllegalArgumentException {
     String queryString = createLanguageQueryParams(sourceLanguageCode, targetLanguageCode);
-    String relativeUrl = String.format("/v3/glossaries/%s/dictionaries%s", glossaryId, queryString);
+    String relativeUrl = multilingualGlossaryPath(glossaryId) + "/dictionaries" + queryString;
     HttpResponse response = httpClientWrapper.sendDeleteRequestWithBackoff(relativeUrl);
     this.checkResponse(response, false, true);
   }
@@ -2359,7 +2355,7 @@ public class DeepLClient extends Translator {
             sourceLanguageCode, targetLanguageCode, entries, "csv");
     params.add(new KeyValuePair<>("name", name));
     HttpResponse response = httpClientWrapper.sendRequestWithBackoff("/v3/glossaries", params);
-    checkResponse(response, false, false);
+    checkResponse(response, false, true);
     return jsonParser.parseMultilingualGlossaryInfo(response.getBody());
   }
 
@@ -2379,14 +2375,13 @@ public class DeepLClient extends Translator {
     validateParameter("targetLanguageCode", targetLanguageCode);
     validateParameter("entries", entries);
 
-    ArrayList<KeyValuePair<String, String>> bodyParams = new ArrayList<>();
-    bodyParams.add(new KeyValuePair<>("source_lang", sourceLanguageCode));
-    bodyParams.add(new KeyValuePair<>("target_lang", targetLanguageCode));
-    bodyParams.add(new KeyValuePair<>("entries", entries));
-    bodyParams.add(new KeyValuePair<>("entries_format", entriesFormat));
-
-    String relativeUrl = String.format("/v3/glossaries/%s/dictionaries", glossaryId);
-    HttpResponse response = httpClientWrapper.sendPutRequestWithBackoff(relativeUrl, bodyParams);
+    Map<String, Object> requestData =
+        createGlossaryDictionaryData(
+            sourceLanguageCode, targetLanguageCode, entries, entriesFormat);
+    String jsonBody = jsonParser.getGson().toJson(requestData);
+    String relativeUrl = multilingualGlossaryPath(glossaryId) + "/dictionaries";
+    HttpResponse response =
+        httpClientWrapper.sendJsonRequestWithBackoff("PUT", relativeUrl, jsonBody);
     checkResponse(response, false, true);
     return jsonParser.parseMultilingualGlossaryDictionaryInfo(response.getBody());
   }
@@ -2410,10 +2405,31 @@ public class DeepLClient extends Translator {
     ArrayList<KeyValuePair<String, String>> bodyParams =
         createGlossaryDictionariesHttpParams(
             sourceLanguageCode, targetLanguageCode, entries, entriesFormat);
-    String relativeUrl = String.format("/v3/glossaries/%s", glossaryId);
+    String relativeUrl = multilingualGlossaryPath(glossaryId);
     HttpResponse response = httpClientWrapper.sendPatchRequestWithBackoff(relativeUrl, bodyParams);
     checkResponse(response, false, true);
     return jsonParser.parseMultilingualGlossaryInfo(response.getBody());
+  }
+
+  /** Validates the multilingual glossary ID and builds its URL path with the ID escaped. */
+  private String multilingualGlossaryPath(String glossaryId) throws DeepLException {
+    validateParameter("glossaryId", glossaryId);
+    try {
+      return "/v3/glossaries/" + ApiClientHelper.encodeQueryComponent(glossaryId);
+    } catch (UnsupportedEncodingException exception) {
+      throw new DeepLException("Error while URL-encoding request", exception);
+    }
+  }
+
+  /** Creates the JSON object of one glossary dictionary. */
+  private static Map<String, Object> createGlossaryDictionaryData(
+      String sourceLanguageCode, String targetLanguageCode, String entries, String entriesFormat) {
+    Map<String, Object> data = new LinkedHashMap<>();
+    data.put("source_lang", sourceLanguageCode);
+    data.put("target_lang", targetLanguageCode);
+    data.put("entries", entries);
+    data.put("entries_format", entriesFormat);
+    return data;
   }
 
   /** Creates query string for the source and target languages */

@@ -7,6 +7,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.absent;
 import static com.github.tomakehurst.wiremock.client.WireMock.delete;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.patch;
@@ -36,6 +37,7 @@ class MultilingualGlossariesTest {
   private static final String DICTIONARY =
       "{\"source_lang\":\"en\",\"target_lang\":\"de\",\"entry_count\":3}";
   private static final String FORM = "application/x-www-form-urlencoded";
+  private static final String JSON = "application/json";
 
   @TempDir Path tempDir;
 
@@ -207,17 +209,11 @@ class MultilingualGlossariesTest {
   void sendsTsvEntriesWhenReplacingADictionary() throws Exception {
     wm.stubFor(
         put("/v3/glossaries/g1/dictionaries")
-            .withHeader("Content-Type", equalTo(FORM))
+            .withHeader("Content-Type", equalTo(JSON))
             .withRequestBody(
-                FormBody.of(
-                    "source_lang",
-                    "en",
-                    "target_lang",
-                    "de",
-                    "entries",
-                    "key1\tvalue1",
-                    "entries_format",
-                    "tsv"))
+                equalToJson(
+                    "{\"source_lang\":\"en\",\"target_lang\":\"de\","
+                        + "\"entries\":\"key1\\tvalue1\",\"entries_format\":\"tsv\"}"))
             .willReturn(okJson(DICTIONARY)));
     MultilingualGlossaryDictionaryInfo dictionary =
         client.replaceMultilingualGlossaryDictionary("g1", "en", "de", entries("key1", "value1"));
@@ -229,15 +225,9 @@ class MultilingualGlossariesTest {
     wm.stubFor(
         put("/v3/glossaries/g2/dictionaries")
             .withRequestBody(
-                FormBody.of(
-                    "source_lang",
-                    "en",
-                    "target_lang",
-                    "de",
-                    "entries",
-                    "key1\tvalue1",
-                    "entries_format",
-                    "tsv"))
+                equalToJson(
+                    "{\"source_lang\":\"en\",\"target_lang\":\"de\","
+                        + "\"entries\":\"key1\\tvalue1\",\"entries_format\":\"tsv\"}"))
             .willReturn(okJson(DICTIONARY)));
     client.replaceMultilingualGlossaryDictionary(
         glossaryObject(),
@@ -248,16 +238,11 @@ class MultilingualGlossariesTest {
   void sendsCsvContentWhenReplacingADictionaryFromCsv() throws Exception {
     wm.stubFor(
         put("/v3/glossaries/g1/dictionaries")
+            .withHeader("Content-Type", equalTo(JSON))
             .withRequestBody(
-                FormBody.of(
-                    "source_lang",
-                    "en",
-                    "target_lang",
-                    "de",
-                    "entries",
-                    "key1,value1\nkey2,value2",
-                    "entries_format",
-                    "csv"))
+                equalToJson(
+                    "{\"source_lang\":\"en\",\"target_lang\":\"de\","
+                        + "\"entries\":\"key1,value1\\nkey2,value2\",\"entries_format\":\"csv\"}"))
             .willReturn(okJson(DICTIONARY)));
     client.replaceMultilingualGlossaryDictionaryFromCsv(
         "g1", "en", "de", "key1,value1\nkey2,value2");
@@ -289,15 +274,9 @@ class MultilingualGlossariesTest {
     wm.stubFor(
         put("/v3/glossaries/g1/dictionaries")
             .withRequestBody(
-                FormBody.of(
-                    "source_lang",
-                    "en",
-                    "target_lang",
-                    "de",
-                    "entries",
-                    "key1,value1\n",
-                    "entries_format",
-                    "csv"))
+                equalToJson(
+                    "{\"source_lang\":\"en\",\"target_lang\":\"de\","
+                        + "\"entries\":\"key1,value1\\n\",\"entries_format\":\"csv\"}"))
             .willReturn(okJson(DICTIONARY)));
     client.replaceMultilingualGlossaryDictionaryFromCsv("g1", "en", "de", file);
   }
@@ -425,6 +404,83 @@ class MultilingualGlossariesTest {
         () -> client.replaceMultilingualGlossaryDictionary("g1", "en", "de", entries("a", "b")));
     assertThrows(
         GlossaryNotFoundException.class, () -> client.updateMultilingualGlossaryName("g1", "name"));
+  }
+
+  @Test
+  void throwsNotFoundWhenTheEntriesResponseHasNoDictionary() {
+    wm.stubFor(
+        get(urlEqualTo("/v3/glossaries/g1/entries?source_lang=en&target_lang=de"))
+            .willReturn(okJson("{\"dictionaries\":[]}")));
+    assertThrows(
+        NotFoundException.class,
+        () -> client.getMultilingualGlossaryDictionaryEntries("g1", "en", "de"));
+  }
+
+  @Test
+  void throwsDeepLExceptionWhenTheEntriesResponseIsMalformed() {
+    wm.stubFor(
+        get(urlEqualTo("/v3/glossaries/g1/entries?source_lang=en&target_lang=de"))
+            .willReturn(okJson("{}")));
+    wm.stubFor(
+        get(urlEqualTo("/v3/glossaries/g2/entries?source_lang=en&target_lang=de"))
+            .willReturn(okJson("{\"dictionaries\":[{\"source_lang\":\"en\"}]}")));
+    DeepLException absent =
+        assertThrows(
+            DeepLException.class,
+            () -> client.getMultilingualGlossaryDictionaryEntries("g1", "en", "de"));
+    assertEquals(DeepLException.class, absent.getClass());
+    DeepLException malformed =
+        assertThrows(
+            DeepLException.class,
+            () -> client.getMultilingualGlossaryDictionaryEntries("g2", "en", "de"));
+    assertEquals(DeepLException.class, malformed.getClass());
+  }
+
+  @Test
+  void throwsGlossaryNotFoundWhenCreatingOrListingReturns404() {
+    wm.stubFor(post("/v3/glossaries").willReturn(aResponse().withStatus(404)));
+    wm.stubFor(get("/v3/glossaries").willReturn(aResponse().withStatus(404)));
+    assertThrows(
+        GlossaryNotFoundException.class,
+        () ->
+            client.createMultilingualGlossary(
+                "n",
+                Collections.singletonList(
+                    new MultilingualGlossaryDictionaryEntries("en", "de", entries("a", "b")))));
+    assertThrows(
+        GlossaryNotFoundException.class,
+        () -> client.createMultilingualGlossaryFromCsv("n", "en", "de", "a,b"));
+    assertThrows(GlossaryNotFoundException.class, () -> client.listMultilingualGlossaries());
+  }
+
+  @Test
+  void sendsTheGlossaryIdUrlEncodedInThePath() throws Exception {
+    String id = "a/b c?d";
+    String path = "/v3/glossaries/a%2Fb%20c%3Fd";
+    String languages = "?source_lang=en&target_lang=de";
+    wm.stubFor(get(urlEqualTo(path)).willReturn(okJson(GLOSSARY)));
+    wm.stubFor(patch(urlEqualTo(path)).willReturn(okJson(GLOSSARY)));
+    wm.stubFor(delete(urlEqualTo(path)).willReturn(aResponse().withStatus(204)));
+    wm.stubFor(
+        get(urlEqualTo(path + "/entries" + languages))
+            .willReturn(
+                okJson(
+                    "{\"dictionaries\":[{\"source_lang\":\"en\",\"target_lang\":\"de\","
+                        + "\"entries\":\"a\\tb\",\"entries_format\":\"tsv\"}]}")));
+    wm.stubFor(put(urlEqualTo(path + "/dictionaries")).willReturn(okJson(DICTIONARY)));
+    wm.stubFor(
+        delete(urlEqualTo(path + "/dictionaries" + languages))
+            .willReturn(aResponse().withStatus(204)));
+    GlossaryEntries entries = entries("a", "b");
+    client.getMultilingualGlossary(id);
+    client.getMultilingualGlossaryDictionaryEntries(id, "en", "de");
+    client.updateMultilingualGlossaryName(id, "n");
+    client.updateMultilingualGlossaryDictionary(id, "en", "de", entries);
+    client.updateMultilingualGlossaryDictionaryFromCsv(id, "en", "de", "a,b");
+    client.replaceMultilingualGlossaryDictionary(id, "en", "de", entries);
+    client.replaceMultilingualGlossaryDictionaryFromCsv(id, "en", "de", "a,b");
+    client.deleteMultilingualGlossaryDictionary(id, "en", "de");
+    client.deleteMultilingualGlossary(id);
   }
 
   @Test
