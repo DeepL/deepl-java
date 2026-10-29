@@ -123,10 +123,30 @@ public class TextTranslationOptions extends BaseRequestOptions {
    * Sets the list of glossaries to use with the translation, up to a maximum of 5. Glossaries are
    * applied in the order provided (first match wins). By default, this value is <code>null</code>
    * and no glossaries are used. This option requires a source language to be set and cannot be
-   * combined with {@link #setGlossary}. To pass a list, use <code>
-   * list.toArray(new IGlossary[0])</code>.
+   * combined with {@link #setGlossary}. To pass a list, pass the glossary IDs to {@link
+   * #setGlossaryIds(List)}.
    */
-  public TextTranslationOptions setGlossaryIds(IGlossary... glossaries) {
+  public TextTranslationOptions setGlossaryIds(IGlossary first, IGlossary... more) {
+    // The separate first parameter keeps the zero-argument call setGlossaryIds() on String...
+    IGlossary[] glossaries = new IGlossary[more.length + 1];
+    glossaries[0] = first;
+    System.arraycopy(more, 0, glossaries, 1, more.length);
+    this.glossaryIds = glossaryIdsOf(glossaries);
+    return this;
+  }
+
+  /**
+   * Sets the list of glossaries to use with the translation, up to a maximum of 5.
+   *
+   * @deprecated Use {@link #setGlossaryIds(IGlossary, IGlossary...)} instead.
+   */
+  @Deprecated
+  public TextTranslationOptions setGlossaries(IGlossary... glossaries) {
+    this.glossaryIds = glossaryIdsOf(glossaries);
+    return this;
+  }
+
+  private static List<String> glossaryIdsOf(IGlossary[] glossaries) {
     List<String> ids = new ArrayList<>();
     for (IGlossary glossary : glossaries) {
       if (glossary == null) {
@@ -134,18 +154,7 @@ public class TextTranslationOptions extends BaseRequestOptions {
       }
       ids.add(glossary.getGlossaryId());
     }
-    this.glossaryIds = ids;
-    return this;
-  }
-
-  /**
-   * Sets the list of glossaries to use with the translation, up to a maximum of 5.
-   *
-   * @deprecated Use {@link #setGlossaryIds(IGlossary...)} instead.
-   */
-  @Deprecated
-  public TextTranslationOptions setGlossaries(IGlossary... glossaries) {
-    return setGlossaryIds(glossaries);
+    return ids;
   }
 
   /**

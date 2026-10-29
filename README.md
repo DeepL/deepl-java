@@ -178,9 +178,9 @@ a `TextTranslationOptions`, with the following setters:
   `listGlossaries()` or `listMultilingualGlossaries()`).
     - `setGlossaryId()` is deprecated; use `setGlossary()` instead.
 - `setGlossaryIds()`: specifies multiple glossaries to use with translation
-  (up to 5), as a list or varargs of glossary ID strings, or as varargs of
-  `IGlossary` objects (`GlossaryInfo`/`MultilingualGlossaryInfo`; pass a list as
-  `list.toArray(new IGlossary[0])`).
+  (up to 5), as a list or varargs of glossary ID strings, or as one or more
+  `IGlossary` objects (`GlossaryInfo`/`MultilingualGlossaryInfo`; for a list of
+  glossary objects, pass their IDs as a list of strings).
   Glossaries are applied in the order provided (first match wins). This option
   requires a source language and cannot be combined with `setGlossary()`.
     - `setGlossaries()` is deprecated; use `setGlossaryIds()` instead.

@@ -607,6 +607,19 @@ class TranslateDocumentTest {
   }
 
   @Test
+  void resolvesTheZeroArgumentSetGlossaryIdsToTheIdOverloadAndSendsNoGlossaries() throws Exception {
+    File input = writeInput("example.txt", "a");
+    expectUpload(
+        "/v2/document",
+        "example.txt",
+        "a".getBytes(StandardCharsets.UTF_8),
+        fields("target_lang", "de"));
+    client.translateDocumentUpload(
+        input, null, "de", new DocumentTranslationOptions().setGlossaryIds());
+    assertPartNames("/v2/document", "file", "target_lang");
+  }
+
+  @Test
   void sendsLanguageCodesWithOnlyTheBaseSubtagLowerCased() throws Exception {
     File input = writeInput("example.txt", "a");
     expectUpload(

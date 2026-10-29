@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `TextTranslationOptions.setStyleRule(String)` and
   `setTranslationMemory(String)`, taking the style rule or translation memory
   ID.
-- Added `TextTranslationOptions.setGlossaryIds(IGlossary...)`, taking glossary
+- Added `TextTranslationOptions.setGlossaryIds(IGlossary, IGlossary...)`, taking glossary
   objects.
 - Added `Translator.translateDocumentGetStatus()`, which returns the status of
   a document translation.
@@ -45,7 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `DocumentTranslationOptions.setFormality(String)`, which sends the
   string as given.
 - Added `DocumentTranslationOptions.setStyleRule(String)`,
-  `setTranslationMemory(String)` and `setGlossaryIds(IGlossary...)`.
+  `setTranslationMemory(String)` and
+  `setGlossaryIds(IGlossary, IGlossary...)`.
 - Added `DocumentStatus.getStatusString()`, the status as the API sent it,
   including values not in `DocumentStatus.StatusCode`.
 - Added `TextResult.getTagHandlingVersion()`, the tag handling version the API

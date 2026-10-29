@@ -586,12 +586,12 @@ class TranslateTextTest {
             "1"));
     client.translateText(
         "Hello", "en", "de", new TextTranslationOptions().setGlossaryIds(glossary, multilingual));
-    client.translateText(
-        "Hello",
-        "en",
-        "de",
-        new TextTranslationOptions()
-            .setGlossaryIds(Arrays.asList(glossary, multilingual).toArray(new IGlossary[0])));
+  }
+
+  @Test
+  void resolvesTheZeroArgumentSetGlossaryIdsToTheIdOverloadAndSendsNoGlossaries() throws Exception {
+    expectBody(FormBody.of("target_lang", "de", "text", "Hello", "show_billed_characters", "1"));
+    client.translateText("Hello", null, "de", new TextTranslationOptions().setGlossaryIds());
   }
 
   @Test

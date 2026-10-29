@@ -118,7 +118,27 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
    * and no glossaries are used. This option requires a source language to be set and cannot be
    * combined with {@link #setGlossary}.
    */
-  public DocumentTranslationOptions setGlossaryIds(IGlossary... glossaries) {
+  public DocumentTranslationOptions setGlossaryIds(IGlossary first, IGlossary... more) {
+    // The separate first parameter keeps the zero-argument call setGlossaryIds() on String...
+    IGlossary[] glossaries = new IGlossary[more.length + 1];
+    glossaries[0] = first;
+    System.arraycopy(more, 0, glossaries, 1, more.length);
+    this.glossaryIds = glossaryIdsOf(glossaries);
+    return this;
+  }
+
+  /**
+   * Sets the list of glossaries to use with the translation, up to a maximum of 5.
+   *
+   * @deprecated Use {@link #setGlossaryIds(IGlossary, IGlossary...)} instead.
+   */
+  @Deprecated
+  public DocumentTranslationOptions setGlossaries(IGlossary... glossaries) {
+    this.glossaryIds = glossaryIdsOf(glossaries);
+    return this;
+  }
+
+  private static List<String> glossaryIdsOf(IGlossary[] glossaries) {
     List<String> ids = new ArrayList<>();
     for (IGlossary glossary : glossaries) {
       if (glossary == null) {
@@ -126,18 +146,7 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
       }
       ids.add(glossary.getGlossaryId());
     }
-    this.glossaryIds = ids;
-    return this;
-  }
-
-  /**
-   * Sets the list of glossaries to use with the translation, up to a maximum of 5.
-   *
-   * @deprecated Use {@link #setGlossaryIds(IGlossary...)} instead.
-   */
-  @Deprecated
-  public DocumentTranslationOptions setGlossaries(IGlossary... glossaries) {
-    return setGlossaryIds(glossaries);
+    return ids;
   }
 
   /**
