@@ -6,6 +6,7 @@ package com.deepl.api;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
+import static com.github.tomakehurst.wiremock.client.WireMock.notMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -21,6 +22,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @SuppressWarnings("deprecation")
 class TranslatorOptionsTest {
@@ -39,12 +41,32 @@ class TranslatorOptionsTest {
     new Translator(" abc-123 \n", new TranslatorOptions().setServerUrl(wm.baseUrl())).getUsage();
   }
 
-  @Test
-  void sendsACustomAuthorizationHeaderInsteadOfTheKey() throws Exception {
+  @ParameterizedTest
+  @ValueSource(strings = {"Authorization", "authorization"})
+  void sendsTheKeyEvenWhenTheHeadersContainAnAuthorizationHeader(String name) throws Exception {
     Map<String, String> headers = new HashMap<>();
-    headers.put("Authorization", "Bearer token");
-    expectUsage("Authorization", equalTo("Bearer token"));
-    OfflineClient.createTranslator(wm, new TranslatorOptions().setHeaders(headers)).getUsage();
+    headers.put(name, "Bearer token");
+    wm.stubFor(
+        get("/v2/usage")
+            .withHeader("Authorization", equalTo("DeepL-Auth-Key k"))
+            .withHeader("Authorization", notMatching(".*Bearer.*"))
+            .willReturn(okJson(USAGE)));
+    OfflineClient.createClient(
+            wm, (DeepLClientOptions) new DeepLClientOptions().setHeaders(headers))
+        .getUsage();
+  }
+
+  @Test
+  void sendsTheAdminKeyEvenWhenTheHeadersContainAnAuthorizationHeader() throws Exception {
+    wm.stubFor(
+        get("/v2/admin/developer-keys")
+            .withHeader("Authorization", equalTo("DeepL-Auth-Key admin-key"))
+            .willReturn(okJson("[]")));
+    OfflineClient.createAdminClient(
+            wm,
+            new DeepLAdminClientOptions()
+                .setHeaders(Collections.singletonMap("Authorization", "Bearer token")))
+        .getDeveloperKeys();
   }
 
   @Test

@@ -27,8 +27,8 @@ final class ApiClientHelper {
   private ApiClientHelper() {}
 
   /**
-   * Creates the HTTP client wrapper with the Authorization and User-Agent headers, unless they are
-   * overridden in the options.
+   * Creates the HTTP client wrapper with the Authorization and User-Agent headers. Custom headers
+   * may replace the User-Agent but never the Authorization header.
    */
   static HttpClientWrapper createHttpClientWrapper(
       String sanitizedAuthKey, String serverUrl, TranslatorOptions options) {
@@ -54,9 +54,13 @@ final class ApiClientHelper {
       int maxRetries) {
     Map<String, String> headers = new HashMap<>();
     if (customHeaders != null) {
-      headers.putAll(customHeaders);
+      for (Map.Entry<String, String> header : customHeaders.entrySet()) {
+        if (!"Authorization".equalsIgnoreCase(header.getKey())) {
+          headers.put(header.getKey(), header.getValue());
+        }
+      }
     }
-    headers.putIfAbsent("Authorization", "DeepL-Auth-Key " + sanitizedAuthKey);
+    headers.put("Authorization", "DeepL-Auth-Key " + sanitizedAuthKey);
     headers.putIfAbsent(
         "User-Agent", Translator.constructUserAgentString(sendPlatformInfo, appInfo));
 
