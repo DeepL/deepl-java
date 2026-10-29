@@ -748,8 +748,9 @@ collections can be stored with your account, each with a user-specified name
 and a uniquely-assigned ID.
 
 Each method that takes a collection accepts either its ID or a `SpokenTerms`
-object. Terms are checked like glossary terms before any request is sent: a
-term that is empty or contains a control character such as a newline throws an
+object. Each term is trimmed of leading and trailing whitespace and then
+checked like a glossary term before any request is sent: a term that is empty
+or contains a control character such as a newline throws an
 `IllegalArgumentException`. Other invalid term lists are rejected by the API
 with a `DeepLException`.
 

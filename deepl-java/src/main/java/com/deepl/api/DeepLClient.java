@@ -1975,16 +1975,32 @@ public class DeepLClient extends Translator {
 
   /**
    * Builds the JSON object of one term list; the API expects the terms newline-separated, so each
-   * term is checked like a glossary term first: a term containing a newline would split.
+   * term is trimmed and then checked like a glossary term: a term containing a newline would split.
    */
   private static Map<String, Object> createSpokenTermsListData(SpokenTermsEntries entries) {
+    List<String> terms = new ArrayList<>();
     for (String term : entries.getEntries()) {
-      GlossaryEntries.validateGlossaryTerm(term);
+      String trimmed = trimWhitespace(term);
+      GlossaryEntries.validateGlossaryTerm(trimmed);
+      terms.add(trimmed);
     }
     Map<String, Object> data = new LinkedHashMap<>();
     data.put("lang", entries.getLang());
-    data.put("entries", String.join("\n", entries.getEntries()));
+    data.put("entries", String.join("\n", terms));
     return data;
+  }
+
+  /** Removes leading and trailing whitespace as defined by {@link Character#isWhitespace}. */
+  private static String trimWhitespace(String term) {
+    int start = 0;
+    int end = term.length();
+    while (start < end && Character.isWhitespace(term.charAt(start))) {
+      start++;
+    }
+    while (end > start && Character.isWhitespace(term.charAt(end - 1))) {
+      end--;
+    }
+    return term.substring(start, end);
   }
 
   private static List<Map<String, Object>> createSpokenTermsListsData(

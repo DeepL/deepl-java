@@ -129,6 +129,17 @@ class SpokenTermsTest {
   }
 
   @Test
+  void trimsEachTermBeforeSendingIt() throws Exception {
+    wm.stubFor(
+        put(urlEqualTo("/v3/spoken-terms/st1/term-lists"))
+            .withRequestBody(equalToJson("{\"lang\":\"en\",\"entries\":\"foo\\nbar baz\"}"))
+            .willReturn(okJson(TERM_LIST)));
+
+    client.replaceSpokenTermsList(
+        "st1", new SpokenTermsEntries("en", Arrays.asList(" foo", "bar baz\t")));
+  }
+
+  @Test
   void joinsEntriesWithNewlinesWhenSendingAndSplitsThemWhenReading() throws Exception {
     wm.stubFor(
         put(urlEqualTo("/v3/spoken-terms/st1/term-lists"))
