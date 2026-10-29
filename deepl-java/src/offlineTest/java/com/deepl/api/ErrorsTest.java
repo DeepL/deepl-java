@@ -5,13 +5,16 @@ package com.deepl.api;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @SuppressWarnings("deprecation")
 class ErrorsTest {
@@ -57,6 +60,24 @@ class ErrorsTest {
     AuthorizationException thrown =
         assertThrows(AuthorizationException.class, admin::getDeveloperKeys);
     assertEquals(401, thrown.getHttpStatusCode());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"", "not json", "{\"character_count\":", "[]"})
+  void throwsDeepLExceptionForAMalformedResponse(String body) {
+    respond(200, body);
+    DeepLException thrown = assertThrows(DeepLException.class, translator::getUsage);
+    assertEquals(DeepLException.class, thrown.getClass());
+    assertTrue(thrown.getMessage().startsWith("Failed to parse"), thrown.getMessage());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"", "{}", "{\"translations\":[{\"text\":"})
+  void throwsDeepLExceptionForAMalformedTranslation(String body) {
+    wm.stubFor(post("/v2/translate").willReturn(aResponse().withStatus(200).withBody(body)));
+    DeepLException thrown =
+        assertThrows(DeepLException.class, () -> translator.translateText("Hello", null, "de"));
+    assertTrue(thrown.getMessage().startsWith("Failed to parse"), thrown.getMessage());
   }
 
   @Test

@@ -41,196 +41,248 @@ public class Parser {
                 .create());
   }
 
-  public List<TextResult> parseTextResult(String json) {
-    TextResponse result = gson.fromJson(json, TextResponse.class);
-    return result.translations;
+  public List<TextResult> parseTextResult(String json) throws DeepLException {
+    return parse(
+        () -> {
+          TextResponse result = gson.fromJson(json, TextResponse.class);
+          return result.translations;
+        });
   }
 
-  public List<WriteResult> parseWriteResult(String json) {
-    WriteResponse result = gson.fromJson(json, WriteResponse.class);
-    return result.improvements;
+  public List<WriteResult> parseWriteResult(String json) throws DeepLException {
+    return parse(
+        () -> {
+          WriteResponse result = gson.fromJson(json, WriteResponse.class);
+          return result.improvements;
+        });
   }
 
-  public Usage parseUsage(String json) {
-    return gson.fromJson(json, Usage.class);
+  public Usage parseUsage(String json) throws DeepLException {
+    return parse(() -> gson.fromJson(json, Usage.class));
   }
 
-  public List<Language> parseV3Languages(String json, LanguageType languageType) {
-    Type v3LanguageListType = new TypeToken<ArrayList<V3Language>>() {}.getType();
-    List<V3Language> entries = gson.fromJson(json, v3LanguageListType);
-    List<Language> result = new ArrayList<>();
-    for (V3Language entry : entries) {
-      if (languageType == LanguageType.Target) {
-        if (!entry.isUsableAsTarget()) continue;
-        result.add(new Language(entry.getName(), entry.getLang(), entry.hasFeature("formality")));
-      } else {
-        if (!entry.isUsableAsSource()) continue;
-        result.add(new Language(entry.getName(), entry.getLang(), null));
-      }
-    }
-    return result;
+  public List<Language> parseV3Languages(String json, LanguageType languageType)
+      throws DeepLException {
+    return parse(
+        () -> {
+          Type v3LanguageListType = new TypeToken<ArrayList<V3Language>>() {}.getType();
+          List<V3Language> entries = gson.fromJson(json, v3LanguageListType);
+          List<Language> result = new ArrayList<>();
+          for (V3Language entry : entries) {
+            if (languageType == LanguageType.Target) {
+              if (!entry.isUsableAsTarget()) continue;
+              result.add(
+                  new Language(entry.getName(), entry.getLang(), entry.hasFeature("formality")));
+            } else {
+              if (!entry.isUsableAsSource()) continue;
+              result.add(new Language(entry.getName(), entry.getLang(), null));
+            }
+          }
+          return result;
+        });
   }
 
-  public List<LanguageSupport> parseLanguageSupportList(String json) {
-    Type listType = new TypeToken<ArrayList<LanguageSupport>>() {}.getType();
-    return gson.fromJson(json, listType);
+  public List<LanguageSupport> parseLanguageSupportList(String json) throws DeepLException {
+    return parse(
+        () -> {
+          Type listType = new TypeToken<ArrayList<LanguageSupport>>() {}.getType();
+          return gson.fromJson(json, listType);
+        });
   }
 
-  public List<LanguageResource> parseLanguageResourceList(String json) {
-    Type listType = new TypeToken<ArrayList<V3LanguageResource>>() {}.getType();
-    List<V3LanguageResource> entries = gson.fromJson(json, listType);
-    List<LanguageResource> result = new ArrayList<>();
-    for (V3LanguageResource entry : entries) {
-      Map<String, ResourceFeature> features = new LinkedHashMap<>();
-      if (entry.features != null) {
-        for (ResourceFeature feature : entry.features) {
-          features.put(feature.getName(), feature);
-        }
-      }
-      result.add(new LanguageResource(entry.name, features));
-    }
-    return result;
+  public List<LanguageResource> parseLanguageResourceList(String json) throws DeepLException {
+    return parse(
+        () -> {
+          Type listType = new TypeToken<ArrayList<V3LanguageResource>>() {}.getType();
+          List<V3LanguageResource> entries = gson.fromJson(json, listType);
+          List<LanguageResource> result = new ArrayList<>();
+          for (V3LanguageResource entry : entries) {
+            Map<String, ResourceFeature> features = new LinkedHashMap<>();
+            if (entry.features != null) {
+              for (ResourceFeature feature : entry.features) {
+                features.put(feature.getName(), feature);
+              }
+            }
+            result.add(new LanguageResource(entry.name, features));
+          }
+          return result;
+        });
   }
 
-  public List<GlossaryLanguagePair> parseV3GlossaryLanguagePairs(String json) {
-    Type v3LanguageListType = new TypeToken<ArrayList<V3Language>>() {}.getType();
-    List<V3Language> entries = gson.fromJson(json, v3LanguageListType);
-    List<String> sourceCodes = new ArrayList<>();
-    List<String> targetCodes = new ArrayList<>();
-    for (V3Language entry : entries) {
-      if (entry.isUsableAsSource()) sourceCodes.add(entry.getLang());
-      if (entry.isUsableAsTarget()) targetCodes.add(entry.getLang());
-    }
-    List<GlossaryLanguagePair> pairs = new ArrayList<>();
-    for (String source : sourceCodes) {
-      for (String target : targetCodes) {
-        if (!source.equals(target)) {
-          pairs.add(new GlossaryLanguagePair(source, target));
-        }
-      }
-    }
-    return pairs;
+  public List<GlossaryLanguagePair> parseV3GlossaryLanguagePairs(String json)
+      throws DeepLException {
+    return parse(
+        () -> {
+          Type v3LanguageListType = new TypeToken<ArrayList<V3Language>>() {}.getType();
+          List<V3Language> entries = gson.fromJson(json, v3LanguageListType);
+          List<String> sourceCodes = new ArrayList<>();
+          List<String> targetCodes = new ArrayList<>();
+          for (V3Language entry : entries) {
+            if (entry.isUsableAsSource()) sourceCodes.add(entry.getLang());
+            if (entry.isUsableAsTarget()) targetCodes.add(entry.getLang());
+          }
+          List<GlossaryLanguagePair> pairs = new ArrayList<>();
+          for (String source : sourceCodes) {
+            for (String target : targetCodes) {
+              if (!source.equals(target)) {
+                pairs.add(new GlossaryLanguagePair(source, target));
+              }
+            }
+          }
+          return pairs;
+        });
   }
 
-  public DocumentStatus parseDocumentStatus(String json) {
-    return gson.fromJson(json, DocumentStatus.class);
+  public DocumentStatus parseDocumentStatus(String json) throws DeepLException {
+    return parse(() -> gson.fromJson(json, DocumentStatus.class));
   }
 
-  public DocumentHandle parseDocumentHandle(String json) {
-    return gson.fromJson(json, DocumentHandle.class);
+  public DocumentHandle parseDocumentHandle(String json) throws DeepLException {
+    return parse(() -> gson.fromJson(json, DocumentHandle.class));
   }
 
-  public GlossaryInfo parseGlossaryInfo(String json) {
-    return gson.fromJson(json, GlossaryInfo.class);
+  public GlossaryInfo parseGlossaryInfo(String json) throws DeepLException {
+    return parse(() -> gson.fromJson(json, GlossaryInfo.class));
   }
 
-  public MultilingualGlossaryInfo parseMultilingualGlossaryInfo(String json) {
-    return gson.fromJson(json, MultilingualGlossaryInfo.class);
+  public MultilingualGlossaryInfo parseMultilingualGlossaryInfo(String json) throws DeepLException {
+    return parse(() -> gson.fromJson(json, MultilingualGlossaryInfo.class));
   }
 
   public MultilingualGlossaryDictionaryListResponse parseMultilingualGlossaryDictionaryListResponse(
-      String json) {
-    return gson.fromJson(json, MultilingualGlossaryDictionaryListResponse.class);
+      String json) throws DeepLException {
+    return parse(() -> gson.fromJson(json, MultilingualGlossaryDictionaryListResponse.class));
   }
 
-  public List<GlossaryInfo> parseGlossaryInfoList(String json) {
-    GlossaryListResponse result = gson.fromJson(json, GlossaryListResponse.class);
-    return result.getGlossaries();
+  public List<GlossaryInfo> parseGlossaryInfoList(String json) throws DeepLException {
+    return parse(
+        () -> {
+          GlossaryListResponse result = gson.fromJson(json, GlossaryListResponse.class);
+          return result.getGlossaries();
+        });
   }
 
-  public List<MultilingualGlossaryInfo> parseMultilingualGlossaryInfoList(String json) {
-    MultilingualGlossaryListResponse result =
-        gson.fromJson(json, MultilingualGlossaryListResponse.class);
-    return result.getGlossaries();
+  public List<MultilingualGlossaryInfo> parseMultilingualGlossaryInfoList(String json)
+      throws DeepLException {
+    return parse(
+        () -> {
+          MultilingualGlossaryListResponse result =
+              gson.fromJson(json, MultilingualGlossaryListResponse.class);
+          return result.getGlossaries();
+        });
   }
 
-  public MultilingualGlossaryDictionaryInfo parseMultilingualGlossaryDictionaryInfo(String json) {
-    return gson.fromJson(json, MultilingualGlossaryDictionaryInfo.class);
+  public MultilingualGlossaryDictionaryInfo parseMultilingualGlossaryDictionaryInfo(String json)
+      throws DeepLException {
+    return parse(() -> gson.fromJson(json, MultilingualGlossaryDictionaryInfo.class));
   }
 
-  public List<StyleRuleInfo> parseStyleRuleInfoList(String json) {
-    StyleRuleListResponse result = gson.fromJson(json, StyleRuleListResponse.class);
-    return result.getStyleRules();
+  public List<StyleRuleInfo> parseStyleRuleInfoList(String json) throws DeepLException {
+    return parse(
+        () -> {
+          StyleRuleListResponse result = gson.fromJson(json, StyleRuleListResponse.class);
+          return result.getStyleRules();
+        });
   }
 
-  public StyleRuleInfo parseStyleRuleInfo(String json) {
-    return gson.fromJson(json, StyleRuleInfo.class);
+  public StyleRuleInfo parseStyleRuleInfo(String json) throws DeepLException {
+    return parse(() -> gson.fromJson(json, StyleRuleInfo.class));
   }
 
-  public List<TranslationMemoryInfo> parseTranslationMemoryInfoList(String json) {
-    TranslationMemoryListResponse result = gson.fromJson(json, TranslationMemoryListResponse.class);
-    return result.getTranslationMemories();
+  public List<TranslationMemoryInfo> parseTranslationMemoryInfoList(String json)
+      throws DeepLException {
+    return parse(
+        () -> {
+          TranslationMemoryListResponse result =
+              gson.fromJson(json, TranslationMemoryListResponse.class);
+          return result.getTranslationMemories();
+        });
   }
 
-  public TranslationMemoryInfo parseTranslationMemoryInfo(String json) {
-    return gson.fromJson(json, TranslationMemoryInfo.class);
+  public TranslationMemoryInfo parseTranslationMemoryInfo(String json) throws DeepLException {
+    return parse(() -> gson.fromJson(json, TranslationMemoryInfo.class));
   }
 
-  public TranslationMemorySegments parseTranslationMemorySegments(String json) {
-    return gson.fromJson(json, TranslationMemorySegments.class);
+  public TranslationMemorySegments parseTranslationMemorySegments(String json)
+      throws DeepLException {
+    return parse(() -> gson.fromJson(json, TranslationMemorySegments.class));
   }
 
-  public TranslationMemoryImport parseTranslationMemoryImport(String json) {
-    return gson.fromJson(json, TranslationMemoryImport.class);
+  public TranslationMemoryImport parseTranslationMemoryImport(String json) throws DeepLException {
+    return parse(() -> gson.fromJson(json, TranslationMemoryImport.class));
   }
 
-  public TranslationMemoryExport parseTranslationMemoryExport(String json, boolean reusedExisting) {
-    TranslationMemoryExportResponse response =
-        gson.fromJson(json, TranslationMemoryExportResponse.class);
-    return new TranslationMemoryExport(
-        response.getJobId(), response.getTranslationMemoryId(), reusedExisting);
+  public TranslationMemoryExport parseTranslationMemoryExport(String json, boolean reusedExisting)
+      throws DeepLException {
+    return parse(
+        () -> {
+          TranslationMemoryExportResponse response =
+              gson.fromJson(json, TranslationMemoryExportResponse.class);
+          return new TranslationMemoryExport(
+              response.getJobId(), response.getTranslationMemoryId(), reusedExisting);
+        });
   }
 
-  public TranslationMemoryJob parseTranslationMemoryJob(String json) {
-    return gson.fromJson(json, TranslationMemoryJob.class);
+  public TranslationMemoryJob parseTranslationMemoryJob(String json) throws DeepLException {
+    return parse(() -> gson.fromJson(json, TranslationMemoryJob.class));
   }
 
-  public CustomInstruction parseCustomInstruction(String json) {
-    return gson.fromJson(json, CustomInstruction.class);
+  public CustomInstruction parseCustomInstruction(String json) throws DeepLException {
+    return parse(() -> gson.fromJson(json, CustomInstruction.class));
   }
 
-  public StyleProfile parseStyleProfile(String json) {
-    return gson.fromJson(json, StyleProfile.class);
+  public StyleProfile parseStyleProfile(String json) throws DeepLException {
+    return parse(() -> gson.fromJson(json, StyleProfile.class));
   }
 
-  public List<StyleProfile> parseStyleProfileList(String json) {
-    StyleProfileListResponse result = gson.fromJson(json, StyleProfileListResponse.class);
-    List<StyleProfile> styleProfiles = new ArrayList<>();
-    if (result != null && result.getStyleProfiles() != null) {
-      for (StyleProfile styleProfile : result.getStyleProfiles()) {
-        if (styleProfile != null) {
-          styleProfiles.add(styleProfile);
-        }
-      }
-    }
-    return styleProfiles;
+  public List<StyleProfile> parseStyleProfileList(String json) throws DeepLException {
+    return parse(
+        () -> {
+          StyleProfileListResponse result = gson.fromJson(json, StyleProfileListResponse.class);
+          List<StyleProfile> styleProfiles = new ArrayList<>();
+          if (result != null && result.getStyleProfiles() != null) {
+            for (StyleProfile styleProfile : result.getStyleProfiles()) {
+              if (styleProfile != null) {
+                styleProfiles.add(styleProfile);
+              }
+            }
+          }
+          return styleProfiles;
+        });
   }
 
-  public SpokenTerms parseSpokenTerms(String json) {
-    return gson.fromJson(json, SpokenTerms.class);
+  public SpokenTerms parseSpokenTerms(String json) throws DeepLException {
+    return parse(() -> gson.fromJson(json, SpokenTerms.class));
   }
 
-  public List<SpokenTerms> parseSpokenTermsList(String json) {
-    SpokenTermsListResponse result = gson.fromJson(json, SpokenTermsListResponse.class);
-    List<SpokenTerms> spokenTerms = result != null ? result.getSpokenTerms() : null;
-    return spokenTerms != null ? spokenTerms : new ArrayList<>();
+  public List<SpokenTerms> parseSpokenTermsList(String json) throws DeepLException {
+    return parse(
+        () -> {
+          SpokenTermsListResponse result = gson.fromJson(json, SpokenTermsListResponse.class);
+          List<SpokenTerms> spokenTerms = result != null ? result.getSpokenTerms() : null;
+          return spokenTerms != null ? spokenTerms : new ArrayList<>();
+        });
   }
 
-  public SpokenTermsList parseSpokenTermsTermList(String json) {
-    return gson.fromJson(json, SpokenTermsList.class);
+  public SpokenTermsList parseSpokenTermsTermList(String json) throws DeepLException {
+    return parse(() -> gson.fromJson(json, SpokenTermsList.class));
   }
 
-  public SpokenTermsEntries parseSpokenTermsEntries(String json) {
-    SpokenTermsEntriesResponse response = gson.fromJson(json, SpokenTermsEntriesResponse.class);
-    List<String> entries = new ArrayList<>();
-    if (response.getEntries() != null) {
-      for (String entry : response.getEntries().split("\n")) {
-        if (!entry.isEmpty()) {
-          entries.add(entry);
-        }
-      }
-    }
-    return new SpokenTermsEntries(response.getLang(), entries);
+  public SpokenTermsEntries parseSpokenTermsEntries(String json) throws DeepLException {
+    return parse(
+        () -> {
+          SpokenTermsEntriesResponse response =
+              gson.fromJson(json, SpokenTermsEntriesResponse.class);
+          List<String> entries = new ArrayList<>();
+          if (response.getEntries() != null) {
+            for (String entry : response.getEntries().split("\n")) {
+              if (!entry.isEmpty()) {
+                entries.add(entry);
+              }
+            }
+          }
+          return new SpokenTermsEntries(response.getLang(), entries);
+        });
   }
 
   public DeveloperKey parseDeveloperKey(String json) throws DeepLException {
@@ -247,6 +299,21 @@ public class Parser {
 
   public CustomTagUsageReport parseCustomTagUsageReport(String json) throws DeepLException {
     return parseAdmin(json, adminParser::parseCustomTagUsageReport);
+  }
+
+  // B8: a malformed or empty response raises DeepLException, never a raw JSON or null error.
+  private static <T> T parse(java.util.function.Supplier<T> parse) throws DeepLException {
+    T result;
+    try {
+      result = parse.get();
+    } catch (RuntimeException e) {
+      throw new DeepLException(
+          "Failed to parse the response of the DeepL API: " + e.getMessage(), e);
+    }
+    if (result == null) {
+      throw new DeepLException("Failed to parse the response of the DeepL API: empty response");
+    }
+    return result;
   }
 
   private <T> T parseAdmin(String json, java.util.function.Function<JsonElement, T> parse)
