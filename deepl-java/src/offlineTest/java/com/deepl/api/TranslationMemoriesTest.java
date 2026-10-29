@@ -546,6 +546,26 @@ class TranslationMemoriesTest {
     assertEquals("<tmx/>", Fixtures.readFile(output));
   }
 
+  @Test
+  void encodesTheIdsInTranslationMemoryPaths() throws Exception {
+    String path = "/v3/translation_memories/a%2Fb%20c%3F";
+    String jobPath = "/v3/translation_memories/jobs/j%2F1%20%23";
+    wm.stubFor(get(urlEqualTo(path)).willReturn(okJson(MEMORY)));
+    wm.stubFor(delete(urlEqualTo(path)).willReturn(aResponse().withStatus(204)));
+    wm.stubFor(get(urlEqualTo(path + "/segments")).willReturn(okJson(SEGMENTS)));
+    wm.stubFor(
+        post(urlEqualTo(path + "/export"))
+            .willReturn(
+                okJson("{\"job_id\":\"j2\",\"parameters\":{\"translation_memory_id\":\"tm1\"}}")));
+    wm.stubFor(get(urlEqualTo(jobPath)).willReturn(okJson(job("export", "processing", ""))));
+    String id = "a/b c?";
+    client.getTranslationMemory(id);
+    client.deleteTranslationMemory(id);
+    client.listTranslationMemorySegments(id);
+    client.createTranslationMemoryExport(id);
+    client.getTranslationMemoryJob("j/1 #");
+  }
+
   private TranslationMemoryJob completedExport() {
     return exportJob(TranslationMemoryJobResult.Status.Completed, wm.baseUrl() + "/storage/export");
   }

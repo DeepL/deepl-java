@@ -200,6 +200,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   They will be removed in the next major version.
 
 ### Fixed
+- Translation memory and translation memory job IDs are now URL-encoded in
+  request paths.
 - The style rule and custom instruction methods now URL-encode the style rule
   ID and custom instruction ID in the request path; they were inserted
   unescaped before.

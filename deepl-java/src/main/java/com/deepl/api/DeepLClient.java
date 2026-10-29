@@ -2086,7 +2086,7 @@ public class DeepLClient extends Translator {
   public TranslationMemoryInfo getTranslationMemory(String translationMemoryId)
       throws DeepLException, InterruptedException, NotFoundException {
     validateParameter("translationMemoryId", translationMemoryId);
-    String relativeUrl = String.format("/v3/translation_memories/%s", translationMemoryId);
+    String relativeUrl = translationMemoryPath(translationMemoryId);
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
     checkResponse(response, false, false);
     return jsonParser.parseTranslationMemoryInfo(response.getBody());
@@ -2140,7 +2140,8 @@ public class DeepLClient extends Translator {
     }
 
     String relativeUrl =
-        String.format("/v3/translation_memories/%s/segments", translationMemoryId)
+        translationMemoryPath(translationMemoryId)
+            + "/segments"
             + ApiClientHelper.createQueryString(queryParams);
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
     checkResponse(response, false, false);
@@ -2194,7 +2195,7 @@ public class DeepLClient extends Translator {
   public void deleteTranslationMemory(String translationMemoryId)
       throws DeepLException, InterruptedException, NotFoundException {
     validateParameter("translationMemoryId", translationMemoryId);
-    String relativeUrl = String.format("/v3/translation_memories/%s", translationMemoryId);
+    String relativeUrl = translationMemoryPath(translationMemoryId);
     HttpResponse response = httpClientWrapper.sendDeleteRequestWithBackoff(relativeUrl);
     checkResponse(response, false, false);
   }
@@ -2335,7 +2336,7 @@ public class DeepLClient extends Translator {
   public TranslationMemoryExport createTranslationMemoryExport(String translationMemoryId)
       throws DeepLException, InterruptedException, NotFoundException {
     validateParameter("translationMemoryId", translationMemoryId);
-    String relativeUrl = String.format("/v3/translation_memories/%s/export", translationMemoryId);
+    String relativeUrl = translationMemoryPath(translationMemoryId) + "/export";
     HttpResponse response = httpClientWrapper.sendRequestWithBackoff(relativeUrl);
     checkResponse(response, false, false);
     // 200 means the API reused a previously completed export, 202 that it started a new one.
@@ -2366,7 +2367,7 @@ public class DeepLClient extends Translator {
   public TranslationMemoryJob getTranslationMemoryJob(String jobId)
       throws DeepLException, InterruptedException, NotFoundException {
     validateParameter("jobId", jobId);
-    String relativeUrl = String.format("/v3/translation_memories/jobs/%s", jobId);
+    String relativeUrl = translationMemoryJobPath(jobId);
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
     checkResponse(response, false, false);
     return jsonParser.parseTranslationMemoryJob(response.getBody());
@@ -2628,6 +2629,27 @@ public class DeepLClient extends Translator {
       throw new IllegalArgumentException("translationMemory must not be null");
     }
     return translationMemory.getTranslationMemoryId();
+  }
+
+  /** Validates the translation memory ID and builds its URL path with the ID escaped. */
+  private String translationMemoryPath(String translationMemoryId) throws DeepLException {
+    validateParameter("translationMemoryId", translationMemoryId);
+    try {
+      return "/v3/translation_memories/"
+          + ApiClientHelper.encodeQueryComponent(translationMemoryId);
+    } catch (UnsupportedEncodingException exception) {
+      throw new DeepLException("Error while URL-encoding request", exception);
+    }
+  }
+
+  /** Validates the translation memory job ID and builds its URL path with the ID escaped. */
+  private String translationMemoryJobPath(String jobId) throws DeepLException {
+    validateParameter("jobId", jobId);
+    try {
+      return "/v3/translation_memories/jobs/" + ApiClientHelper.encodeQueryComponent(jobId);
+    } catch (UnsupportedEncodingException exception) {
+      throw new DeepLException("Error while URL-encoding request", exception);
+    }
   }
 
   /** Extracts the ID of the given Spoken Terms collection. */
