@@ -39,10 +39,10 @@ public class StyleProfile {
   private final boolean glossaryPriorityOrderEnabled;
 
   @SerializedName(value = "creation_time")
-  private final @Nullable Date creationTime;
+  private final Date creationTime;
 
   @SerializedName(value = "updated_time")
-  private final @Nullable Date updatedTime;
+  private final Date updatedTime;
 
   /**
    * Initializes a new {@link StyleProfile} object.
@@ -55,8 +55,8 @@ public class StyleProfile {
    * @param styleRuleIds IDs of the linked style rules.
    * @param translationMemoryIds IDs of the linked translation memories.
    * @param glossaryPriorityOrderEnabled Whether the linked glossaries are applied in list order.
-   * @param creationTime Time the style profile was created, or <code>null</code>.
-   * @param updatedTime Time the style profile was last updated, or <code>null</code>.
+   * @param creationTime Time the style profile was created.
+   * @param updatedTime Time the style profile was last updated.
    */
   public StyleProfile(
       String styleProfileId,
@@ -67,8 +67,8 @@ public class StyleProfile {
       @Nullable List<String> styleRuleIds,
       @Nullable List<String> translationMemoryIds,
       boolean glossaryPriorityOrderEnabled,
-      @Nullable Date creationTime,
-      @Nullable Date updatedTime) {
+      Date creationTime,
+      Date updatedTime) {
     this.styleProfileId = styleProfileId;
     this.name = name;
     this.description = description;
@@ -123,13 +123,13 @@ public class StyleProfile {
     return glossaryPriorityOrderEnabled;
   }
 
-  /** @return Time the style profile was created, or <code>null</code> if unavailable. */
-  public @Nullable Date getCreationTime() {
+  /** @return Time the style profile was created. */
+  public Date getCreationTime() {
     return creationTime;
   }
 
-  /** @return Time the style profile was last updated, or <code>null</code> if unavailable. */
-  public @Nullable Date getUpdatedTime() {
+  /** @return Time the style profile was last updated. */
+  public Date getUpdatedTime() {
     return updatedTime;
   }
 

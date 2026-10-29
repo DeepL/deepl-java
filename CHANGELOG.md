@@ -61,7 +61,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `setTranslationMemoryIds()` take a list of IDs or the `IGlossary`,
   `StyleRuleInfo` or `TranslationMemoryInfo` objects. Options left `null` are
   not sent; an empty string clears the description or industry and an empty
-  list unlinks all components of that kind.
+  list unlinks all components of that kind. `StyleProfile.getCreationTime()`
+  and `getUpdatedTime()` are never `null`; a response without a valid
+  `creation_time` or `updated_time` raises a `DeepLException`.
 - Added Spoken Terms support to `DeepLClient` (`/v3/spoken-terms`):
   `createSpokenTerms()`, `listSpokenTerms()`, `getSpokenTerms()`,
   `updateSpokenTerms()`, `getSpokenTermsEntries()`, `replaceSpokenTermsList()`,

@@ -9,7 +9,8 @@ import java.lang.reflect.*;
 import java.util.*;
 
 /**
- * Parses style profiles tolerantly: a malformed timestamp or ID list entry does not fail the call.
+ * Parses style profiles. The required timestamps must be present and valid; a malformed ID list
+ * entry is skipped.
  *
  * <p>This class is internal; you should not use this class directly.
  */
@@ -36,8 +37,17 @@ class StyleProfileDeserializer implements JsonDeserializer<StyleProfile> {
         getStringList(jsonObject, "style_rule_ids"),
         getStringList(jsonObject, "translation_memory_ids"),
         glossaryPriorityOrderEnabled,
-        Parser.getAsDateOrNull(jsonObject, "creation_time", context),
-        Parser.getAsDateOrNull(jsonObject, "updated_time", context));
+        getRequiredDate(jsonObject, "creation_time", context),
+        getRequiredDate(jsonObject, "updated_time", context));
+  }
+
+  private static Date getRequiredDate(
+      JsonObject jsonObject, String parameterName, JsonDeserializationContext context) {
+    Date date = Parser.getAsDateOrNull(jsonObject, parameterName, context);
+    if (date == null) {
+      throw new JsonParseException("Style profile response is missing a valid " + parameterName);
+    }
+    return date;
   }
 
   private static List<String> getStringList(JsonObject jsonObject, String parameterName) {

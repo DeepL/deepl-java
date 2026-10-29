@@ -1049,7 +1049,7 @@ class Example {  // Continuing class Example from above
 optional parameters `page` (page number, 0-indexed, default 0) and `pageSize`
 (items per page, default 10; the API reduces values above 100 to 100). Optional
 fields that a style profile does not have, such as the description and industry,
-are `null`.
+are `null`; the creation and update times are always set.
 
 ```java
 class Example {  // Continuing class Example from above

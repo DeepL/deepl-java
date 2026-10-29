@@ -16,7 +16,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -293,7 +292,7 @@ class StyleProfilesTest {
   }
 
   @Test
-  void toleratesAMalformedTimestampAndNonStringIds() throws Exception {
+  void toleratesNonStringIds() throws Exception {
     wm.stubFor(
         get(urlEqualTo("/v3/style_profiles/" + ID))
             .willReturn(
@@ -301,20 +300,40 @@ class StyleProfilesTest {
                     "{\"style_profile_id\":\""
                         + ID
                         + "\",\"name\":\"n\","
-                        + "\"creation_time\":\"not a timestamp\","
+                        + "\"creation_time\":\"2026-04-01T16:34:25.223Z\","
                         + "\"updated_time\":\"2026-08-06T09:12:44.108Z\","
                         + "\"glossary_ids\":[\"g1\",42,null,{}],\"style_rule_ids\":null}")));
 
     StyleProfile profile = client.getStyleProfile(ID);
 
-    assertNull(profile.getCreationTime());
-    assertNotNull(profile.getUpdatedTime());
     assertEquals(ID, profile.getStyleProfileId());
     assertEquals("n", profile.getName());
     assertEquals(Collections.singletonList("g1"), profile.getGlossaryIds());
     assertTrue(profile.getStyleRuleIds().isEmpty());
     assertTrue(profile.getTranslationMemoryIds().isEmpty());
     assertFalse(profile.isGlossaryPriorityOrderEnabled());
+  }
+
+  @Test
+  void throwsDeepLExceptionWhenATimestampIsMissingOrMalformed() {
+    String head = "{\"style_profile_id\":\"" + ID + "\",\"name\":\"n\",";
+    wm.stubFor(
+        get(urlEqualTo("/v3/style_profiles/missing"))
+            .willReturn(okJson(head + "\"updated_time\":\"2026-08-06T09:12:44.108Z\"}")));
+    wm.stubFor(
+        get(urlEqualTo("/v3/style_profiles/malformed"))
+            .willReturn(
+                okJson(
+                    head
+                        + "\"creation_time\":\"2026-04-01T16:34:25.223Z\","
+                        + "\"updated_time\":\"not a timestamp\"}")));
+
+    DeepLException missing =
+        assertThrows(DeepLException.class, () -> client.getStyleProfile("missing"));
+    assertTrue(missing.getMessage().contains("creation_time"));
+    DeepLException malformed =
+        assertThrows(DeepLException.class, () -> client.getStyleProfile("malformed"));
+    assertTrue(malformed.getMessage().contains("updated_time"));
   }
 
   @Test
