@@ -54,6 +54,18 @@ public class DeepLAdminClientOptions {
   }
 
   /**
+   * Set the HTTP proxy to use for HTTP requests, as a URL such as {@code
+   * http://proxy.example.com:3128}. The port defaults to 80. Only <code>http</code> proxy URLs
+   * without credentials are supported; use {@link #setProxy(Proxy)} for other proxies.
+   *
+   * @throws IllegalArgumentException If the URL is not a valid HTTP proxy URL.
+   */
+  public DeepLAdminClientOptions setProxy(String proxyUrl) {
+    this.proxy = ProxyUrl.parse(proxyUrl);
+    return this;
+  }
+
+  /**
    * Set HTTP headers attached to every HTTP request. By default, this value is <code>null</code>
    * and no extra headers are used. A <code>User-Agent</code> header replaces the one built by the
    * client. An <code>Authorization</code> header is ignored: the authorization is always built from

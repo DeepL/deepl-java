@@ -70,6 +70,37 @@ class TranslatorOptionsTest {
   }
 
   @Test
+  void sendsRequestsThroughTheProxyOfAProxyUrl() throws Exception {
+    // WireMock answers plain HTTP proxy requests, so it stands in for both proxy and server.
+    wm.stubFor(
+        get("/v2/usage").withHeader("Host", equalTo("example.invalid")).willReturn(okJson(USAGE)));
+    DeepLClientOptions options = new DeepLClientOptions();
+    options.setServerUrl("http://example.invalid").setProxy("http://localhost:" + wm.getPort());
+    new DeepLClient("k", options).getUsage();
+  }
+
+  @Test
+  void sendsAdminRequestsThroughTheProxyOfAProxyUrl() throws Exception {
+    wm.stubFor(
+        get("/v2/admin/developer-keys")
+            .withHeader("Host", equalTo("example.invalid"))
+            .willReturn(okJson("[]")));
+    new DeepLAdminClient(
+            "k",
+            new DeepLAdminClientOptions()
+                .setServerUrl("http://example.invalid")
+                .setProxy("http://127.0.0.1:" + wm.getPort()))
+        .getDeveloperKeys();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"socks5://proxy:1080", "proxy:3128", "http://", "http://u:p@proxy:3128"})
+  void rejectsProxyUrlsThatAreNotPlainHttpProxies(String url) {
+    assertThrows(IllegalArgumentException.class, () -> new DeepLClientOptions().setProxy(url));
+    assertThrows(IllegalArgumentException.class, () -> new DeepLAdminClientOptions().setProxy(url));
+  }
+
+  @Test
   void sendsCustomHeaders() throws Exception {
     expectUsage("X-Custom", equalTo("value"));
     OfflineClient.createTranslator(
