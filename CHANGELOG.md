@@ -181,6 +181,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   They will be removed in the next major version.
 
 ### Fixed
+- The style rule and custom instruction methods now URL-encode the style rule
+  ID and custom instruction ID in the request path; they were inserted
+  unescaped before.
 - `replaceMultilingualGlossaryDictionary()` and
   `replaceMultilingualGlossaryDictionaryFromCsv()` now send a JSON body, the
   only content type the endpoint accepts, instead of a form body.

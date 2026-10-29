@@ -225,6 +225,29 @@ class StyleRulesTest {
   }
 
   @Test
+  void encodesTheIdsInStyleRulePaths() throws Exception {
+    String rulePath = "/v3/style_rules/a%2Fb%20c%3F";
+    String instructionPath = rulePath + "/custom_instructions/i%2F1%23";
+    wm.stubFor(get(urlEqualTo(rulePath)).willReturn(okJson(RULE)));
+    wm.stubFor(patch(urlEqualTo(rulePath)).willReturn(okJson(RULE)));
+    wm.stubFor(delete(urlEqualTo(rulePath)).willReturn(aResponse().withStatus(204)));
+    wm.stubFor(put(urlEqualTo(rulePath + "/configured_rules")).willReturn(okJson(RULE)));
+    wm.stubFor(post(urlEqualTo(rulePath + "/custom_instructions")).willReturn(okJson(INSTRUCTION)));
+    wm.stubFor(get(urlEqualTo(instructionPath)).willReturn(okJson(INSTRUCTION)));
+    wm.stubFor(put(urlEqualTo(instructionPath)).willReturn(okJson(INSTRUCTION)));
+    wm.stubFor(delete(urlEqualTo(instructionPath)).willReturn(aResponse().withStatus(204)));
+    String id = "a/b c?";
+    client.getStyleRule(id);
+    client.updateStyleRuleName(id, "n");
+    client.deleteStyleRule(id);
+    client.updateStyleRuleConfiguredRules(id, calendarRule());
+    client.createStyleRuleCustomInstruction(id, "L", "P", null);
+    client.getStyleRuleCustomInstruction(id, "i/1#");
+    client.updateStyleRuleCustomInstruction(id, "i/1#", "L", "P", null);
+    client.deleteStyleRuleCustomInstruction(id, "i/1#");
+  }
+
+  @Test
   void throwsNotFoundWhenTheStyleRuleIsUnknown() {
     wm.stubFor(get("/v3/style_rules/s1").willReturn(aResponse().withStatus(404)));
     assertThrows(NotFoundException.class, () -> client.getStyleRule("s1"));

@@ -2795,7 +2795,7 @@ public class DeepLClient extends Translator {
   public StyleRuleInfo getStyleRule(String styleId)
       throws DeepLException, InterruptedException, NotFoundException {
     validateParameter("styleId", styleId);
-    String relativeUrl = String.format("/v3/style_rules/%s", styleId);
+    String relativeUrl = styleRulePath(styleId);
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
     checkResponse(response, false, false);
     return jsonParser.parseStyleRuleInfo(response.getBody());
@@ -2816,7 +2816,7 @@ public class DeepLClient extends Translator {
       throws DeepLException, InterruptedException, NotFoundException {
     validateParameter("styleId", styleId);
     validateParameter("name", name);
-    String relativeUrl = String.format("/v3/style_rules/%s", styleId);
+    String relativeUrl = styleRulePath(styleId);
     Map<String, Object> requestData = new HashMap<>();
     requestData.put("name", name);
     String jsonBody = jsonParser.getGson().toJson(requestData);
@@ -2837,7 +2837,7 @@ public class DeepLClient extends Translator {
   public void deleteStyleRule(String styleId)
       throws DeepLException, InterruptedException, NotFoundException {
     validateParameter("styleId", styleId);
-    String relativeUrl = String.format("/v3/style_rules/%s", styleId);
+    String relativeUrl = styleRulePath(styleId);
     HttpResponse response = httpClientWrapper.sendDeleteRequestWithBackoff(relativeUrl);
     checkResponse(response, false, false);
   }
@@ -2860,7 +2860,7 @@ public class DeepLClient extends Translator {
     if (configuredRules == null) {
       throw new IllegalArgumentException("configuredRules must not be null");
     }
-    String relativeUrl = String.format("/v3/style_rules/%s/configured_rules", styleId);
+    String relativeUrl = styleRulePath(styleId) + "/configured_rules";
     String jsonBody = jsonParser.getGson().toJson(configuredRules);
     HttpResponse response =
         httpClientWrapper.sendJsonRequestWithBackoff("PUT", relativeUrl, jsonBody);
@@ -2887,7 +2887,7 @@ public class DeepLClient extends Translator {
     validateParameter("styleId", styleId);
     validateParameter("label", label);
     validateParameter("prompt", prompt);
-    String relativeUrl = String.format("/v3/style_rules/%s/custom_instructions", styleId);
+    String relativeUrl = styleRulePath(styleId) + "/custom_instructions";
     Map<String, Object> requestData = new HashMap<>();
     requestData.put("label", label);
     requestData.put("prompt", prompt);
@@ -2915,8 +2915,7 @@ public class DeepLClient extends Translator {
       throws DeepLException, InterruptedException, NotFoundException {
     validateParameter("styleId", styleId);
     validateParameter("instructionId", instructionId);
-    String relativeUrl =
-        String.format("/v3/style_rules/%s/custom_instructions/%s", styleId, instructionId);
+    String relativeUrl = customInstructionPath(styleId, instructionId);
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
     checkResponse(response, false, false);
     return jsonParser.parseCustomInstruction(response.getBody());
@@ -2947,8 +2946,7 @@ public class DeepLClient extends Translator {
     validateParameter("instructionId", instructionId);
     validateParameter("label", label);
     validateParameter("prompt", prompt);
-    String relativeUrl =
-        String.format("/v3/style_rules/%s/custom_instructions/%s", styleId, instructionId);
+    String relativeUrl = customInstructionPath(styleId, instructionId);
     Map<String, Object> requestData = new HashMap<>();
     requestData.put("label", label);
     requestData.put("prompt", prompt);
@@ -2975,10 +2973,32 @@ public class DeepLClient extends Translator {
       throws DeepLException, InterruptedException, NotFoundException {
     validateParameter("styleId", styleId);
     validateParameter("instructionId", instructionId);
-    String relativeUrl =
-        String.format("/v3/style_rules/%s/custom_instructions/%s", styleId, instructionId);
+    String relativeUrl = customInstructionPath(styleId, instructionId);
     HttpResponse response = httpClientWrapper.sendDeleteRequestWithBackoff(relativeUrl);
     checkResponse(response, false, false);
+  }
+
+  /** Validates the style rule ID and builds its URL path with the ID escaped. */
+  private String styleRulePath(String styleId) throws DeepLException {
+    validateParameter("styleId", styleId);
+    try {
+      return "/v3/style_rules/" + ApiClientHelper.encodeQueryComponent(styleId);
+    } catch (UnsupportedEncodingException exception) {
+      throw new DeepLException("Error while URL-encoding request", exception);
+    }
+  }
+
+  /** Validates both IDs and builds the custom instruction URL path with the IDs escaped. */
+  private String customInstructionPath(String styleId, String instructionId) throws DeepLException {
+    String styleRulePath = styleRulePath(styleId);
+    validateParameter("instructionId", instructionId);
+    try {
+      return styleRulePath
+          + "/custom_instructions/"
+          + ApiClientHelper.encodeQueryComponent(instructionId);
+    } catch (UnsupportedEncodingException exception) {
+      throw new DeepLException("Error while URL-encoding request", exception);
+    }
   }
 
   /** Creates a glossary with given details. */
