@@ -776,11 +776,18 @@ public class Translator {
       @Nullable String sourceLang,
       String targetLang,
       @Nullable TextTranslationOptions options) {
+    String formality = null;
+    if (options != null) {
+      formality =
+          options.getFormalityString() != null
+              ? options.getFormalityString()
+              : formalityValue(options.getFormality());
+    }
     ArrayList<KeyValuePair<String, String>> params =
-        createHttpParamsCommon(
+        createHttpParamsCommonWithFormalityValue(
             sourceLang,
             targetLang,
-            options != null ? options.getFormality() : null,
+            formality,
             options != null ? options.getGlossaryId() : null,
             options != null ? options.getGlossaryIds() : null);
     texts.forEach(
@@ -793,7 +800,9 @@ public class Translator {
 
     if (options != null) {
       // Note: formality and glossaryId are added above
-      if (options.getSentenceSplittingMode() != null) {
+      if (options.getSentenceSplittingModeString() != null) {
+        params.add(new KeyValuePair<>("split_sentences", options.getSentenceSplittingModeString()));
+      } else if (options.getSentenceSplittingMode() != null) {
         switch (options.getSentenceSplittingMode()) {
           case Off:
             params.add(new KeyValuePair<>("split_sentences", "0"));
@@ -937,6 +946,16 @@ public class Translator {
       @Nullable Formality formality,
       @Nullable String glossaryId,
       @Nullable List<String> glossaryIds) {
+    return createHttpParamsCommonWithFormalityValue(
+        sourceLang, targetLang, formalityValue(formality), glossaryId, glossaryIds);
+  }
+
+  private static ArrayList<KeyValuePair<String, String>> createHttpParamsCommonWithFormalityValue(
+      @Nullable String sourceLang,
+      String targetLang,
+      @Nullable String formality,
+      @Nullable String glossaryId,
+      @Nullable List<String> glossaryIds) {
     targetLang = LanguageCode.standardize(targetLang);
     sourceLang = sourceLang == null ? null : LanguageCode.standardize(sourceLang);
     checkValidLanguages(sourceLang, targetLang);
@@ -948,24 +967,7 @@ public class Translator {
     params.add(new KeyValuePair<>("target_lang", targetLang));
 
     if (formality != null) {
-      switch (formality) {
-        case More:
-          params.add(new KeyValuePair<>("formality", "more"));
-          break;
-        case Less:
-          params.add(new KeyValuePair<>("formality", "less"));
-          break;
-        case PreferMore:
-          params.add(new KeyValuePair<>("formality", "prefer_more"));
-          break;
-        case PreferLess:
-          params.add(new KeyValuePair<>("formality", "prefer_less"));
-          break;
-        case Default:
-        default:
-          params.add(new KeyValuePair<>("formality", "default"));
-          break;
-      }
+      params.add(new KeyValuePair<>("formality", formality));
     }
 
     if (glossaryId != null) {
@@ -990,6 +992,26 @@ public class Translator {
     }
 
     return params;
+  }
+
+  /** The wire value of the given formality, or <code>null</code> if it is <code>null</code>. */
+  private static @Nullable String formalityValue(@Nullable Formality formality) {
+    if (formality == null) {
+      return null;
+    }
+    switch (formality) {
+      case More:
+        return "more";
+      case Less:
+        return "less";
+      case PreferMore:
+        return "prefer_more";
+      case PreferLess:
+        return "prefer_less";
+      case Default:
+      default:
+        return "default";
+    }
   }
 
   /** Combine XML tags with comma-delimiter to be included in HTTP request parameters. */

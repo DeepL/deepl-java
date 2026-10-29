@@ -104,8 +104,13 @@ There are additional optional arguments to control translation, see
 corresponding to your input text(s). `TextResult` has the following accessors:
 - `getText()` returns the translated text,
 - `getDetectedSourceLanguage()` returns the detected source language code,
-- `getBilledCharacters()` returns the number of characters billed for the text, and
-- `getModelTypeUsed()` returns the model type used for the translation.
+- `getBilledCharacters()` returns the number of characters billed for the text
+  (0 if the response does not contain it),
+- `getModelTypeUsed()` returns the model type used for the translation, as a
+  string such as `"quality_optimized"` (see `ModelType`), or `null`, and
+- `getTagHandlingVersion()` returns the tag handling version used, as a string
+  such as `"v2"` (see `TagHandlingVersion`); it is `null` unless tag handling
+  was requested.
 
 ```java
 class Example {  // Continuing class Example from above
@@ -156,6 +161,8 @@ a `TextTranslationOptions`, with the following setters:
       sentence.
     - `SentenceSplittingMode.NoNewlines`: input text will be split into
       sentences using punctuation but not newlines.
+    - A string is also accepted and sent as given in `split_sentences`, for
+      example `"nonewlines"`.
 - `setPreserveFormatting()`: controls automatic-formatting-correction. Set to
   `True` to prevent automatic-correction of formatting, default: `false`.
 - `setFormality()`: controls whether translations should lean toward informal or
@@ -163,32 +170,32 @@ a `TextTranslationOptions`, with the following setters:
   [Listing available languages](#listing-available-languages).
     - `Formality.Less`: use informal language.
     - `Formality.More`: use formal, more polite language.
+    - A string is also accepted and sent as given, for example `"prefer_less"`,
+      for values not yet in `Formality`.
 - `setGlossary()`: specifies a glossary to use with translation, as a string
   containing the glossary ID, or a `GlossaryInfo`/`MultilingualGlossaryInfo` 
   object (this object is returned by glossary lookup functions, for example 
   `listGlossaries()` or `listMultilingualGlossaries()`).
-    - `setGlossaryId()` is also available for backward-compatibility, accepting
-      a string containing the glossary ID.
+    - `setGlossaryId()` is deprecated; use `setGlossary()` instead.
 - `setGlossaryIds()`: specifies multiple glossaries to use with translation
-  (up to 5), as a list or varargs of glossary ID strings. Glossaries are applied
-  in the order provided (first match wins). `setGlossaries()` is also available,
-  accepting `IGlossary` objects. This option requires a source language and
-  cannot be combined with `setGlossary()`/`setGlossaryId()`.
+  (up to 5), as a list or varargs of glossary ID strings, or as varargs or a
+  collection of `IGlossary` objects (`GlossaryInfo`/`MultilingualGlossaryInfo`).
+  Glossaries are applied in the order provided (first match wins). This option
+  requires a source language and cannot be combined with `setGlossary()`.
+    - `setGlossaries()` is deprecated; use `setGlossaryIds()` instead.
 - `setStyleRule()`: specifies a style rule to use with translation, as a string
   containing the ID of the style rule, or a `StyleRuleInfo` object.
-    - `setStyleId()` is also available, accepting a string containing the style rule ID.
+    - `setStyleId()` is deprecated; use `setStyleRule()` instead.
 - `setStyleProfile()`: specifies a style profile to use with translation, as a
-  `StyleProfile` object. The profile's glossaries, style rules and translation
+  string containing the style profile ID, or a `StyleProfile` object. The profile's glossaries, style rules and translation
   memories are applied per text once the source language is known; a component
   that does not fit the language pair is left out. No source language is
   required. Cannot be combined with the glossary, style rule, translation memory
   or custom instruction options; the API rejects such a request.
-    - `setStyleProfileId()` is also available, accepting a string containing the
-      style profile ID.
 - `setTranslationMemory()`: specifies a translation memory to use with translation,
-  as a `TranslationMemoryInfo` object. Sets the translation memory ID.
-    - `setTranslationMemoryId()` is also available, accepting a string containing
-      the translation memory ID.
+  as a string containing the translation memory ID, or a `TranslationMemoryInfo`
+  object.
+    - `setTranslationMemoryId()` is deprecated; use `setTranslationMemory()` instead.
     - `setTranslationMemoryThreshold()` is also available, accepting an integer
       from 0 to 100 to control the minimum matching percentage for translation
       memory matches. We recommend a minimum threshold of 75%.
@@ -203,24 +210,30 @@ a `TextTranslationOptions`, with the following setters:
   Note: Any request with the custom instructions parameter enabled will use the
   `quality_optimized` model type as the default. Requests combining custom instructions
   and `model_type: latency_optimized` will be rejected.
-- `model_type`: specifies the type of translation model to use, options are:
-  - `'quality_optimized'`: use a translation model that maximizes translation quality,
-    at the cost of response time. This option may be unavailable for some language pairs.
-  - `'prefer_quality_optimized'`: use the highest-quality translation model for the given
-    language pair.
-  - `'latency_optimized'`: use a translation model that minimizes response time, at the
-    cost of translation quality.
-- `setTagHandling()`: type of tags to parse before translation, options are
-  `"html"` and `"xml"`.
-- `setTagHandlingVersion()`: specifies which version of the tag handling algorithm to use. Options are `"v1"` and `"v2"`.
+- `setModelType()`: specifies the type of translation model to use, as a
+  `ModelType` or a string, options are:
+  - `ModelType.QualityOptimized` (`'quality_optimized'`): use a translation model that
+    maximizes translation quality, at the cost of response time. This option may be
+    unavailable for some language pairs.
+  - `ModelType.PreferQualityOptimized` (`'prefer_quality_optimized'`): use the
+    highest-quality translation model for the given language pair.
+  - `ModelType.LatencyOptimized` (`'latency_optimized'`): use a translation model that
+    minimizes response time, at the cost of translation quality.
+- `setTagHandling()`: type of tags to parse before translation, as a
+  `TagHandlingMode` (`TagHandlingMode.Html`, `TagHandlingMode.Xml`) or a string
+  (`"html"`, `"xml"`).
+- `setTagHandlingVersion()`: specifies which version of the tag handling algorithm
+  to use, as a `TagHandlingVersion` (`TagHandlingVersion.V1`, `TagHandlingVersion.V2`)
+  or a string (`"v1"`, `"v2"`).
 
 The following options are only used if `setTagHandling()` is set to `'xml'`:
 
 - `setOutlineDetection()`: specify `false` to disable automatic tag detection,
   default is `true`.
 - `setSplittingTags()`: list of XML tags that should be used to split text into
-  sentences. Tags may be specified as an array of strings (`['tag1', 'tag2']`),
-  or a comma-separated list of strings (`'tag1,tag2'`). The default is an empty
+  sentences. Tags may be specified as an `Iterable<String>`
+  (`Arrays.asList("tag1", "tag2")`), or a comma-separated string (`"tag1,tag2"`)
+  that is sent as given. The default is an empty
   list.
 - `setNonSplittingTags()`: list of XML tags that should not be used to split
   text into sentences. Format and default are the same as for splitting tags.
@@ -939,7 +952,7 @@ class Example {  // Continuing class Example from above
             "Hallo, Welt!",
             "de",
             "en-US",
-            new TextTranslationOptions().setStyleId(styleId));
+            new TextTranslationOptions().setStyleRule(styleId));
         System.out.println(result.getText());
     }
 }
@@ -1052,9 +1065,9 @@ class Example {  // Continuing class Example from above
 
 #### Using a style profile in translations
 
-Pass a `StyleProfile` to `setStyleProfile()` or an ID to `setStyleProfileId()`
-in `TextTranslationOptions` or `DocumentTranslationOptions` to translate with all
-of the profile's components through one ID:
+Pass a `StyleProfile` or an ID to `setStyleProfile()` in `TextTranslationOptions`
+(in `DocumentTranslationOptions`, pass an ID to `setStyleProfileId()`) to
+translate with all of the profile's components through one ID:
 
 ```java
 class Example {  // Continuing class Example from above
@@ -1064,7 +1077,7 @@ class Example {  // Continuing class Example from above
             null,
             "de",
             new TextTranslationOptions()
-                .setStyleProfileId("3f1c9d0e-7a24-4b58-9c31-8f0e5d2a1b47"));
+                .setStyleProfile("3f1c9d0e-7a24-4b58-9c31-8f0e5d2a1b47"));
         System.out.println(result.getText());
     }
 }
@@ -1255,7 +1268,7 @@ class Example {  // Continuing class Example from above
     public void usingTranslationMemoryExample() throws Exception {
         // Using the translation memory ID directly
         TextTranslationOptions options = new TextTranslationOptions()
-                .setTranslationMemoryId("tm-123abc")
+                .setTranslationMemory("tm-123abc")
                 .setTranslationMemoryThreshold(80);
         TextResult result = client.translateText(
             "Hello, world!", null, "de", options);

@@ -281,8 +281,7 @@ class TranslateTextTest {
             "1",
             "style_profile_id",
             "sp1"));
-    client.translateText(
-        "Hello", null, "de", new TextTranslationOptions().setStyleProfileId("sp1"));
+    client.translateText("Hello", null, "de", new TextTranslationOptions().setStyleProfile("sp1"));
   }
 
   @Test
@@ -323,7 +322,8 @@ class TranslateTextTest {
   @Test
   void rejectsANullStyleProfile() {
     assertThrows(
-        IllegalArgumentException.class, () -> new TextTranslationOptions().setStyleProfile(null));
+        IllegalArgumentException.class,
+        () -> new TextTranslationOptions().setStyleProfile((StyleProfile) null));
   }
 
   @Test
@@ -443,6 +443,157 @@ class TranslateTextTest {
   }
 
   @Test
+  void sendsFormalityStringAsGiven() throws Exception {
+    expectBody(
+        FormBody.of(
+            "target_lang",
+            "de",
+            "formality",
+            "prefer_less",
+            "text",
+            "Hello",
+            "show_billed_characters",
+            "1"));
+    client.translateText(
+        "Hello", null, "de", new TextTranslationOptions().setFormality("prefer_less"));
+  }
+
+  @Test
+  void sendsSentenceSplittingStringAsGiven() throws Exception {
+    expectBody(
+        FormBody.of(
+            "target_lang",
+            "de",
+            "text",
+            "Hello",
+            "show_billed_characters",
+            "1",
+            "split_sentences",
+            "nonewlines"));
+    client.translateText(
+        "Hello", null, "de", new TextTranslationOptions().setSentenceSplittingMode("nonewlines"));
+  }
+
+  @Test
+  void sendsTagHandlingEnums() throws Exception {
+    expectBody(
+        FormBody.of(
+            "target_lang",
+            "de",
+            "text",
+            "Hello",
+            "show_billed_characters",
+            "1",
+            "tag_handling",
+            "html",
+            "tag_handling_version",
+            "v1"));
+    client.translateText(
+        "Hello",
+        null,
+        "de",
+        new TextTranslationOptions()
+            .setTagHandling(TagHandlingMode.Html)
+            .setTagHandlingVersion(TagHandlingVersion.V1));
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "QualityOptimized,quality_optimized",
+    "PreferQualityOptimized,prefer_quality_optimized",
+    "LatencyOptimized,latency_optimized"
+  })
+  void sendsModelTypeEnum(ModelType modelType, String expected) throws Exception {
+    expectBody(
+        FormBody.of(
+            "target_lang",
+            "de",
+            "text",
+            "Hello",
+            "show_billed_characters",
+            "1",
+            "model_type",
+            expected));
+    client.translateText("Hello", null, "de", new TextTranslationOptions().setModelType(modelType));
+  }
+
+  @Test
+  void sendsCommaSeparatedTagStringsAsGiven() throws Exception {
+    expectBody(
+        FormBody.of(
+            "target_lang",
+            "de",
+            "text",
+            "Hello",
+            "show_billed_characters",
+            "1",
+            "splitting_tags",
+            "title,par",
+            "non_splitting_tags",
+            "span,b",
+            "ignore_tags",
+            "raw"));
+    client.translateText(
+        "Hello",
+        null,
+        "de",
+        new TextTranslationOptions()
+            .setSplittingTags("title,par")
+            .setNonSplittingTags("span,b")
+            .setIgnoreTags("raw"));
+  }
+
+  @Test
+  void sendsStyleRuleId() throws Exception {
+    expectBody(
+        FormBody.of(
+            "target_lang", "de", "text", "Hello", "show_billed_characters", "1", "style_id", "s3"));
+    client.translateText("Hello", null, "de", new TextTranslationOptions().setStyleRule("s3"));
+  }
+
+  @Test
+  void sendsTranslationMemoryId() throws Exception {
+    expectBody(
+        FormBody.of(
+            "target_lang",
+            "de",
+            "text",
+            "Hello",
+            "show_billed_characters",
+            "1",
+            "translation_memory_id",
+            "tm3"));
+    client.translateText(
+        "Hello", null, "de", new TextTranslationOptions().setTranslationMemory("tm3"));
+  }
+
+  @Test
+  void sendsTheIdsOfGlossaryObjects() throws Exception {
+    GlossaryInfo glossary = new GlossaryInfo("g1", "n", true, "en", "de", new Date(), 1);
+    MultilingualGlossaryInfo multilingual =
+        new MultilingualGlossaryInfo("g2", "n", new Date(), Collections.emptyList());
+    expectBody(
+        FormBody.of(
+            "source_lang",
+            "en",
+            "target_lang",
+            "de",
+            "glossary_ids",
+            "g1,g2",
+            "text",
+            "Hello",
+            "show_billed_characters",
+            "1"));
+    client.translateText(
+        "Hello", "en", "de", new TextTranslationOptions().setGlossaryIds(glossary, multilingual));
+    client.translateText(
+        "Hello",
+        "en",
+        "de",
+        new TextTranslationOptions().setGlossaryIds(Arrays.asList(glossary, multilingual)));
+  }
+
+  @Test
   void sendsExtraBodyParametersLastAndLetsThemOverrideOptions() throws Exception {
     Map<String, String> extra = new LinkedHashMap<>();
     extra.put("target_lang", "fr");
@@ -495,6 +646,35 @@ class TranslateTextTest {
     assertEquals(0, result.getBilledCharacters());
     assertNull(result.getModelTypeUsed());
     assertEquals("x", result.getText());
+  }
+
+  @Test
+  void parsesTagHandlingVersion() throws Exception {
+    wm.stubFor(
+        post("/v2/translate")
+            .willReturn(
+                okJson(
+                    "{\"translations\":[{\"detected_source_language\":\"EN\",\"text\":\"x\","
+                        + "\"billed_characters\":5,\"tag_handling_version\":\"v2\"}]}")));
+    TextResult result = client.translateText("Hello", null, "de");
+    assertEquals("v2", result.getTagHandlingVersion());
+  }
+
+  @Test
+  void parsesAMissingOrMalformedTagHandlingVersionAsNull() throws Exception {
+    wm.stubFor(
+        post("/v2/translate")
+            .willReturn(
+                okJson(
+                    "{\"translations\":[{\"detected_source_language\":\"EN\",\"text\":\"x\","
+                        + "\"billed_characters\":5,\"tag_handling_version\":{\"v\":2}},"
+                        + "{\"detected_source_language\":\"EN\",\"text\":\"y\","
+                        + "\"billed_characters\":3}]}")));
+    List<TextResult> results = client.translateText(Arrays.asList("a", "b"), null, "de");
+    assertNull(results.get(0).getTagHandlingVersion());
+    assertEquals("x", results.get(0).getText());
+    assertEquals(5, results.get(0).getBilledCharacters());
+    assertNull(results.get(1).getTagHandlingVersion());
   }
 
   @Test

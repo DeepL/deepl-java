@@ -16,10 +16,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `TextTranslationOptions.setExtraBodyParameters()` and
   `DocumentTranslationOptions.setExtraBodyParameters()` now return the options
   class, so further setters can be chained after them.
-- Added the `setStyleProfile()` / `setStyleProfileId()` option to
-  `TextTranslationOptions` and `DocumentTranslationOptions`, sent as
-  `style_profile_id` on text and document translation. It accepts a style
-  profile ID or a `StyleProfile` object.
+- Added the `setStyleProfile()` option to `TextTranslationOptions` and
+  `setStyleProfile()` / `setStyleProfileId()` to `DocumentTranslationOptions`,
+  sent as `style_profile_id` on text and document translation. It accepts a
+  style profile ID or a `StyleProfile` object.
+- Added the `TagHandlingMode`, `TagHandlingVersion` and `ModelType` enums and
+  `TextTranslationOptions.setTagHandling()`, `setTagHandlingVersion()` and
+  `setModelType()` overloads that take them; the string setters remain.
+- Added `TextTranslationOptions.setFormality(String)` and
+  `setSentenceSplittingMode(String)`, which send the string as given, for
+  values not yet in `Formality` or `SentenceSplittingMode`.
+- Added `TextTranslationOptions.setSplittingTags(String)`,
+  `setNonSplittingTags(String)` and `setIgnoreTags(String)`, which send a
+  comma-separated tag list as given.
+- Added `TextTranslationOptions.setStyleRule(String)` and
+  `setTranslationMemory(String)`, taking the style rule or translation memory
+  ID.
+- Added `TextTranslationOptions.setGlossaryIds(IGlossary...)` and
+  `setGlossaryIds(Collection<? extends IGlossary>)`, taking glossary objects.
+- Added `TextResult.getTagHandlingVersion()`, the tag handling version the API
+  used (`tag_handling_version`); `null` when the response does not contain it.
 - Added style profile support to `DeepLClient` (`/v3/style_profiles`):
   `createStyleProfile()`, `listStyleProfiles()`, `getStyleProfile()`,
   `updateStyleProfile()` and `deleteStyleProfile()`, with the new classes
@@ -93,6 +109,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   example `"de"`, or use `getSourceLanguages()` / `getTargetLanguages()`.
   The constants will be removed in the next major version. The class itself
   and its helper methods are not deprecated.
+- Deprecated `TextTranslationOptions.setGlossaryId()`, `setGlossaries()`,
+  `setStyleId()` and `setTranslationMemoryId()`. Use `setGlossary()`,
+  `setGlossaryIds()`, `setStyleRule()` and `setTranslationMemory()` instead.
+  They will be removed in the next major version.
 
 ### Fixed
 - `translateText()` no longer fails when a translation in the response has no

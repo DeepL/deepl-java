@@ -21,6 +21,12 @@ class TextResultDeserializer implements JsonDeserializer<TextResult> {
         jsonObject.get("text").getAsString(),
         jsonObject.get("detected_source_language").getAsString(),
         billedCharacters != null ? billedCharacters : 0,
-        Parser.getAsStringOrNull(jsonObject, "model_type_used"));
+        Parser.getAsStringOrNull(jsonObject, "model_type_used"),
+        stringOrNull(jsonObject.get("tag_handling_version")));
+  }
+
+  /** Parses a new response field tolerantly: anything but a JSON string or number yields null. */
+  private static String stringOrNull(JsonElement element) {
+    return element != null && element.isJsonPrimitive() ? element.getAsString() : null;
   }
 }

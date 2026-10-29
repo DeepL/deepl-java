@@ -5,6 +5,8 @@ package com.deepl.api;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -15,11 +17,12 @@ import java.util.Map;
  * <p>All properties have corresponding setters in fluent-style, so the following is possible:
  * <code>
  *      TextTranslationOptions options = new TextTranslationOptions()
- *          .setFormality(Formality.Less).setGlossaryId("f63c02c5-f056-..");
+ *          .setFormality(Formality.Less).setGlossary("f63c02c5-f056-..");
  * </code>
  */
 public class TextTranslationOptions extends BaseRequestOptions {
   private Formality formality;
+  private String formalityString;
   private String glossaryId;
   private List<String> glossaryIds;
   private String styleId;
@@ -27,6 +30,7 @@ public class TextTranslationOptions extends BaseRequestOptions {
   private String translationMemoryId;
   private Integer translationMemoryThreshold;
   private SentenceSplittingMode sentenceSplittingMode;
+  private String sentenceSplittingModeString;
   private boolean preserveFormatting = false;
   private String context;
   private String tagHandling;
@@ -48,13 +52,30 @@ public class TextTranslationOptions extends BaseRequestOptions {
    */
   public TextTranslationOptions setFormality(Formality formality) {
     this.formality = formality;
+    this.formalityString = null;
+    return this;
+  }
+
+  /**
+   * Sets the formality as a string, which is sent to the API as given, for example <code>"less"
+   * </code>. Use this for values not yet in {@link Formality}. By default, this value is <code>null
+   * </code> and translations use the default formality.
+   *
+   * @see #setFormality(Formality)
+   */
+  public TextTranslationOptions setFormality(String formality) {
+    this.formalityString = formality;
+    this.formality = null;
     return this;
   }
 
   /**
    * Sets the ID of a glossary to use with the translation. By default, this value is <code>
    * null</code> and no glossary is used.
+   *
+   * @deprecated Use {@link #setGlossary(String)} instead.
    */
+  @Deprecated
   public TextTranslationOptions setGlossaryId(String glossaryId) {
     this.glossaryId = glossaryId;
     return this;
@@ -81,7 +102,7 @@ public class TextTranslationOptions extends BaseRequestOptions {
    * Sets the list of glossary IDs to use with the translation, up to a maximum of 5. Glossaries are
    * applied in the order provided (first match wins). By default, this value is <code>null</code>
    * and no glossaries are used. This option requires a source language to be set and cannot be
-   * combined with {@link #setGlossaryId} or {@link #setGlossary}.
+   * combined with {@link #setGlossary}.
    */
   public TextTranslationOptions setGlossaryIds(List<String> glossaryIds) {
     this.glossaryIds = glossaryIds;
@@ -92,7 +113,7 @@ public class TextTranslationOptions extends BaseRequestOptions {
    * Sets the list of glossary IDs to use with the translation, up to a maximum of 5. Glossaries are
    * applied in the order provided (first match wins). By default, this value is <code>null</code>
    * and no glossaries are used. This option requires a source language to be set and cannot be
-   * combined with {@link #setGlossaryId} or {@link #setGlossary}.
+   * combined with {@link #setGlossary}.
    */
   public TextTranslationOptions setGlossaryIds(String... glossaryIds) {
     this.glossaryIds = Arrays.asList(glossaryIds);
@@ -103,9 +124,19 @@ public class TextTranslationOptions extends BaseRequestOptions {
    * Sets the list of glossaries to use with the translation, up to a maximum of 5. Glossaries are
    * applied in the order provided (first match wins). By default, this value is <code>null</code>
    * and no glossaries are used. This option requires a source language to be set and cannot be
-   * combined with {@link #setGlossaryId} or {@link #setGlossary}.
+   * combined with {@link #setGlossary}.
    */
-  public TextTranslationOptions setGlossaries(IGlossary... glossaries) {
+  public TextTranslationOptions setGlossaryIds(IGlossary... glossaries) {
+    return setGlossaryIds(Arrays.asList(glossaries));
+  }
+
+  /**
+   * Sets the list of glossaries to use with the translation, up to a maximum of 5. Glossaries are
+   * applied in the order provided (first match wins). By default, this value is <code>null</code>
+   * and no glossaries are used. This option requires a source language to be set and cannot be
+   * combined with {@link #setGlossary}.
+   */
+  public TextTranslationOptions setGlossaryIds(Collection<? extends IGlossary> glossaries) {
     List<String> ids = new ArrayList<>();
     for (IGlossary glossary : glossaries) {
       if (glossary == null) {
@@ -118,11 +149,33 @@ public class TextTranslationOptions extends BaseRequestOptions {
   }
 
   /**
+   * Sets the list of glossaries to use with the translation, up to a maximum of 5.
+   *
+   * @deprecated Use {@link #setGlossaryIds(IGlossary...)} instead.
+   */
+  @Deprecated
+  public TextTranslationOptions setGlossaries(IGlossary... glossaries) {
+    return setGlossaryIds(glossaries);
+  }
+
+  /**
+   * Sets the ID of a style rule to use with the translation. By default, this value is <code>
+   * null</code> and no style rule is used.
+   *
+   * @deprecated Use {@link #setStyleRule(String)} instead.
+   */
+  @Deprecated
+  public TextTranslationOptions setStyleId(String styleId) {
+    this.styleId = styleId;
+    return this;
+  }
+
+  /**
    * Sets the ID of a style rule to use with the translation. By default, this value is <code>
    * null</code> and no style rule is used.
    */
-  public TextTranslationOptions setStyleId(String styleId) {
-    this.styleId = styleId;
+  public TextTranslationOptions setStyleRule(String styleRuleId) {
+    this.styleId = styleRuleId;
     return this;
   }
 
@@ -134,7 +187,7 @@ public class TextTranslationOptions extends BaseRequestOptions {
     if (styleRule == null) {
       throw new IllegalArgumentException("styleRule must not be null");
     }
-    return setStyleId(styleRule.getStyleId());
+    return setStyleRule(styleRule.getStyleId());
   }
 
   /**
@@ -144,27 +197,39 @@ public class TextTranslationOptions extends BaseRequestOptions {
    * used. The API rejects combining a style profile with glossaries, a style rule, a translation
    * memory, a translation memory threshold or custom instructions.
    */
-  public TextTranslationOptions setStyleProfileId(String styleProfileId) {
+  public TextTranslationOptions setStyleProfile(String styleProfileId) {
     this.styleProfileId = styleProfileId;
     return this;
   }
 
   /**
    * Sets the style profile to use with the translation. By default, this value is <code>null
-   * </code> and no style profile is used. See {@link #setStyleProfileId}.
+   * </code> and no style profile is used. See {@link #setStyleProfile(String)}.
    */
   public TextTranslationOptions setStyleProfile(StyleProfile styleProfile) {
     if (styleProfile == null) {
       throw new IllegalArgumentException("styleProfile must not be null");
     }
-    return setStyleProfileId(styleProfile.getStyleProfileId());
+    return setStyleProfile(styleProfile.getStyleProfileId());
+  }
+
+  /**
+   * Sets the ID of a translation memory to use with the translation. By default, this value is
+   * <code>null</code> and no translation memory is used.
+   *
+   * @deprecated Use {@link #setTranslationMemory(String)} instead.
+   */
+  @Deprecated
+  public TextTranslationOptions setTranslationMemoryId(String translationMemoryId) {
+    this.translationMemoryId = translationMemoryId;
+    return this;
   }
 
   /**
    * Sets the ID of a translation memory to use with the translation. By default, this value is
    * <code>null</code> and no translation memory is used.
    */
-  public TextTranslationOptions setTranslationMemoryId(String translationMemoryId) {
+  public TextTranslationOptions setTranslationMemory(String translationMemoryId) {
     this.translationMemoryId = translationMemoryId;
     return this;
   }
@@ -177,14 +242,13 @@ public class TextTranslationOptions extends BaseRequestOptions {
     if (translationMemory == null) {
       throw new IllegalArgumentException("translationMemory must not be null");
     }
-    return setTranslationMemoryId(translationMemory.getTranslationMemoryId());
+    return setTranslationMemory(translationMemory.getTranslationMemoryId());
   }
 
   /**
    * Sets the threshold for translation memory matches. By default, this value is <code>null</code>
-   * and the API default threshold is used. Note: a translation memory ID must also be set via
-   * {@link #setTranslationMemoryId} or {@link #setTranslationMemory}, otherwise an error will be
-   * thrown at translation time.
+   * and the API default threshold is used. Note: a translation memory must also be set via {@link
+   * #setTranslationMemory}, otherwise an error will be thrown at translation time.
    */
   public TextTranslationOptions setTranslationMemoryThreshold(Integer translationMemoryThreshold) {
     if (translationMemoryThreshold != null
@@ -214,6 +278,20 @@ public class TextTranslationOptions extends BaseRequestOptions {
   public TextTranslationOptions setSentenceSplittingMode(
       SentenceSplittingMode sentenceSplittingMode) {
     this.sentenceSplittingMode = sentenceSplittingMode;
+    this.sentenceSplittingModeString = null;
+    return this;
+  }
+
+  /**
+   * Sets the sentence splitting mode as a string, which is sent to the API as given in <code>
+   * split_sentences</code>, for example <code>"nonewlines"</code>. Use this for values not yet in
+   * {@link SentenceSplittingMode}.
+   *
+   * @see #setSentenceSplittingMode(SentenceSplittingMode)
+   */
+  public TextTranslationOptions setSentenceSplittingMode(String sentenceSplittingMode) {
+    this.sentenceSplittingModeString = sentenceSplittingMode;
+    this.sentenceSplittingMode = null;
     return this;
   }
 
@@ -238,11 +316,33 @@ public class TextTranslationOptions extends BaseRequestOptions {
   }
 
   /**
+   * Set the type of tags to parse before translation. By default, this value is <code>null</code>
+   * and no tag-handling is used.
+   *
+   * @see TagHandlingMode
+   */
+  public TextTranslationOptions setTagHandling(TagHandlingMode tagHandling) {
+    this.tagHandling = tagHandling != null ? tagHandling.getValue() : null;
+    return this;
+  }
+
+  /**
    * Sets the version of tag handling algorithm to use. By default, this value is <code>null</code>
    * and the API default is used.
    */
   public TextTranslationOptions setTagHandlingVersion(String tagHandlingVersion) {
     this.tagHandlingVersion = tagHandlingVersion;
+    return this;
+  }
+
+  /**
+   * Sets the version of tag handling algorithm to use. By default, this value is <code>null</code>
+   * and the API default is used.
+   *
+   * @see TagHandlingVersion
+   */
+  public TextTranslationOptions setTagHandlingVersion(TagHandlingVersion tagHandlingVersion) {
+    this.tagHandlingVersion = tagHandlingVersion != null ? tagHandlingVersion.getValue() : null;
     return this;
   }
 
@@ -257,6 +357,17 @@ public class TextTranslationOptions extends BaseRequestOptions {
    */
   public TextTranslationOptions setModelType(String modelType) {
     this.modelType = modelType;
+    return this;
+  }
+
+  /**
+   * Set the type of model to use for a text translation. By default, this value is <code>null
+   * </code> and the API default model type is used.
+   *
+   * @see ModelType
+   */
+  public TextTranslationOptions setModelType(ModelType modelType) {
+    this.modelType = modelType != null ? modelType.getValue() : null;
     return this;
   }
 
@@ -279,6 +390,16 @@ public class TextTranslationOptions extends BaseRequestOptions {
   }
 
   /**
+   * Sets the XML tags containing content that should not be translated, as a comma-separated string
+   * that is sent as given, for example <code>
+   * "a,b"</code>. By default, this value is <code>null</code> and no tags are specified.
+   */
+  public TextTranslationOptions setIgnoreTags(String ignoreTags) {
+    this.ignoreTags = ignoreTags != null ? Collections.singletonList(ignoreTags) : null;
+    return this;
+  }
+
+  /**
    * Sets the list of XML tags that should not be used to split text into sentences. By default,
    * this value is <code>null</code> and no tags are specified.
    */
@@ -288,11 +409,32 @@ public class TextTranslationOptions extends BaseRequestOptions {
   }
 
   /**
+   * Sets the XML tags that should not be used to split text into sentences, as a comma-separated
+   * string that is sent as given, for example <code>
+   * "a,b"</code>. By default, this value is <code>null</code> and no tags are specified.
+   */
+  public TextTranslationOptions setNonSplittingTags(String nonSplittingTags) {
+    this.nonSplittingTags =
+        nonSplittingTags != null ? Collections.singletonList(nonSplittingTags) : null;
+    return this;
+  }
+
+  /**
    * Set the list of XML tags that should be used to split text into sentences. By default, this
    * value is <code>null</code> and no tags are specified.
    */
   public TextTranslationOptions setSplittingTags(Iterable<String> splittingTags) {
     this.splittingTags = splittingTags;
+    return this;
+  }
+
+  /**
+   * Sets the XML tags that should be used to split text into sentences, as a comma-separated string
+   * that is sent as given, for example <code>
+   * "a,b"</code>. By default, this value is <code>null</code> and no tags are specified.
+   */
+  public TextTranslationOptions setSplittingTags(String splittingTags) {
+    this.splittingTags = splittingTags != null ? Collections.singletonList(splittingTags) : null;
     return this;
   }
 
@@ -308,6 +450,16 @@ public class TextTranslationOptions extends BaseRequestOptions {
   /** Gets the current formality setting. */
   public Formality getFormality() {
     return formality;
+  }
+
+  /** The formality set as a string, sent in place of {@link #getFormality()}. */
+  String getFormalityString() {
+    return formalityString;
+  }
+
+  /** The sentence splitting mode set as a string, sent in place of the enum value. */
+  String getSentenceSplittingModeString() {
+    return sentenceSplittingModeString;
   }
 
   /** Gets the current glossary ID. */
