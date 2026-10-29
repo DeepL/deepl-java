@@ -104,35 +104,46 @@ final class ApiClientHelper {
       }
     }
 
-    switch (response.getCode()) {
+    throw createException(
+            response.getCode(), messageSuffix, inDocumentDownload, usingGlossary, keyName)
+        .setHttpStatusCode(response.getCode());
+  }
+
+  @SuppressWarnings("deprecation")
+  private static DeepLException createException(
+      int code,
+      String messageSuffix,
+      boolean inDocumentDownload,
+      boolean usingGlossary,
+      String keyName) {
+    switch (code) {
       case HttpURLConnection.HTTP_BAD_REQUEST:
-        throw new DeepLException("Bad request" + messageSuffix);
+        return new DeepLException("Bad request" + messageSuffix);
       case HttpURLConnection.HTTP_UNAUTHORIZED:
       case HttpURLConnection.HTTP_FORBIDDEN:
-        throw new AuthorizationException("Authorization failure, check " + keyName + messageSuffix);
+        return new AuthorizationException(
+            "Authorization failure, check " + keyName + messageSuffix);
       case HttpURLConnection.HTTP_NOT_FOUND:
         if (usingGlossary) {
-          throw new GlossaryNotFoundException("Glossary not found" + messageSuffix);
+          return new GlossaryNotFoundException("Glossary not found" + messageSuffix);
         } else {
-          throw new NotFoundException("Not found" + messageSuffix);
+          return new NotFoundException("Not found" + messageSuffix);
         }
       case 429:
-        throw new TooManyRequestsException(
+        return new TooManyRequestsException(
             "Too many requests, DeepL servers are currently experiencing high load"
                 + messageSuffix);
       case 456:
-        throw new QuotaExceededException(
+        return new QuotaExceededException(
             "Quota for this billing period has been exceeded" + messageSuffix);
       case HttpURLConnection.HTTP_UNAVAILABLE:
-        {
-          if (inDocumentDownload) {
-            throw new DocumentNotReadyException("Document not ready" + messageSuffix);
-          } else {
-            throw new DeepLException("Service unavailable" + messageSuffix);
-          }
+        if (inDocumentDownload) {
+          return new DocumentNotReadyException("Document not ready" + messageSuffix);
+        } else {
+          return new DeepLException("Service unavailable" + messageSuffix);
         }
       default:
-        throw new DeepLException("Unknown error" + messageSuffix);
+        return new DeepLException("Unknown error" + messageSuffix);
     }
   }
 

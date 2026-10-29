@@ -517,6 +517,8 @@ class TranslateDocumentTest {
             () -> client.translateDocument(input, output, "en", "de"));
     assertNull(thrown.getHandle());
     assertTrue(thrown.getMessage().contains("Invalid file"));
+    assertEquals(400, thrown.getHttpStatusCode());
+    assertFalse(thrown.getShouldRetry());
   }
 
   @Test

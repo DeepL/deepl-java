@@ -27,4 +27,22 @@ public class DocumentTranslationException extends DeepLException {
   public @Nullable DocumentHandle getHandle() {
     return handle;
   }
+
+  /** Returns the HTTP status code of the underlying error, if it came from an HTTP response. */
+  @Override
+  public @Nullable Integer getHttpStatusCode() {
+    Throwable cause = getCause();
+    return cause instanceof DeepLException
+        ? ((DeepLException) cause).getHttpStatusCode()
+        : super.getHttpStatusCode();
+  }
+
+  /** Returns whether a retry of the underlying failed request could succeed. */
+  @Override
+  public boolean getShouldRetry() {
+    Throwable cause = getCause();
+    return cause instanceof DeepLException
+        ? ((DeepLException) cause).getShouldRetry()
+        : super.getShouldRetry();
+  }
 }

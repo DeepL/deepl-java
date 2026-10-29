@@ -26,21 +26,27 @@ class ErrorsTest {
 
   @ParameterizedTest
   @CsvSource({
-    "400,com.deepl.api.DeepLException,Bad request",
-    "401,com.deepl.api.AuthorizationException,Authorization failure",
-    "403,com.deepl.api.AuthorizationException,Authorization failure",
-    "404,com.deepl.api.NotFoundException,Not found",
-    "429,com.deepl.api.TooManyRequestsException,Too many requests",
-    "456,com.deepl.api.QuotaExceededException,Quota for this billing period has been exceeded",
-    "500,com.deepl.api.DeepLException,Unknown error",
-    "503,com.deepl.api.DeepLException,Service unavailable",
+    "400,com.deepl.api.DeepLException,Bad request,false",
+    "401,com.deepl.api.AuthorizationException,Authorization failure,false",
+    "403,com.deepl.api.AuthorizationException,Authorization failure,false",
+    "404,com.deepl.api.NotFoundException,Not found,false",
+    "418,com.deepl.api.DeepLException,Unknown error,false",
+    "429,com.deepl.api.TooManyRequestsException,Too many requests,true",
+    "456,com.deepl.api.QuotaExceededException,Quota for this billing period has been exceeded,false",
+    "500,com.deepl.api.DeepLException,Unknown error,true",
+    "503,com.deepl.api.DeepLException,Service unavailable,true",
   })
   void throwsTheExceptionOfTheStatusCode(
-      int status, Class<? extends DeepLException> expected, String messagePrefix) {
+      int status,
+      Class<? extends DeepLException> expected,
+      String messagePrefix,
+      boolean shouldRetry) {
     respond(status, "");
     DeepLException thrown = assertThrows(expected, translator::getUsage);
     assertEquals(expected, thrown.getClass());
     assertEquals(true, thrown.getMessage().startsWith(messagePrefix), thrown.getMessage());
+    assertEquals(status, thrown.getHttpStatusCode());
+    assertEquals(shouldRetry, thrown.getShouldRetry());
   }
 
   @Test
@@ -48,7 +54,9 @@ class ErrorsTest {
     wm.stubFor(get("/v2/admin/developer-keys").willReturn(aResponse().withStatus(401)));
     DeepLAdminClient admin =
         OfflineClient.createAdminClient(wm, new DeepLAdminClientOptions().setMaxRetries(0));
-    assertThrows(AuthorizationException.class, admin::getDeveloperKeys);
+    AuthorizationException thrown =
+        assertThrows(AuthorizationException.class, admin::getDeveloperKeys);
+    assertEquals(401, thrown.getHttpStatusCode());
   }
 
   @Test
