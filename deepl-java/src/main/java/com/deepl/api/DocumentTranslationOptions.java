@@ -6,6 +6,7 @@ package com.deepl.api;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -251,5 +252,13 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
   /** Gets the current watermark setting, or <code>null</code> if it is not set. */
   public @Nullable Boolean getEnableWatermark() {
     return enableWatermark;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public DocumentTranslationOptions setExtraBodyParameters(
+      Map<String, String> extraBodyParameters) {
+    super.setExtraBodyParameters(extraBodyParameters);
+    return this;
   }
 }

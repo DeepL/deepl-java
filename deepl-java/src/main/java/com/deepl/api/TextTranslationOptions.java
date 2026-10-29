@@ -6,6 +6,7 @@ package com.deepl.api;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Options to control text translation behaviour. These options may be provided to {@link
@@ -392,5 +393,12 @@ public class TextTranslationOptions extends BaseRequestOptions {
   /** Gets the current custom instructions list. */
   public Iterable<String> getCustomInstructions() {
     return customInstructions;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public TextTranslationOptions setExtraBodyParameters(Map<String, String> extraBodyParameters) {
+    super.setExtraBodyParameters(extraBodyParameters);
+    return this;
   }
 }

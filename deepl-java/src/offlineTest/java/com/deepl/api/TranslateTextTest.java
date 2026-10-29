@@ -447,12 +447,14 @@ class TranslateTextTest {
     Map<String, String> extra = new LinkedHashMap<>();
     extra.put("target_lang", "fr");
     extra.put("debug", "1");
-    TextTranslationOptions options = new TextTranslationOptions();
-    options.setExtraBodyParameters(extra);
+    TextTranslationOptions options =
+        new TextTranslationOptions().setExtraBodyParameters(extra).setFormality(Formality.Less);
     expectBody(
         FormBody.of(
             "source_lang",
             "en",
+            "formality",
+            "less",
             "text",
             "Hello",
             "show_billed_characters",

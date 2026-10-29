@@ -212,8 +212,7 @@ class TranslateDocumentTest {
     extra.put("target_lang", "fr");
     extra.put("debug", "1");
     DocumentTranslationOptions options =
-        new DocumentTranslationOptions().setGlossaryIds("g1", "g2");
-    options.setExtraBodyParameters(extra);
+        new DocumentTranslationOptions().setExtraBodyParameters(extra).setGlossaryIds("g1", "g2");
     expectUpload(
         "/v2/document",
         "example.txt",
