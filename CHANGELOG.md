@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   failed response (`null` if there was none), and
   `DeepLException.getShouldRetry()`, which is `true` for HTTP 429, HTTP 5xx and
   connection, DNS and timeout failures.
-- Added `setProxy(String)` to `DeepLClientOptions` (`TranslatorOptions`) and
+- Added `setProxyUrl(String)` to `DeepLClientOptions` (`TranslatorOptions`) and
   `DeepLAdminClientOptions`, which takes an HTTP proxy URL such as
   `http://proxy.example.com:3128`.
 - `TextTranslationOptions.setExtraBodyParameters()` and

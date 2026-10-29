@@ -1617,7 +1617,8 @@ The available options setters are:
   timeout while reading the response.
 - `setTimeout()`: connection timeout for each HTTP request.
 - `setProxy()`: provide details about a proxy to use for all HTTP requests to
-  DeepL, either as a `java.net.Proxy` or as an HTTP proxy URL such as
+  DeepL, as a `java.net.Proxy`.
+- `setProxyUrl()`: the same as an HTTP proxy URL such as
   `"http://proxy.example.com:3128"` (port 80 if omitted; credentials in the
   URL are not supported).
 - `setHeaders()`: additional HTTP headers to attach to all requests. They may

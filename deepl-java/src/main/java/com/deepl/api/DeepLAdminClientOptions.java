@@ -60,7 +60,7 @@ public class DeepLAdminClientOptions {
    *
    * @throws IllegalArgumentException If the URL is not a valid HTTP proxy URL.
    */
-  public DeepLAdminClientOptions setProxy(String proxyUrl) {
+  public DeepLAdminClientOptions setProxyUrl(String proxyUrl) {
     this.proxy = ProxyUrl.parse(proxyUrl);
     return this;
   }

@@ -65,7 +65,7 @@ public class TranslatorOptions {
    *
    * @throws IllegalArgumentException If the URL is not a valid HTTP proxy URL.
    */
-  public TranslatorOptions setProxy(String proxyUrl) {
+  public TranslatorOptions setProxyUrl(String proxyUrl) {
     this.proxy = ProxyUrl.parse(proxyUrl);
     return this;
   }
