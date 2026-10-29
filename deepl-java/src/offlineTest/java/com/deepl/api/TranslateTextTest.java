@@ -484,6 +484,20 @@ class TranslateTextTest {
   }
 
   @Test
+  void parsesAMissingBilledCharactersAndANullModelType() throws Exception {
+    wm.stubFor(
+        post("/v2/translate")
+            .willReturn(
+                okJson(
+                    "{\"translations\":[{\"detected_source_language\":\"EN\",\"text\":\"x\","
+                        + "\"model_type_used\":null}]}")));
+    TextResult result = client.translateText("Hello", null, "de");
+    assertEquals(0, result.getBilledCharacters());
+    assertNull(result.getModelTypeUsed());
+    assertEquals("x", result.getText());
+  }
+
+  @Test
   void throwsIllegalArgumentWhenTextIsEmpty() {
     assertThrows(IllegalArgumentException.class, () -> client.translateText("", null, "de"));
     assertThrows(

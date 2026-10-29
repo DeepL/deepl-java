@@ -95,6 +95,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and its helper methods are not deprecated.
 
 ### Fixed
+- `translateText()` no longer fails when a translation in the response has no
+  `billed_characters` (`getBilledCharacters()` returns 0) or a `null`
+  `model_type_used` (`getModelTypeUsed()` returns `null`).
 - HTTP 401 now throws `AuthorizationException`, like HTTP 403, instead of a
   `DeepLException` with "Unknown error".
 - Connection failures (refused connections, unreachable hosts) and failed DNS
