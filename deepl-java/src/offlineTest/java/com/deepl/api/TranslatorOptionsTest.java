@@ -117,6 +117,7 @@ class TranslatorOptionsTest {
     assertThrows(IllegalArgumentException.class, () -> new Translator(""));
     assertThrows(IllegalArgumentException.class, () -> new Translator(null));
     assertThrows(IllegalArgumentException.class, () -> new DeepLClient(""));
+    assertThrows(IllegalArgumentException.class, () -> new DeepLClient(" \n"));
   }
 
   @Test

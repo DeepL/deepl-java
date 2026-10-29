@@ -42,7 +42,7 @@ public class Translator {
    */
   @Deprecated
   public Translator(String authKey, TranslatorOptions options) throws IllegalArgumentException {
-    if (authKey == null || authKey.isEmpty()) {
+    if (authKey == null || authKey.trim().isEmpty()) {
       throw new IllegalArgumentException("authKey cannot be null or empty");
     }
 
