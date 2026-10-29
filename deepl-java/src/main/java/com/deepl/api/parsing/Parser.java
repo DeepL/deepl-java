@@ -61,15 +61,14 @@ public class Parser {
     return parse(() -> gson.fromJson(json, Usage.class));
   }
 
-  public List<Language> parseV3Languages(String json, LanguageType languageType)
-      throws DeepLException {
+  public List<Language> parseV3Languages(String json, boolean target) throws DeepLException {
     return parse(
         () -> {
           Type v3LanguageListType = new TypeToken<ArrayList<V3Language>>() {}.getType();
           List<V3Language> entries = gson.fromJson(json, v3LanguageListType);
           List<Language> result = new ArrayList<>();
           for (V3Language entry : entries) {
-            if (languageType == LanguageType.Target) {
+            if (target) {
               if (!entry.isUsableAsTarget()) continue;
               result.add(
                   new Language(entry.getName(), entry.getLang(), entry.hasFeature("formality")));

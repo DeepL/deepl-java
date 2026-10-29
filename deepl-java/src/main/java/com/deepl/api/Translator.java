@@ -290,13 +290,15 @@ public class Translator {
    *     target languages.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
+   * @deprecated Use {@link #getSourceLanguages()} or {@link #getTargetLanguages()} instead.
    */
+  @Deprecated
   public List<Language> getLanguages(LanguageType languageType)
       throws DeepLException, InterruptedException {
     HttpResponse response =
         httpClientWrapper.sendGetRequestWithBackoff("/v3/languages?resource=translate_text");
     checkResponse(response, false, false);
-    return jsonParser.parseV3Languages(response.getBody(), languageType);
+    return jsonParser.parseV3Languages(response.getBody(), languageType == LanguageType.Target);
   }
 
   /**

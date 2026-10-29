@@ -145,6 +145,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   languages, including the bare `en` and `pt` as target languages.
 
 ### Deprecated
+- Deprecated `Translator.getLanguages(LanguageType)` and the `LanguageType`
+  enum. Use `getSourceLanguages()` or `getTargetLanguages()` instead. They
+  will be removed in the next major version.
 - Deprecated `GlossaryNotFoundException`. Catch its superclass
   `NotFoundException` instead, which is thrown for HTTP 404 on every endpoint.
   It will be removed in the next major version.
