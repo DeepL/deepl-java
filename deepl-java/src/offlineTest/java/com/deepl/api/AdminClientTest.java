@@ -113,7 +113,7 @@ class AdminClientTest {
     assertEquals("k", keys.get(0).getKeyId());
     assertNull(keys.get(0).getCreationTime());
     assertTrue(keys.get(0).isDeactivated());
-    assertNull(keys.get(0).getUsageLimits().getCharacters());
+    assertNull(keys.get(0).getUsageLimits());
 
     LocalDate start = LocalDate.of(2025, 9, 29);
     LocalDate end = LocalDate.of(2025, 10, 1);
@@ -588,6 +588,29 @@ class AdminClientTest {
     assertEquals(4, wm.getAllServeEvents().size());
     assertThrows(
         IllegalArgumentException.class, () -> client.getUsageAnalytics((Date) null, new Date()));
+  }
+
+  @Test
+  void returnsNullForAbsentLabelsAndUsageLimits() throws Exception {
+    wm.stubFor(
+        get("/v2/admin/developer-keys")
+            .willReturn(okJson("[{\"key_id\":\"k\",\"is_deactivated\":false}]")));
+    wm.stubFor(
+        get(urlPathEqualTo("/v2/admin/analytics"))
+            .willReturn(
+                okJson(
+                    "{\"usage_report\":{\"key_usages\":[{\"api_key\":\"a\","
+                        + "\"usage\":{\"total_characters\":1}}]}}")));
+
+    DeveloperKey key = client.listDeveloperKeys().get(0);
+    assertNull(key.getLabel());
+    assertNull(key.getUsageLimits());
+    KeyUsage usage =
+        client
+            .getUsageAnalytics(LocalDate.of(2026, 10, 19), LocalDate.of(2026, 10, 21))
+            .getKeyUsages()
+            .get(0);
+    assertNull(usage.getApiKeyLabel());
   }
 
   @Test

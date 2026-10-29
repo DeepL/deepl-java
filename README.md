@@ -1540,7 +1540,9 @@ class AdminExample {  // Continuing class AdminExample from above
 `deactivateDeveloperKey()`, `renameDeveloperKey()` and
 `setDeveloperKeyUsageLimits()` accept either a key ID or a `DeveloperKey`
 object and return the updated `DeveloperKey`. The API validates labels and
-limit values.
+limit values. `DeveloperKey.getLabel()` and `getUsageLimits()` return `null`
+if the API sent no label or no usage limits; within `DeveloperKeyUsageLimits`
+a `null` limit means unlimited.
 
 `createDeveloperKey()` takes a `CreateDeveloperKeyOptions` (`setLabel()`), and
 `deactivateDeveloperKey()`, `renameDeveloperKey()` and
@@ -1566,7 +1568,8 @@ Pass a `groupBy` argument to break the usage down by key
 (`AdminUsageGroupBy.Key`, see `getKeyUsages()`) or by key and day
 (`AdminUsageGroupBy.KeyAndDay`, see `getKeyAndDayUsages()`); a string is sent
 as given, for values not yet in the enum. These lists are
-empty if the report uses a different grouping.
+empty if the report uses a different grouping. `KeyUsage.getApiKeyLabel()` is
+`null` if the API sent no label.
 `getGroupBy()` returns the grouping as the API sends it, for example `"key"` or
 `"keyAndDay"`. Each usage breakdown has the characters used in total and per
 product, `getSpeechToTextMinutes()` and `getSpeechToSpeechMinutes()`.

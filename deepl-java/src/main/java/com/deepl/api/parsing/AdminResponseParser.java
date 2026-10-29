@@ -12,8 +12,9 @@ import org.jetbrains.annotations.*;
 
 /**
  * Parses Admin API responses tolerantly: entries that are not objects or have no key_id are
- * skipped, and missing or malformed fields get neutral defaults. A response of the wrong overall
- * shape, or a single key without key_id, is an error.
+ * skipped, missing optional fields (labels, usage limits, dates) are null, and other missing or
+ * malformed fields get neutral defaults. A response of the wrong overall shape, or a single key
+ * without key_id, is an error.
  *
  * <p>This class is internal; you should not use this class directly.
  */
@@ -32,17 +33,23 @@ class AdminResponseParser {
   }
 
   private DeveloperKey parseKey(JsonObject object) {
-    JsonObject limits = asObject(object.get("usage_limits"));
+    JsonElement limitsElement = object.get("usage_limits");
+    JsonObject limits =
+        limitsElement != null && limitsElement.isJsonObject()
+            ? limitsElement.getAsJsonObject()
+            : null;
     return new DeveloperKey(
         string(object, "key_id"),
-        string(object, "label"),
+        stringOrNull(object, "label"),
         date(object, "creation_time"),
         date(object, "deactivated_time"),
         bool(object, "is_deactivated"),
-        new DeveloperKeyUsageLimits(
-            longOrNull(limits, "characters"),
-            longOrNull(limits, "speech_to_text_milliseconds"),
-            longOrNull(limits, "speech_to_speech_milliseconds")));
+        limits == null
+            ? null
+            : new DeveloperKeyUsageLimits(
+                longOrNull(limits, "characters"),
+                longOrNull(limits, "speech_to_text_milliseconds"),
+                longOrNull(limits, "speech_to_speech_milliseconds")));
   }
 
   List<DeveloperKey> parseDeveloperKeys(@Nullable JsonElement json) {
@@ -113,7 +120,7 @@ class AdminResponseParser {
       usages.add(
           new KeyUsage(
               string(entry, "api_key"),
-              string(entry, "api_key_label"),
+              stringOrNull(entry, "api_key_label"),
               parseBreakdown(entry.get("usage")),
               utcDay(entry, "usage_date")));
     }

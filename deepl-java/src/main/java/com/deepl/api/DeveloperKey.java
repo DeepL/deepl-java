@@ -13,7 +13,7 @@ public class DeveloperKey {
   private final String keyId;
 
   @SerializedName(value = "label")
-  private final String label;
+  private final @Nullable String label;
 
   @SerializedName(value = "creation_time")
   private final @Nullable Date creationTime;
@@ -31,15 +31,16 @@ public class DeveloperKey {
    * Initializes a new {@link DeveloperKey} containing information about a developer key.
    *
    * @param keyId Unique ID of the key.
-   * @param label Label assigned to the key.
+   * @param label Label assigned to the key, or <code>null</code> if the API sent none.
    * @param creationTime Timestamp when the key was created.
    * @param deactivatedTime Timestamp when the key was deactivated, or <code>null</code> if active.
    * @param isDeactivated True if the key is deactivated.
-   * @param usageLimits Usage limits configured for the key.
+   * @param usageLimits Usage limits configured for the key, or <code>null</code> if the API sent
+   *     none.
    */
   public DeveloperKey(
       String keyId,
-      String label,
+      @Nullable String label,
       @Nullable Date creationTime,
       @Nullable Date deactivatedTime,
       boolean isDeactivated,
@@ -57,8 +58,8 @@ public class DeveloperKey {
     return keyId;
   }
 
-  /** @return Label assigned to the key. */
-  public String getLabel() {
+  /** @return Label assigned to the key, or <code>null</code> if the API sent none. */
+  public @Nullable String getLabel() {
     return label;
   }
 
@@ -77,9 +78,12 @@ public class DeveloperKey {
     return isDeactivated;
   }
 
-  /** @return Usage limits configured for the key; a <code>null</code> limit means unlimited. */
-  public DeveloperKeyUsageLimits getUsageLimits() {
-    return usageLimits != null ? usageLimits : new DeveloperKeyUsageLimits(null, null, null);
+  /**
+   * @return Usage limits configured for the key, in which a <code>null</code> limit means
+   *     unlimited; or <code>null</code> if the API sent no usage limits.
+   */
+  public @Nullable DeveloperKeyUsageLimits getUsageLimits() {
+    return usageLimits;
   }
 
   @Override

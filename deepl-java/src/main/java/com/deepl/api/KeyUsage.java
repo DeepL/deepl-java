@@ -13,7 +13,7 @@ public class KeyUsage {
   private final String apiKey;
 
   @SerializedName(value = "api_key_label")
-  private final String apiKeyLabel;
+  private final @Nullable String apiKeyLabel;
 
   @SerializedName(value = "usage")
   private final AdminUsageBreakdown usage;
@@ -25,12 +25,15 @@ public class KeyUsage {
    * Initializes a new {@link KeyUsage}.
    *
    * @param apiKey Masked API key.
-   * @param apiKeyLabel Label of the API key.
+   * @param apiKeyLabel Label of the API key, or <code>null</code> if the API sent none.
    * @param usage Usage of the API key.
    * @param usageDate Day of the usage as midnight UTC, present when grouped by key and day.
    */
   public KeyUsage(
-      String apiKey, String apiKeyLabel, AdminUsageBreakdown usage, @Nullable Date usageDate) {
+      String apiKey,
+      @Nullable String apiKeyLabel,
+      AdminUsageBreakdown usage,
+      @Nullable Date usageDate) {
     this.apiKey = apiKey;
     this.apiKeyLabel = apiKeyLabel;
     this.usage = usage;
@@ -42,8 +45,8 @@ public class KeyUsage {
     return apiKey;
   }
 
-  /** @return Label of the API key. */
-  public String getApiKeyLabel() {
+  /** @return Label of the API key, or <code>null</code> if the API sent none. */
+  public @Nullable String getApiKeyLabel() {
     return apiKeyLabel;
   }
 
