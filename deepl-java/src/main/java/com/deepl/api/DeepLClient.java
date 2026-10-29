@@ -1913,10 +1913,14 @@ public class DeepLClient extends Translator {
     return spokenTerms.getSpokenTermsId();
   }
 
-  /** Validates the Spoken Terms collection ID and builds its URL path. */
+  /** Validates the Spoken Terms collection ID and builds its URL path with the ID escaped. */
   private String spokenTermsPath(String spokenTermsId) throws DeepLException {
     validateParameter("spokenTermsId", spokenTermsId);
-    return "/v3/spoken-terms/" + spokenTermsId;
+    try {
+      return "/v3/spoken-terms/" + ApiClientHelper.encodeQueryComponent(spokenTermsId);
+    } catch (UnsupportedEncodingException exception) {
+      throw new DeepLException("Error while URL-encoding request", exception);
+    }
   }
 
   /** Serializes a Spoken Terms request body, adding the extra body parameters last. */

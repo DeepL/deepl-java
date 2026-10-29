@@ -67,7 +67,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `setTermLists()`) and sends only the fields set; `createSpokenTerms()` and
   `replaceSpokenTermsList()` take optional `CreateSpokenTermsOptions` and
   `ReplaceSpokenTermsListOptions`. All three options classes support
-  `setExtraBodyParameters()`. Terms are passed and returned as a list of strings and are checked
+  `setExtraBodyParameters()`. Collection IDs are URL-encoded in the request
+  path. Terms are passed and returned as a list of strings and are checked
   like glossary terms, so a term containing a newline throws an
   `IllegalArgumentException`.
 - Added the `DeepLAdminClient` class for the Admin API. It must be created with

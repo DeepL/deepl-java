@@ -5,8 +5,10 @@ package com.deepl.api;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.anyRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
+import static com.github.tomakehurst.wiremock.client.WireMock.delete;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.ok;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.patch;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
@@ -103,6 +105,27 @@ class SpokenTermsTest {
         "st1",
         new SpokenTermsEntries("en", Collections.singletonList("a")),
         new ReplaceSpokenTermsListOptions().setExtraBodyParameters(extra));
+  }
+
+  @Test
+  void urlEncodesTheIdInEveryPath() throws Exception {
+    String id = "a/b c";
+    String path = "/v3/spoken-terms/a%2Fb%20c";
+    wm.stubFor(get(urlEqualTo(path)).willReturn(okJson(SPOKEN_TERMS)));
+    wm.stubFor(patch(urlEqualTo(path)).willReturn(okJson(SPOKEN_TERMS)));
+    wm.stubFor(delete(urlEqualTo(path)).willReturn(ok()));
+    wm.stubFor(
+        get(urlEqualTo(path + "/entries?lang=en"))
+            .willReturn(okJson("{\"lang\":\"en\",\"entries\":\"a\"}")));
+    wm.stubFor(put(urlEqualTo(path + "/term-lists")).willReturn(okJson(TERM_LIST)));
+    wm.stubFor(delete(urlEqualTo(path + "/term-lists?lang=en")).willReturn(ok()));
+
+    client.getSpokenTerms(id);
+    client.updateSpokenTerms(id, new UpdateSpokenTermsOptions().setName("n"));
+    client.getSpokenTermsEntries(id, "en");
+    client.replaceSpokenTermsList(id, new SpokenTermsEntries("en", Collections.singletonList("a")));
+    client.deleteSpokenTermsList(id, "en");
+    client.deleteSpokenTerms(id);
   }
 
   @Test
