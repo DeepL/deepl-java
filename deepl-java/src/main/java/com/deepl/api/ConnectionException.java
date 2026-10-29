@@ -6,10 +6,22 @@ package com.deepl.api;
 /** Exception thrown when a connection error occurs while accessing the DeepL API. */
 public class ConnectionException extends DeepLException {
   private final boolean shouldRetry;
+  private final boolean requestNotSent;
 
   public ConnectionException(String message, boolean shouldRetry, Throwable cause) {
+    this(message, shouldRetry, cause, false);
+  }
+
+  ConnectionException(
+      String message, boolean shouldRetry, Throwable cause, boolean requestNotSent) {
     super(message, cause);
     this.shouldRetry = shouldRetry;
+    this.requestNotSent = requestNotSent;
+  }
+
+  /** True if the failure happened before the request was sent, so a retry cannot duplicate it. */
+  boolean getRequestNotSent() {
+    return requestNotSent;
   }
 
   /**

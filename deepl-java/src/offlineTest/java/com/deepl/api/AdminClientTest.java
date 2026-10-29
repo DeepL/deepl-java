@@ -384,6 +384,27 @@ class AdminClientTest {
   }
 
   @Test
+  void retriesKeyCreationAfterARefusedConnection() throws Exception {
+    int closedPort;
+    try (java.net.ServerSocket socket = new java.net.ServerSocket(0)) {
+      closedPort = socket.getLocalPort();
+    }
+    DeepLAdminClient refusedClient =
+        new DeepLAdminClient(
+            "k",
+            new DeepLAdminClientOptions()
+                .setServerUrl("http://127.0.0.1:" + closedPort)
+                .setMaxRetries(1));
+    long start = System.nanoTime();
+    ConnectionException thrown =
+        assertThrows(ConnectionException.class, refusedClient::createDeveloperKey);
+    long elapsedMillis = (System.nanoTime() - start) / 1_000_000;
+    assertTrue(thrown.getCause() instanceof java.net.ConnectException, thrown.toString());
+    // The first backoff is 1 s minus at most 23 % jitter: only a retry takes this long.
+    assertTrue(elapsedMillis >= 700, "no retry after " + elapsedMillis + " ms");
+  }
+
+  @Test
   void doesNotRetryKeyCreationAfterATimeoutOrConnectionReset() {
     DeepLAdminClient timeoutClient =
         OfflineClient.createAdminClient(

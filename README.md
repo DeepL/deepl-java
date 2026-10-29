@@ -1428,8 +1428,8 @@ Create a `DeepLAdminClient` with your admin key. It uses the
 `DeepLAdminClientOptions` object to configure the timeout, retries, proxy,
 headers, server URL and app info, as for `DeepLClient`, see
 [Configuration](#configuration). Developer key creation is retried only after
-HTTP 429 or a DNS resolution failure, when the API cannot have processed the
-request, so that a lost response cannot create several keys. For the same
+HTTP 429, a DNS resolution failure, a refused connection or a connect timeout,
+when the API cannot have processed the request, so that a lost response cannot create several keys. For the same
 reason, this request is sent in streaming mode, so it does not follow HTTP
 redirects: a redirect fails with a `ConnectionException`.
 

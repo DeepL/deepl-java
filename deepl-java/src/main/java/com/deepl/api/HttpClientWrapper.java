@@ -95,8 +95,8 @@ class HttpClientWrapper {
 
   /**
    * Sends a JSON POST request that must not be repeated if the server may have processed it, such
-   * as creating a resource. It is retried only after HTTP 429 or a DNS resolution failure, because
-   * in both cases the request was not processed.
+   * as creating a resource. It is retried only when the request was not sent: after HTTP 429, a DNS
+   * resolution failure, a refused connection or a connect timeout.
    */
   public HttpResponse sendJsonRequestRetryingOnlyUnprocessed(String relativeUrl, String jsonBody)
       throws InterruptedException, DeepLException {
@@ -278,11 +278,8 @@ class HttpClientWrapper {
         }
         response.close();
       } catch (ConnectionException exception) {
-        // A failed DNS lookup means the request was never sent, so a retry cannot duplicate it.
         boolean shouldRetry =
-            retryOnlyUnprocessed
-                ? exception.getCause() instanceof UnknownHostException
-                : exception.getShouldRetry();
+            retryOnlyUnprocessed ? exception.getRequestNotSent() : exception.getShouldRetry();
         if (!shouldRetry || backoffTimer.getNumRetries() >= this.maxRetries) {
           throw exception;
         }
@@ -323,7 +320,18 @@ class HttpClientWrapper {
           // over plain HTTP, 407 challenges) cannot be replayed from a streamed body.
           connection.setFixedLengthStreamingMode(content.getContent().length);
         }
+      }
 
+      // Connect separately: a DNS, refused or timed-out connect means nothing was sent yet.
+      try {
+        connection.connect();
+      } catch (IOException e) {
+        ConnectionException failure = toConnectionException(e);
+        throw new ConnectionException(
+            failure.getMessage(), failure.getShouldRetry(), e, failure.getShouldRetry());
+      }
+
+      if (content != null) {
         try (OutputStream output = connection.getOutputStream()) {
           output.write(content.getContent());
         }

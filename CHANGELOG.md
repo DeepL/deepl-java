@@ -99,8 +99,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DeepLException` with "Unknown error".
 - Connection failures (refused connections, unreachable hosts) and failed DNS
   lookups are now retried like timeouts, in all request types including
-  `PATCH`. Developer key creation still retries only after HTTP 429 or a DNS
-  failure.
+  `PATCH`.
+- Developer key creation is now also retried after a refused connection or a
+  connect timeout, in addition to HTTP 429 and DNS failures, as the request was
+  not sent in these cases. A timeout or connection reset after the request was
+  sent is still not retried.
 - A failure while reading the response body, for example a read timeout, now
   throws a `ConnectionException` and is retried. It threw a non-retried
   `DeepLException` before.
