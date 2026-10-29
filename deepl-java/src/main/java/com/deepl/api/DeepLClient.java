@@ -1523,8 +1523,9 @@ public class DeepLClient extends Translator {
         httpClientWrapper.sendAssetPutRequestWithBackoff(uploadUrl, fileContent, contentType);
     if (response.getCode() < 200 || response.getCode() >= 300) {
       throw new DeepLException(
-          String.format(
-              "Error uploading translation memory file, HTTP status: %d", response.getCode()));
+              String.format(
+                  "Error uploading translation memory file, HTTP status: %d", response.getCode()))
+          .setHttpStatusCode(response.getCode());
     }
   }
 
@@ -1730,9 +1731,10 @@ public class DeepLClient extends Translator {
     try (HttpResponseStream response = httpClientWrapper.downloadAssetWithBackoff(downloadUrl)) {
       if (response.getCode() < 200 || response.getCode() >= 300) {
         throw new DeepLException(
-            String.format(
-                "Error downloading translation memory export, HTTP status: %d",
-                response.getCode()));
+                String.format(
+                    "Error downloading translation memory export, HTTP status: %d",
+                    response.getCode()))
+            .setHttpStatusCode(response.getCode());
       }
       assert response.getBody() != null;
       StreamUtil.transferTo(response.getBody(), outputStream);

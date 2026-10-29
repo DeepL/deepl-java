@@ -251,6 +251,8 @@ class TranslationMemoriesTest {
                 client.uploadTranslationMemoryFile(
                     storageUrl(), new byte[] {1}, "application/xml"));
     assertTrue(thrown.getMessage().contains("HTTP status: 403"));
+    assertEquals(403, thrown.getHttpStatusCode());
+    assertFalse(thrown.getShouldRetry());
   }
 
   @Test
@@ -462,6 +464,8 @@ class TranslationMemoriesTest {
             DeepLException.class,
             () -> client.downloadTranslationMemoryExport(completedExport(), output));
     assertTrue(thrown.getMessage().contains("HTTP status: 500"));
+    assertEquals(500, thrown.getHttpStatusCode());
+    assertTrue(thrown.getShouldRetry());
     assertFalse(output.exists());
   }
 

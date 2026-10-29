@@ -1062,7 +1062,7 @@ public class Translator {
       return;
     }
     if (response.getBody() == null) {
-      throw new DeepLException("response stream is empty");
+      throw new DeepLException("response stream is empty").setHttpStatusCode(response.getCode());
     }
     checkResponse(response.toStringResponse(), true, false);
   }
