@@ -7,8 +7,6 @@ package com.deepl.api;
 import com.deepl.api.http.HttpResponse;
 import com.deepl.api.http.HttpResponseStream;
 import com.deepl.api.utils.*;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import java.io.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -796,7 +794,7 @@ public class DeepLClient extends Translator {
     Map<String, Object> requestData = new LinkedHashMap<>();
     requestData.put("name", name);
     requestData.put("term_lists", createSpokenTermsListsData(termLists));
-    String jsonBody = spokenTermsJsonBody(requestData, options);
+    String jsonBody = jsonBodyWithExtraParameters(requestData, options);
     HttpResponse response =
         httpClientWrapper.sendJsonRequestWithBackoff("/v3/spoken-terms", jsonBody);
     checkResponse(response, false, false);
@@ -885,7 +883,7 @@ public class DeepLClient extends Translator {
     if (options != null && options.getTermLists() != null) {
       requestData.put("term_lists", createSpokenTermsListsData(options.getTermLists()));
     }
-    String jsonBody = spokenTermsJsonBody(requestData, options);
+    String jsonBody = jsonBodyWithExtraParameters(requestData, options);
     HttpResponse response =
         httpClientWrapper.sendJsonPatchRequestWithBackoff(relativeUrl, jsonBody);
     checkResponse(response, false, false);
@@ -953,7 +951,7 @@ public class DeepLClient extends Translator {
       @Nullable ReplaceSpokenTermsListOptions options)
       throws DeepLException, InterruptedException {
     String relativeUrl = spokenTermsPath(spokenTermsId) + "/term-lists";
-    String jsonBody = spokenTermsJsonBody(createSpokenTermsListData(entries), options);
+    String jsonBody = jsonBodyWithExtraParameters(createSpokenTermsListData(entries), options);
     HttpResponse response =
         httpClientWrapper.sendJsonRequestWithBackoff("PUT", relativeUrl, jsonBody);
     checkResponse(response, false, false);
@@ -1140,7 +1138,7 @@ public class DeepLClient extends Translator {
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
-  public StyleProfile createStyleProfile(String name, @Nullable StyleProfileOptions options)
+  public StyleProfile createStyleProfile(String name, @Nullable CreateStyleProfileOptions options)
       throws DeepLException, InterruptedException {
     HttpResponse response =
         httpClientWrapper.sendJsonRequestWithBackoff(
@@ -1150,10 +1148,10 @@ public class DeepLClient extends Translator {
   }
 
   /**
-   * Functions the same as {@link DeepLClient#createStyleProfile(String, StyleProfileOptions)} but
-   * without options.
+   * Functions the same as {@link DeepLClient#createStyleProfile(String, CreateStyleProfileOptions)}
+   * but without options.
    *
-   * @see DeepLClient#createStyleProfile(String, StyleProfileOptions)
+   * @see DeepLClient#createStyleProfile(String, CreateStyleProfileOptions)
    */
   public StyleProfile createStyleProfile(String name) throws DeepLException, InterruptedException {
     return createStyleProfile(name, null);
@@ -1195,8 +1193,7 @@ public class DeepLClient extends Translator {
    * empty list unlinks all components of that kind. With nothing set, nothing changes.
    *
    * @param styleProfileId ID of the style profile to update.
-   * @param name New name of the style profile, or <code>null</code> to keep the current name.
-   * @param options Fields to change, or <code>null</code>.
+   * @param options Fields to change, including the new name, or <code>null</code>.
    * @return {@link StyleProfile} object with details about the updated style profile.
    * @throws IllegalArgumentException If the ID is <code>null</code> or empty.
    * @throws NotFoundException If no style profile with the given ID is found.
@@ -1204,26 +1201,49 @@ public class DeepLClient extends Translator {
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
   public StyleProfile updateStyleProfile(
-      String styleProfileId, @Nullable String name, @Nullable StyleProfileOptions options)
+      String styleProfileId, @Nullable UpdateStyleProfileOptions options)
       throws DeepLException, InterruptedException {
     String relativeUrl = styleProfilePath(styleProfileId);
     HttpResponse response =
         httpClientWrapper.sendJsonPatchRequestWithBackoff(
-            relativeUrl, createStyleProfileBody(name, options));
+            relativeUrl,
+            createStyleProfileBody(options != null ? options.getName() : null, options));
     checkResponse(response, false, false);
     return jsonParser.parseStyleProfile(response.getBody());
   }
 
   /**
-   * Functions the same as {@link DeepLClient#updateStyleProfile(String, String,
-   * StyleProfileOptions)} but accepts a {@link StyleProfile} object.
+   * Functions the same as {@link DeepLClient#updateStyleProfile(String, UpdateStyleProfileOptions)}
+   * but accepts a {@link StyleProfile} object.
    *
-   * @see DeepLClient#updateStyleProfile(String, String, StyleProfileOptions)
+   * @see DeepLClient#updateStyleProfile(String, UpdateStyleProfileOptions)
    */
   public StyleProfile updateStyleProfile(
-      StyleProfile styleProfile, @Nullable String name, @Nullable StyleProfileOptions options)
+      StyleProfile styleProfile, @Nullable UpdateStyleProfileOptions options)
       throws DeepLException, InterruptedException {
-    return updateStyleProfile(styleProfileId(styleProfile), name, options);
+    return updateStyleProfile(styleProfileId(styleProfile), options);
+  }
+
+  /**
+   * Functions the same as {@link DeepLClient#updateStyleProfile(String, UpdateStyleProfileOptions)}
+   * but without options; sends an empty update.
+   *
+   * @see DeepLClient#updateStyleProfile(String, UpdateStyleProfileOptions)
+   */
+  public StyleProfile updateStyleProfile(String styleProfileId)
+      throws DeepLException, InterruptedException {
+    return updateStyleProfile(styleProfileId, null);
+  }
+
+  /**
+   * Functions the same as {@link DeepLClient#updateStyleProfile(StyleProfile,
+   * UpdateStyleProfileOptions)} but without options; sends an empty update.
+   *
+   * @see DeepLClient#updateStyleProfile(String, UpdateStyleProfileOptions)
+   */
+  public StyleProfile updateStyleProfile(StyleProfile styleProfile)
+      throws DeepLException, InterruptedException {
+    return updateStyleProfile(styleProfile, null);
   }
 
   /**
@@ -1923,8 +1943,8 @@ public class DeepLClient extends Translator {
     }
   }
 
-  /** Serializes a Spoken Terms request body, adding the extra body parameters last. */
-  private String spokenTermsJsonBody(
+  /** Serializes a JSON request body, adding the extra body parameters last. */
+  private String jsonBodyWithExtraParameters(
       Map<String, Object> requestData, @Nullable BaseRequestOptions options) {
     if (options != null && options.getExtraBodyParameters() != null) {
       requestData.putAll(options.getExtraBodyParameters());
@@ -1950,20 +1970,29 @@ public class DeepLClient extends Translator {
     }
   }
 
-  /** Builds the JSON body of a style profile request; Gson omits the options left null. */
+  /** Builds the JSON body of a style profile request, adding the extra body parameters last. */
   private String createStyleProfileBody(
-      @Nullable String name, @Nullable StyleProfileOptions options) {
-    JsonObject body = new JsonObject();
+      @Nullable String name, @Nullable CreateStyleProfileOptions options) {
+    Map<String, Object> body = new LinkedHashMap<>();
     if (name != null) {
-      body.addProperty("name", name);
+      body.put("name", name);
     }
     if (options != null) {
-      for (Map.Entry<String, JsonElement> entry :
-          jsonParser.getGson().toJsonTree(options).getAsJsonObject().entrySet()) {
-        body.add(entry.getKey(), entry.getValue());
-      }
+      putIfNotNull(body, "description", options.getDescription());
+      putIfNotNull(body, "industry", options.getIndustry());
+      putIfNotNull(body, "glossary_ids", options.getGlossaryIds());
+      putIfNotNull(body, "style_rule_ids", options.getStyleRuleIds());
+      putIfNotNull(body, "translation_memory_ids", options.getTranslationMemoryIds());
+      putIfNotNull(
+          body, "glossary_priority_order_enabled", options.getGlossaryPriorityOrderEnabled());
     }
-    return jsonParser.getGson().toJson(body);
+    return jsonBodyWithExtraParameters(body, options);
+  }
+
+  private static void putIfNotNull(Map<String, Object> body, String key, @Nullable Object value) {
+    if (value != null) {
+      body.put(key, value);
+    }
   }
 
   /** Builds the query string that selects the term list of the given language. */

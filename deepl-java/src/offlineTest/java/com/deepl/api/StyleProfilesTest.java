@@ -11,6 +11,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.patch;
+import static com.github.tomakehurst.wiremock.client.WireMock.patchRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -23,7 +24,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -96,7 +100,7 @@ class StyleProfilesTest {
 
     client.createStyleProfile(
         "n",
-        new StyleProfileOptions()
+        new CreateStyleProfileOptions()
             .setDescription("d")
             .setIndustry("Legal")
             .setGlossaryIds(Arrays.asList("g2", "g1"))
@@ -114,8 +118,80 @@ class StyleProfilesTest {
 
     client.updateStyleProfile(
         ID,
-        null,
-        new StyleProfileOptions().setDescription("").setStyleRuleIds(Collections.emptyList()));
+        new UpdateStyleProfileOptions()
+            .setDescription("")
+            .setStyleRuleIds(Collections.emptyList()));
+  }
+
+  @Test
+  void sendsTheNameFromTheUpdateOptions() throws Exception {
+    wm.stubFor(
+        patch(urlEqualTo("/v3/style_profiles/" + ID))
+            .withRequestBody(equalToJson("{\"name\":\"new\",\"industry\":\"Legal\"}"))
+            .willReturn(okJson(MINIMAL_PROFILE)));
+
+    client.updateStyleProfile(
+        ID, new UpdateStyleProfileOptions().setName("new").setIndustry("Legal"));
+  }
+
+  @Test
+  void addsExtraBodyParametersLastWhenCreatingAndUpdating() throws Exception {
+    Map<String, String> extra = new HashMap<>();
+    extra.put("description", "replaced");
+    extra.put("beta", "on");
+    wm.stubFor(
+        post(urlEqualTo("/v3/style_profiles"))
+            .withRequestBody(
+                equalToJson("{\"name\":\"n\",\"description\":\"replaced\",\"beta\":\"on\"}"))
+            .willReturn(aResponse().withStatus(201).withBody(MINIMAL_PROFILE)));
+    wm.stubFor(
+        patch(urlEqualTo("/v3/style_profiles/" + ID))
+            .withRequestBody(
+                equalToJson("{\"name\":\"m\",\"description\":\"replaced\",\"beta\":\"on\"}"))
+            .willReturn(okJson(MINIMAL_PROFILE)));
+
+    client.createStyleProfile(
+        "n", new CreateStyleProfileOptions().setDescription("d").setExtraBodyParameters(extra));
+    client.updateStyleProfile(
+        ID,
+        new UpdateStyleProfileOptions()
+            .setName("m")
+            .setDescription("d")
+            .setExtraBodyParameters(extra));
+  }
+
+  @Test
+  void sendsTheIdsOfComponentObjects() throws Exception {
+    wm.stubFor(
+        post(urlEqualTo("/v3/style_profiles"))
+            .withRequestBody(
+                equalToJson(
+                    "{\"name\":\"n\",\"glossary_ids\":[\"g1\",\"mg1\"],"
+                        + "\"style_rule_ids\":[\"s1\"],\"translation_memory_ids\":[\"t1\",\"t2\"]}"))
+            .willReturn(aResponse().withStatus(201).withBody(MINIMAL_PROFILE)));
+    wm.stubFor(
+        patch(urlEqualTo("/v3/style_profiles/" + ID))
+            .withRequestBody(equalToJson("{\"style_rule_ids\":[\"s1\"]}"))
+            .willReturn(okJson(MINIMAL_PROFILE)));
+    GlossaryInfo glossary = new GlossaryInfo("g1", "n", true, "en", "de", new Date(), 1);
+    MultilingualGlossaryInfo multilingual =
+        new MultilingualGlossaryInfo("mg1", "n", new Date(), Collections.emptyList());
+    StyleRuleInfo rule = new StyleRuleInfo("s1", "n", new Date(), new Date(), "de", 1, null, null);
+    TranslationMemoryInfo tm1 =
+        new TranslationMemoryInfo("t1", "n", "de", Collections.singletonList("en"), 1);
+    TranslationMemoryInfo tm2 =
+        new TranslationMemoryInfo("t2", "n", "de", Collections.singletonList("en"), 1);
+
+    client.createStyleProfile(
+        "n",
+        new CreateStyleProfileOptions()
+            .setGlossaryIds(glossary, multilingual)
+            .setStyleRuleIds(rule)
+            .setTranslationMemoryIds(tm1, tm2));
+    client.updateStyleProfile(ID, new UpdateStyleProfileOptions().setStyleRuleIds(rule));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new CreateStyleProfileOptions().setStyleRuleIds(rule, (StyleRuleInfo) null));
   }
 
   @Test
@@ -125,8 +201,26 @@ class StyleProfilesTest {
             .withRequestBody(equalToJson("{}"))
             .willReturn(okJson(MINIMAL_PROFILE)));
 
-    client.updateStyleProfile(ID, null, null);
-    client.updateStyleProfile(ID, null, new StyleProfileOptions());
+    client.updateStyleProfile(ID);
+    client.updateStyleProfile(ID, null);
+    client.updateStyleProfile(ID, new UpdateStyleProfileOptions());
+  }
+
+  @Test
+  void sendsAnEmptyObjectWhenUpdatingAStyleProfileObjectWithoutOptions() throws Exception {
+    wm.stubFor(
+        patch(urlEqualTo("/v3/style_profiles/" + ID))
+            .withRequestBody(equalToJson("{}"))
+            .willReturn(okJson(MINIMAL_PROFILE)));
+    StyleProfile profile =
+        new StyleProfile(ID, "n", null, null, null, null, null, false, new Date(), new Date());
+
+    client.updateStyleProfile(profile);
+
+    wm.verify(
+        1,
+        patchRequestedFor(urlEqualTo("/v3/style_profiles/" + ID))
+            .withRequestBody(equalToJson("{}")));
   }
 
   @Test
@@ -141,7 +235,7 @@ class StyleProfilesTest {
 
     StyleProfile profile = client.getStyleProfile(ID);
     client.getStyleProfile(profile);
-    client.updateStyleProfile(profile, "new", null);
+    client.updateStyleProfile(profile, new UpdateStyleProfileOptions().setName("new"));
     client.deleteStyleProfile(ID);
     client.deleteStyleProfile(profile);
   }
@@ -156,7 +250,7 @@ class StyleProfilesTest {
   @Test
   void rejectsAnEmptyIdBeforeSendingAnyRequest() {
     assertThrows(IllegalArgumentException.class, () -> client.getStyleProfile(""));
-    assertThrows(IllegalArgumentException.class, () -> client.updateStyleProfile("", "n", null));
+    assertThrows(IllegalArgumentException.class, () -> client.updateStyleProfile("", null));
     assertThrows(IllegalArgumentException.class, () -> client.deleteStyleProfile(""));
     wm.verify(0, anyRequestedFor(anyUrl()));
   }

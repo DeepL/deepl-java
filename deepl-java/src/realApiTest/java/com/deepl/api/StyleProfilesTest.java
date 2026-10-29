@@ -29,7 +29,7 @@ class StyleProfilesTest {
       StyleProfile created =
           client.createStyleProfile(
               name,
-              new StyleProfileOptions()
+              new CreateStyleProfileOptions()
                   .setDescription("Description")
                   .setStyleRuleIds(Collections.singletonList(styleId)));
       profileId = created.getStyleProfileId();
@@ -59,8 +59,8 @@ class StyleProfilesTest {
       StyleProfile updated =
           client.updateStyleProfile(
               fetched,
-              name + "-renamed",
-              new StyleProfileOptions()
+              new UpdateStyleProfileOptions()
+                  .setName(name + "-renamed")
                   .setIndustry("Legal")
                   .setDescription("")
                   .setStyleRuleIds(Collections.emptyList()));

@@ -1005,9 +1005,14 @@ with `DeepLClient`; each has a user-specified name and a uniquely-assigned ID.
 #### Creating a style profile
 
 Use `createStyleProfile()` to create a style profile. Only the name is required.
-Pass a `StyleProfileOptions` to set a description, an industry, the IDs of the
-components to link, and whether the glossary order sets priority. If any of the
-component IDs cannot be used, the request fails and no style profile is created.
+Pass a `CreateStyleProfileOptions` to set a description, an industry, the
+components to link, and whether the glossary order sets priority.
+`setGlossaryIds()`, `setStyleRuleIds()` and `setTranslationMemoryIds()` take a
+list of IDs or the objects themselves (`GlossaryInfo` or
+`MultilingualGlossaryInfo`, `StyleRuleInfo`, `TranslationMemoryInfo`).
+`setExtraBodyParameters()` adds fields to the JSON request body, replacing a
+field with the same key. If any of the component IDs cannot be used, the
+request fails and no style profile is created.
 
 ```java
 class Example {  // Continuing class Example from above
@@ -1019,7 +1024,7 @@ class Example {  // Continuing class Example from above
         // Create a style profile with a description and linked components
         StyleProfile linked = client.createStyleProfile(
             "Legal, German",
-            new StyleProfileOptions()
+            new CreateStyleProfileOptions()
                 .setDescription("Contract wording for the German market.")
                 .setIndustry("Legal")
                 .setGlossaryIds(Arrays.asList(
@@ -1028,6 +1033,11 @@ class Example {  // Continuing class Example from above
                 .setGlossaryPriorityOrderEnabled(true)
                 .setStyleRuleIds(Arrays.asList("dca2e053-8ae5-45e6-a0d2-881156e7f4e4")));
         System.out.println(linked.getStyleRuleIds());
+
+        // Link components by passing the objects instead of their IDs
+        StyleRuleInfo rule = client.getStyleRule("dca2e053-8ae5-45e6-a0d2-881156e7f4e4");
+        client.createStyleProfile(
+            "Legal, German (rules)", new CreateStyleProfileOptions().setStyleRuleIds(rule));
     }
 }
 ```
@@ -1062,9 +1072,9 @@ class Example {  // Continuing class Example from above
 
 #### Updating a style profile
 
-`updateStyleProfile()` takes the ID or `StyleProfile` object, an optional new
-name and an optional `StyleProfileOptions`. Fields left `null` are not sent and
-stay unchanged. An empty string clears the description or industry. A component
+`updateStyleProfile()` takes the ID or `StyleProfile` object and an optional
+`UpdateStyleProfileOptions`, which has the setters of `CreateStyleProfileOptions`
+plus `setName()`. Fields left `null` are not sent and stay unchanged. An empty string clears the description or industry. A component
 list you send replaces the linked list in full; an empty list unlinks all
 components of that kind.
 
@@ -1075,13 +1085,13 @@ class Example {  // Continuing class Example from above
 
         // Rename and set the industry; other fields are unchanged
         client.updateStyleProfile(
-            profileId, "Legal, German (2026)", new StyleProfileOptions().setIndustry("Legal"));
+            profileId,
+            new UpdateStyleProfileOptions().setName("Legal, German (2026)").setIndustry("Legal"));
 
         // Clear the description and unlink all style rules
         StyleProfile updated = client.updateStyleProfile(
             profileId,
-            null,
-            new StyleProfileOptions()
+            new UpdateStyleProfileOptions()
                 .setDescription("")
                 .setStyleRuleIds(Collections.emptyList()));
         System.out.println(updated.getDescription());  // null
