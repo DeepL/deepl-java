@@ -125,7 +125,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `correctText()` to the `DeepLClient` class, which corrects grammar, spelling
   and punctuation using the `/v2/write/correct` endpoint. It accepts a single
   text or a list of texts, an optional target language and an optional
-  `CorrectTextOptions`, which supports `setExtraBodyParameters()`.
+  `CorrectTextOptions`, which supports `setExtraBodyParameters()`. A response
+  without one complete result per input text raises a `DeepLException`.
 - Added `TextRephraseOptions.setWritingStyle(WritingStyle)` and
   `setTone(WritingTone)` overloads; the string setters remain.
 - `TextRephraseOptions` now extends `BaseRequestOptions` and supports
@@ -163,6 +164,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   They will be removed in the next major version.
 
 ### Fixed
+- `rephraseText()` raises a `DeepLException` when the response does not
+  contain one complete result per input text. Before, the single-text
+  overload threw an `IndexOutOfBoundsException` or returned `null`, and the
+  list overload returned a short list.
 - A document status the library does not know yet no longer stops
   `translateDocumentWaitUntilDone()` and `translateDocument()` with
   "Unknown error": it counts as in progress and polling continues.

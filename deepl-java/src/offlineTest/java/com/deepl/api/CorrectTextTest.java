@@ -56,6 +56,19 @@ class CorrectTextTest {
   }
 
   @Test
+  void throwsDeepLExceptionWhenImprovementsAreShort() {
+    wm.stubFor(post("/v2/write/correct").willReturn(okJson(REPLY)));
+    assertThrows(
+        DeepLException.class, () -> client.correctText(Arrays.asList("a", "b"), "en-GB", null));
+  }
+
+  @Test
+  void throwsDeepLExceptionWhenImprovementsAreEmpty() {
+    wm.stubFor(post("/v2/write/correct").willReturn(okJson("{\"improvements\":[]}")));
+    assertThrows(DeepLException.class, () -> client.correctText("a", "en-GB", null));
+  }
+
+  @Test
   void sendsEveryTextOfAList() throws Exception {
     wm.stubFor(
         post("/v2/write/correct")

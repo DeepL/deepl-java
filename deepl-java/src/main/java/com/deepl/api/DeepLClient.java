@@ -159,7 +159,14 @@ public class DeepLClient extends Translator {
         httpClientWrapper.sendRequestWithBackoff(
             String.format("/%s/write/%s", apiVersion, operation), params);
     checkResponse(response, false, false);
-    return jsonParser.parseWriteResult(response.getBody());
+    List<WriteResult> results = jsonParser.parseWriteResult(response.getBody());
+    if (results.size() != textCount || results.contains(null)) {
+      throw new DeepLException(
+          String.format(
+              "Failed to parse the response of the DeepL API: expected %d improvements, got %d",
+              textCount, results.size()));
+    }
+    return results;
   }
 
   /**

@@ -97,6 +97,25 @@ class RephraseTextTest {
   }
 
   @Test
+  void throwsDeepLExceptionWhenImprovementsAreShort() {
+    wm.stubFor(post("/v2/write/rephrase").willReturn(okJson(REPLY)));
+    assertThrows(
+        DeepLException.class, () -> client.rephraseText(Arrays.asList("a", "b"), "en-GB", null));
+  }
+
+  @Test
+  void throwsDeepLExceptionWhenImprovementsAreEmpty() {
+    wm.stubFor(post("/v2/write/rephrase").willReturn(okJson("{\"improvements\":[]}")));
+    assertThrows(DeepLException.class, () -> client.rephraseText("a", "en-GB", null));
+  }
+
+  @Test
+  void throwsDeepLExceptionWhenAnImprovementIsNull() {
+    wm.stubFor(post("/v2/write/rephrase").willReturn(okJson("{\"improvements\":[null]}")));
+    assertThrows(DeepLException.class, () -> client.rephraseText("a", "en-GB", null));
+  }
+
+  @Test
   void sendsEveryTextOfAList() throws Exception {
     wm.stubFor(
         post("/v2/write/rephrase")

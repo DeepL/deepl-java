@@ -316,7 +316,8 @@ WriteResult result = client.correctText("A rainbouw has seven colours.", "EN-US"
 System.out.println(result.getText());
 ```
 
-Both functions return one `WriteResult` per input text.
+Both functions return one `WriteResult` per input text. A response that does
+not contain one complete result per input text raises a `DeepLException`.
 
 ### Translating documents
 

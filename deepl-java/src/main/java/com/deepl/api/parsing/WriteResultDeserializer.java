@@ -15,10 +15,21 @@ import java.lang.reflect.Type;
 class WriteResultDeserializer implements JsonDeserializer<WriteResult> {
   public WriteResult deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
       throws JsonParseException {
+    if (!json.isJsonObject()) {
+      throw new JsonParseException("Write API improvement is not an object");
+    }
     JsonObject jsonObject = json.getAsJsonObject();
     return new WriteResult(
-        jsonObject.get("text").getAsString(),
-        jsonObject.get("detected_source_language").getAsString(),
-        jsonObject.get("target_language").getAsString());
+        getRequiredString(jsonObject, "text"),
+        getRequiredString(jsonObject, "detected_source_language"),
+        getRequiredString(jsonObject, "target_language"));
+  }
+
+  private static String getRequiredString(JsonObject jsonObject, String parameterName) {
+    String value = Parser.getAsStringOrNull(jsonObject, parameterName);
+    if (value == null) {
+      throw new JsonParseException("Write API improvement is missing " + parameterName);
+    }
+    return value;
   }
 }
