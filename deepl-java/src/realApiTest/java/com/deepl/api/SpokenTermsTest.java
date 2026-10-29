@@ -41,9 +41,11 @@ class SpokenTermsTest {
       SpokenTerms updated =
           client.updateSpokenTerms(
               id,
-              null,
-              Collections.singletonList(
-                  new SpokenTermsEntries("en", Collections.singletonList("authentication"))));
+              new UpdateSpokenTermsOptions()
+                  .setTermLists(
+                      Collections.singletonList(
+                          new SpokenTermsEntries(
+                              "en", Collections.singletonList("authentication")))));
       assertTermLists(updated, "en", 3);
       assertEquals(
           new HashSet<>(Arrays.asList("DeepL", "authentication", "webhook")),

@@ -8,6 +8,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.patch;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.put;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -15,7 +17,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -23,6 +27,83 @@ class SpokenTermsTest {
   @RegisterExtension static OfflineServer wm = new OfflineServer();
 
   private final DeepLClient client = OfflineClient.createClient(wm);
+
+  private static final String SPOKEN_TERMS =
+      "{\"spoken_terms_id\":\"st1\",\"name\":\"n\","
+          + "\"creation_time\":\"2026-10-01T00:00:00Z\",\"term_lists\":[]}";
+  private static final String TERM_LIST = "{\"lang\":\"en\",\"entry_count\":1}";
+
+  private static Map<String, String> extraBodyParameters() {
+    Map<String, String> extra = new HashMap<>();
+    extra.put("name", "override");
+    extra.put("beta", "on");
+    return extra;
+  }
+
+  @Test
+  void createSendsTheExtraBodyParametersLast() throws Exception {
+    wm.stubFor(
+        post(urlEqualTo("/v3/spoken-terms"))
+            .withRequestBody(
+                equalToJson(
+                    "{\"name\":\"override\",\"beta\":\"on\","
+                        + "\"term_lists\":[{\"lang\":\"en\",\"entries\":\"a\"}]}"))
+            .willReturn(okJson(SPOKEN_TERMS)));
+
+    client.createSpokenTerms(
+        "n",
+        Collections.singletonList(new SpokenTermsEntries("en", Collections.singletonList("a"))),
+        new CreateSpokenTermsOptions().setExtraBodyParameters(extraBodyParameters()));
+  }
+
+  @Test
+  void updateSendsOnlyTheOptionsThatAreSet() throws Exception {
+    wm.stubFor(
+        patch(urlEqualTo("/v3/spoken-terms/st1"))
+            .withRequestBody(equalToJson("{\"name\":\"renamed\"}"))
+            .willReturn(okJson(SPOKEN_TERMS)));
+    wm.stubFor(
+        patch(urlEqualTo("/v3/spoken-terms/st2"))
+            .withRequestBody(
+                equalToJson("{\"term_lists\":[{\"lang\":\"en\",\"entries\":\"a\\nb\"}]}"))
+            .willReturn(okJson(SPOKEN_TERMS)));
+    wm.stubFor(
+        patch(urlEqualTo("/v3/spoken-terms/st3"))
+            .withRequestBody(equalToJson("{\"name\":\"override\",\"beta\":\"on\"}"))
+            .willReturn(okJson(SPOKEN_TERMS)));
+    wm.stubFor(
+        patch(urlEqualTo("/v3/spoken-terms/st4"))
+            .withRequestBody(equalToJson("{}"))
+            .willReturn(okJson(SPOKEN_TERMS)));
+
+    client.updateSpokenTerms("st1", new UpdateSpokenTermsOptions().setName("renamed"));
+    client.updateSpokenTerms(
+        "st2",
+        new UpdateSpokenTermsOptions()
+            .setTermLists(
+                Collections.singletonList(new SpokenTermsEntries("en", Arrays.asList("a", "b")))));
+    client.updateSpokenTerms(
+        "st3",
+        new UpdateSpokenTermsOptions()
+            .setName("renamed")
+            .setExtraBodyParameters(extraBodyParameters()));
+    client.updateSpokenTerms("st4", null);
+  }
+
+  @Test
+  void replaceListSendsTheExtraBodyParametersLast() throws Exception {
+    Map<String, String> extra = new HashMap<>();
+    extra.put("lang", "de");
+    wm.stubFor(
+        put(urlEqualTo("/v3/spoken-terms/st1/term-lists"))
+            .withRequestBody(equalToJson("{\"lang\":\"de\",\"entries\":\"a\"}"))
+            .willReturn(okJson(TERM_LIST)));
+
+    client.replaceSpokenTermsList(
+        "st1",
+        new SpokenTermsEntries("en", Collections.singletonList("a")),
+        new ReplaceSpokenTermsListOptions().setExtraBodyParameters(extra));
+  }
 
   @Test
   void joinsEntriesWithNewlinesWhenSendingAndSplitsThemWhenReading() throws Exception {
@@ -48,7 +129,10 @@ class SpokenTermsTest {
 
     assertThrows(IllegalArgumentException.class, () -> client.createSpokenTerms("n", termLists));
     assertThrows(
-        IllegalArgumentException.class, () -> client.updateSpokenTerms("st1", null, termLists));
+        IllegalArgumentException.class,
+        () ->
+            client.updateSpokenTerms(
+                "st1", new UpdateSpokenTermsOptions().setTermLists(termLists)));
     assertThrows(
         IllegalArgumentException.class,
         () -> client.replaceSpokenTermsList("st1", termLists.get(0)));

@@ -757,7 +757,10 @@ with a `DeepLException`.
 
 Use `createSpokenTerms()` with a name and a list of `SpokenTermsEntries`, one
 per language. It returns a `SpokenTerms` object with the ID, name, creation
-time and the term lists (`SpokenTermsList`: language and entry count):
+time and the term lists (`SpokenTermsList`: language and entry count). An
+optional third argument, `CreateSpokenTermsOptions`, supports
+`setExtraBodyParameters()`: a map of additional parameters added last to the
+JSON request body, replacing any parameter with the same key.
 
 ```java
 class Example {  // Continuing class Example from above
@@ -798,10 +801,18 @@ class Example {  // Continuing class Example from above
 #### Editing a Spoken Terms collection
 
 `updateSpokenTerms()` changes the name and/or merges terms into the existing
-term lists; pass `null` for what should not change. `replaceSpokenTermsList()`
-replaces the term list of one language, or adds it if the collection has none
-for that language. `deleteSpokenTermsList()` removes the term list of one
-language:
+term lists. It takes an `UpdateSpokenTermsOptions` and sends only the fields
+that are set:
+
+- `setName()`: the new name of the collection.
+- `setTermLists()`: term lists to merge, one `SpokenTermsEntries` per language.
+- `setExtraBodyParameters()`: a map of additional parameters added last to the
+  JSON request body, replacing any parameter with the same key.
+
+`replaceSpokenTermsList()` replaces the term list of one language, or adds it
+if the collection has none for that language; an optional third argument,
+`ReplaceSpokenTermsListOptions`, supports `setExtraBodyParameters()`.
+`deleteSpokenTermsList()` removes the term list of one language:
 
 ```java
 class Example {  // Continuing class Example from above
@@ -809,11 +820,13 @@ class Example {  // Continuing class Example from above
         String spokenTermsId = "def3a26b-3e84-45b3-84ae-0c0aaf3525f7";
 
         // Rename the collection
-        client.updateSpokenTerms(spokenTermsId, "Product Terms", null);
+        client.updateSpokenTerms(spokenTermsId,
+            new UpdateSpokenTermsOptions().setName("Product Terms"));
 
         // Merge a term into the "en" term list
-        SpokenTerms updated = client.updateSpokenTerms(spokenTermsId, null,
-            Arrays.asList(new SpokenTermsEntries("en", Arrays.asList("authentication"))));
+        SpokenTerms updated = client.updateSpokenTerms(spokenTermsId,
+            new UpdateSpokenTermsOptions().setTermLists(
+                Arrays.asList(new SpokenTermsEntries("en", Arrays.asList("authentication")))));
 
         // Replace the "en" term list, then add and remove a "de" term list
         SpokenTermsList replaced = client.replaceSpokenTermsList(spokenTermsId,

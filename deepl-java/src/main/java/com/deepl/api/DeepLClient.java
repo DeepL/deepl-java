@@ -783,22 +783,35 @@ public class DeepLClient extends Translator {
    *
    * @param name User-defined name of the collection.
    * @param termLists Term lists of the collection, one {@link SpokenTermsEntries} per language.
+   * @param options Additional options, or <code>null</code>; see {@link CreateSpokenTermsOptions}.
    * @return {@link SpokenTerms} object with details about the new collection.
    * @throws IllegalArgumentException If a term is invalid, as checked for glossary terms.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
    *     DeepLException} or a derived class will be thrown.
    */
-  public SpokenTerms createSpokenTerms(String name, List<SpokenTermsEntries> termLists)
+  public SpokenTerms createSpokenTerms(
+      String name, List<SpokenTermsEntries> termLists, @Nullable CreateSpokenTermsOptions options)
       throws DeepLException, InterruptedException {
     Map<String, Object> requestData = new LinkedHashMap<>();
     requestData.put("name", name);
     requestData.put("term_lists", createSpokenTermsListsData(termLists));
-    String jsonBody = jsonParser.getGson().toJson(requestData);
+    String jsonBody = spokenTermsJsonBody(requestData, options);
     HttpResponse response =
         httpClientWrapper.sendJsonRequestWithBackoff("/v3/spoken-terms", jsonBody);
     checkResponse(response, false, false);
     return jsonParser.parseSpokenTerms(response.getBody());
+  }
+
+  /**
+   * Functions the same as {@link DeepLClient#createSpokenTerms(String, List,
+   * CreateSpokenTermsOptions)} without options.
+   *
+   * @see DeepLClient#createSpokenTerms(String, List, CreateSpokenTermsOptions)
+   */
+  public SpokenTerms createSpokenTerms(String name, List<SpokenTermsEntries> termLists)
+      throws DeepLException, InterruptedException {
+    return createSpokenTerms(name, termLists, null);
   }
 
   /**
@@ -829,9 +842,8 @@ public class DeepLClient extends Translator {
    */
   public SpokenTerms getSpokenTerms(String spokenTermsId)
       throws DeepLException, InterruptedException {
-    validateParameter("spokenTermsId", spokenTermsId);
-    String relativeUrl = String.format("/v3/spoken-terms/%s", spokenTermsId);
-    HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
+    HttpResponse response =
+        httpClientWrapper.sendGetRequestWithBackoff(spokenTermsPath(spokenTermsId));
     checkResponse(response, false, false);
     return jsonParser.parseSpokenTerms(response.getBody());
   }
@@ -854,9 +866,8 @@ public class DeepLClient extends Translator {
    * SpokenTermsEntries)}.
    *
    * @param spokenTermsId ID of the collection to update.
-   * @param name New name of the collection, or <code>null</code> to keep the current name.
-   * @param termLists Term lists to merge into the collection, or <code>null</code> to keep the
-   *     current term lists.
+   * @param options The fields to change, see {@link UpdateSpokenTermsOptions}; only the fields set
+   *     are sent. <code>null</code> changes nothing.
    * @return {@link SpokenTerms} object with details about the updated collection.
    * @throws NotFoundException If no collection with the given ID is found.
    * @throws IllegalArgumentException If a term is invalid, as checked for glossary terms.
@@ -864,18 +875,17 @@ public class DeepLClient extends Translator {
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
   public SpokenTerms updateSpokenTerms(
-      String spokenTermsId, @Nullable String name, @Nullable List<SpokenTermsEntries> termLists)
+      String spokenTermsId, @Nullable UpdateSpokenTermsOptions options)
       throws DeepLException, InterruptedException {
-    validateParameter("spokenTermsId", spokenTermsId);
+    String relativeUrl = spokenTermsPath(spokenTermsId);
     Map<String, Object> requestData = new LinkedHashMap<>();
-    if (name != null) {
-      requestData.put("name", name);
+    if (options != null && options.getName() != null) {
+      requestData.put("name", options.getName());
     }
-    if (termLists != null) {
-      requestData.put("term_lists", createSpokenTermsListsData(termLists));
+    if (options != null && options.getTermLists() != null) {
+      requestData.put("term_lists", createSpokenTermsListsData(options.getTermLists()));
     }
-    String jsonBody = jsonParser.getGson().toJson(requestData);
-    String relativeUrl = String.format("/v3/spoken-terms/%s", spokenTermsId);
+    String jsonBody = spokenTermsJsonBody(requestData, options);
     HttpResponse response =
         httpClientWrapper.sendJsonPatchRequestWithBackoff(relativeUrl, jsonBody);
     checkResponse(response, false, false);
@@ -883,15 +893,15 @@ public class DeepLClient extends Translator {
   }
 
   /**
-   * Functions the same as {@link DeepLClient#updateSpokenTerms(String, String, List)} but accepts a
-   * {@link SpokenTerms} object.
+   * Functions the same as {@link DeepLClient#updateSpokenTerms(String, UpdateSpokenTermsOptions)}
+   * but accepts a {@link SpokenTerms} object.
    *
-   * @see DeepLClient#updateSpokenTerms(String, String, List)
+   * @see DeepLClient#updateSpokenTerms(String, UpdateSpokenTermsOptions)
    */
   public SpokenTerms updateSpokenTerms(
-      SpokenTerms spokenTerms, @Nullable String name, @Nullable List<SpokenTermsEntries> termLists)
+      SpokenTerms spokenTerms, @Nullable UpdateSpokenTermsOptions options)
       throws DeepLException, InterruptedException {
-    return updateSpokenTerms(spokenTermsId(spokenTerms), name, termLists);
+    return updateSpokenTerms(spokenTermsId(spokenTerms), options);
   }
 
   /**
@@ -906,9 +916,7 @@ public class DeepLClient extends Translator {
    */
   public SpokenTermsEntries getSpokenTermsEntries(String spokenTermsId, String lang)
       throws DeepLException, InterruptedException {
-    validateParameter("spokenTermsId", spokenTermsId);
-    String relativeUrl =
-        String.format("/v3/spoken-terms/%s/entries%s", spokenTermsId, langQueryString(lang));
+    String relativeUrl = spokenTermsPath(spokenTermsId) + "/entries" + langQueryString(lang);
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
     checkResponse(response, false, false);
     return jsonParser.parseSpokenTermsEntries(response.getBody());
@@ -931,21 +939,52 @@ public class DeepLClient extends Translator {
    *
    * @param spokenTermsId ID of the collection.
    * @param entries Language and terms of the new term list.
+   * @param options Additional options, or <code>null</code>; see {@link
+   *     ReplaceSpokenTermsListOptions}.
    * @return {@link SpokenTermsList} object with details about the new term list.
    * @throws NotFoundException If no collection with the given ID is found.
    * @throws IllegalArgumentException If a term is invalid, as checked for glossary terms.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
-  public SpokenTermsList replaceSpokenTermsList(String spokenTermsId, SpokenTermsEntries entries)
+  public SpokenTermsList replaceSpokenTermsList(
+      String spokenTermsId,
+      SpokenTermsEntries entries,
+      @Nullable ReplaceSpokenTermsListOptions options)
       throws DeepLException, InterruptedException {
-    validateParameter("spokenTermsId", spokenTermsId);
-    String jsonBody = jsonParser.getGson().toJson(createSpokenTermsListData(entries));
-    String relativeUrl = String.format("/v3/spoken-terms/%s/term-lists", spokenTermsId);
+    String relativeUrl = spokenTermsPath(spokenTermsId) + "/term-lists";
+    String jsonBody = spokenTermsJsonBody(createSpokenTermsListData(entries), options);
     HttpResponse response =
         httpClientWrapper.sendJsonRequestWithBackoff("PUT", relativeUrl, jsonBody);
     checkResponse(response, false, false);
     return jsonParser.parseSpokenTermsTermList(response.getBody());
+  }
+
+  /**
+   * Functions the same as {@link DeepLClient#replaceSpokenTermsList(String, SpokenTermsEntries,
+   * ReplaceSpokenTermsListOptions)} without options.
+   *
+   * @see DeepLClient#replaceSpokenTermsList(String, SpokenTermsEntries,
+   *     ReplaceSpokenTermsListOptions)
+   */
+  public SpokenTermsList replaceSpokenTermsList(String spokenTermsId, SpokenTermsEntries entries)
+      throws DeepLException, InterruptedException {
+    return replaceSpokenTermsList(spokenTermsId, entries, null);
+  }
+
+  /**
+   * Functions the same as {@link DeepLClient#replaceSpokenTermsList(String, SpokenTermsEntries,
+   * ReplaceSpokenTermsListOptions)} but accepts a {@link SpokenTerms} object.
+   *
+   * @see DeepLClient#replaceSpokenTermsList(String, SpokenTermsEntries,
+   *     ReplaceSpokenTermsListOptions)
+   */
+  public SpokenTermsList replaceSpokenTermsList(
+      SpokenTerms spokenTerms,
+      SpokenTermsEntries entries,
+      @Nullable ReplaceSpokenTermsListOptions options)
+      throws DeepLException, InterruptedException {
+    return replaceSpokenTermsList(spokenTermsId(spokenTerms), entries, options);
   }
 
   /**
@@ -956,7 +995,7 @@ public class DeepLClient extends Translator {
    */
   public SpokenTermsList replaceSpokenTermsList(SpokenTerms spokenTerms, SpokenTermsEntries entries)
       throws DeepLException, InterruptedException {
-    return replaceSpokenTermsList(spokenTermsId(spokenTerms), entries);
+    return replaceSpokenTermsList(spokenTermsId(spokenTerms), entries, null);
   }
 
   /**
@@ -968,9 +1007,8 @@ public class DeepLClient extends Translator {
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
   public void deleteSpokenTerms(String spokenTermsId) throws DeepLException, InterruptedException {
-    validateParameter("spokenTermsId", spokenTermsId);
-    String relativeUrl = String.format("/v3/spoken-terms/%s", spokenTermsId);
-    HttpResponse response = httpClientWrapper.sendDeleteRequestWithBackoff(relativeUrl);
+    HttpResponse response =
+        httpClientWrapper.sendDeleteRequestWithBackoff(spokenTermsPath(spokenTermsId));
     checkResponse(response, false, false);
   }
 
@@ -996,9 +1034,7 @@ public class DeepLClient extends Translator {
    */
   public void deleteSpokenTermsList(String spokenTermsId, String lang)
       throws DeepLException, InterruptedException {
-    validateParameter("spokenTermsId", spokenTermsId);
-    String relativeUrl =
-        String.format("/v3/spoken-terms/%s/term-lists%s", spokenTermsId, langQueryString(lang));
+    String relativeUrl = spokenTermsPath(spokenTermsId) + "/term-lists" + langQueryString(lang);
     HttpResponse response = httpClientWrapper.sendDeleteRequestWithBackoff(relativeUrl);
     checkResponse(response, false, false);
   }
@@ -1875,6 +1911,21 @@ public class DeepLClient extends Translator {
       throw new IllegalArgumentException("spokenTerms must not be null");
     }
     return spokenTerms.getSpokenTermsId();
+  }
+
+  /** Validates the Spoken Terms collection ID and builds its URL path. */
+  private String spokenTermsPath(String spokenTermsId) throws DeepLException {
+    validateParameter("spokenTermsId", spokenTermsId);
+    return "/v3/spoken-terms/" + spokenTermsId;
+  }
+
+  /** Serializes a Spoken Terms request body, adding the extra body parameters last. */
+  private String spokenTermsJsonBody(
+      Map<String, Object> requestData, @Nullable BaseRequestOptions options) {
+    if (options != null && options.getExtraBodyParameters() != null) {
+      requestData.putAll(options.getExtraBodyParameters());
+    }
+    return jsonParser.getGson().toJson(requestData);
   }
 
   /** Extracts the ID of the given style profile. */
