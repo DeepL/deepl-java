@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added `DeepLClient.updateMultilingualGlossary()` and
+  `UpdateMultilingualGlossaryOptions`, which rename a glossary and merge
+  dictionaries into it in one request, sending only the fields that are set.
+- Added `CreateMultilingualGlossaryOptions` and
+  `ReplaceMultilingualGlossaryDictionaryOptions`, and overloads of the
+  multilingual glossary create, update and replace methods that take an options
+  object whose extra body parameters are added to the request last.
+- Added `getMultilingualGlossary()`, `updateMultilingualGlossaryName()`,
+  `updateMultilingualGlossaryDictionaryFromCsv()` and
+  `replaceMultilingualGlossaryDictionaryFromCsv()` overloads that take a
+  `MultilingualGlossaryInfo` object.
 - Added `DeepLException.getHttpStatusCode()`, the HTTP status code of the
   failed response (`null` if there was none), and
   `DeepLException.getShouldRetry()`, which is `true` for HTTP 429, HTTP 5xx and

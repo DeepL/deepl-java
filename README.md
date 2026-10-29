@@ -520,9 +520,9 @@ detail.
 
 Functions to get, list, and delete stored glossaries are also provided:
 
-- `getMultilingualGlossary()` takes a glossary ID and returns a
-  `MultilingualGlossaryInfo` object for a stored glossary, or raises an
-  exception if no such glossary is found.
+- `getMultilingualGlossary()` takes a glossary ID or `MultilingualGlossaryInfo`
+  object and returns a `MultilingualGlossaryInfo` object for a stored glossary,
+  or raises an exception if no such glossary is found.
 - `listMultilingualGlossaries()` returns a list of `MultilingualGlossaryInfo`
   objects corresponding to all of your stored glossaries.
 - `deleteMultilingualGlossary()` takes a glossary ID or
@@ -602,6 +602,36 @@ Functions to edit stored glossaries are also provided:
   replacing any pre-existing entries for that language pair.
 - `updateMultilingualGlossaryName()` takes a glossary ID or `MultilingualGlossaryInfo`
   object, plus the new name of the glossary.
+- `updateMultilingualGlossary()` takes a glossary ID or `MultilingualGlossaryInfo`
+  object and an `UpdateMultilingualGlossaryOptions` object, and changes the
+  name and merges the dictionaries set in it in one request; fields that are not
+  set are not sent.
+- `updateMultilingualGlossaryDictionaryFromCsv()` and
+  `replaceMultilingualGlossaryDictionaryFromCsv()` take a glossary ID or
+  `MultilingualGlossaryInfo` object, a source and target language and the CSV
+  content as a `String` or `File`.
+
+The create, update and replace functions also have overloads taking an options
+object as the last argument (`CreateMultilingualGlossaryOptions`,
+`UpdateMultilingualGlossaryOptions` and
+`ReplaceMultilingualGlossaryDictionaryOptions`; the `updateMultilingualGlossaryName()`
+and `updateMultilingualGlossaryDictionary*()` overloads accept any options object
+and read only its extra body parameters), whose `setExtraBodyParameters()`
+values are added to the request body last.
+
+```java
+class Example {  // Continuing class Example from above
+  public void updateGlossaryExample() throws Exception {
+    GlossaryEntries entries = new GlossaryEntries(Collections.singletonMap("goodbye", "Tschüss"));
+    MultilingualGlossaryInfo updatedGlossary =
+      client.updateMultilingualGlossary(myGlossary,
+        new UpdateMultilingualGlossaryOptions()
+          .setName("My renamed glossary")
+          .setDictionaries(Arrays.asList(
+            new MultilingualGlossaryDictionaryEntries("en", "de", entries))));
+  }
+}
+```
 
 ```java
 // Update glossary dictionary
