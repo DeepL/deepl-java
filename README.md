@@ -1466,6 +1466,46 @@ class Example {  // Continuing class Example from above
 }
 ```
 
+#### Listing languages and features per resource
+
+`DeepLClient.getLanguagesForResource()` returns the languages supported by one
+API resource, as a list of `LanguageSupport` objects. Pass the resource as a
+`LanguageResourceName` (`TranslateText`, `TranslateDocument`, `Glossary`,
+`Voice`, `Write`, `StyleRules`, `TranslationMemory`) or as a string. By
+default only stable languages and features are returned; to also return beta
+languages or features relying on third-party providers, pass
+`GetLanguagesForResourceOptions` with `setInclude(LanguageInclude.Beta,
+LanguageInclude.External)` (or `setInclude(List<String>)`).
+`getCode()` returns the language code exactly as the API sends it.
+
+`getLanguageResources()` returns one `LanguageResource` per resource:
+`getName()` gives the resource name, for example `"translate_text"`, and
+`getFeatures()` maps each feature name to a `ResourceFeature`, whose
+`getNeedsSourceSupport()` and `getNeedsTargetSupport()` say whether the source
+or target language must support the feature (`false` if the API omits them).
+
+```java
+class Example {  // Continuing class Example from above
+    public void getLanguagesForResourceExample() throws Exception {
+        List<LanguageSupport> languages = client.getLanguagesForResource(
+                LanguageResourceName.Write,
+                new GetLanguagesForResourceOptions().setInclude(LanguageInclude.Beta));
+        for (LanguageSupport language : languages) {
+            System.out.printf("%s (%s) %s%n",
+                              language.getName(),
+                              language.getCode(),
+                              language.getStatus()); // Example: "German (de) stable"
+        }
+
+        for (LanguageResource resource : client.getLanguageResources()) {
+            System.out.printf("%s: %s%n",
+                              resource.getName(),
+                              resource.getFeatures().keySet()); // Example: "glossary: [...]"
+        }
+    }
+}
+```
+
 #### Listing available glossary languages
 
 Glossaries are supported for a subset of language pairs. To retrieve those

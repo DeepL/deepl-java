@@ -11,21 +11,6 @@ import java.util.Map;
  * DeepLClient#getLanguageResources()}.
  */
 public class LanguageResource {
-  /** Resource value: text translation. */
-  public static final String RESOURCE_TRANSLATE_TEXT = "translate_text";
-  /** Resource value: document translation. */
-  public static final String RESOURCE_TRANSLATE_DOCUMENT = "translate_document";
-  /** Resource value: glossary. */
-  public static final String RESOURCE_GLOSSARY = "glossary";
-  /** Resource value: voice. */
-  public static final String RESOURCE_VOICE = "voice";
-  /** Resource value: write (rephrase). */
-  public static final String RESOURCE_WRITE = "write";
-  /** Resource value: style rules. */
-  public static final String RESOURCE_STYLE_RULES = "style_rules";
-  /** Resource value: translation memory. */
-  public static final String RESOURCE_TRANSLATION_MEMORY = "translation_memory";
-
   private final String name;
   private final Map<String, ResourceFeature> features;
 

@@ -10,14 +10,9 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Information about a language supported by the DeepL API for a given resource, as returned by
- * {@link DeepLClient#getLanguagesForResource(String, java.util.List)}.
+ * {@link DeepLClient#getLanguagesForResource(String, GetLanguagesForResourceOptions)}.
  */
 public class LanguageSupport {
-  /** Include value: also return beta languages and features. */
-  public static final String INCLUDE_BETA = "beta";
-  /** Include value: also return features that rely on third-party service providers. */
-  public static final String INCLUDE_EXTERNAL = "external";
-
   @SerializedName("lang")
   private final String code;
 

@@ -92,10 +92,39 @@ class LanguagesTest {
   }
 
   @Test
-  void sendsTheResourceAndEveryIncludeValueOfLanguagesForAResource() throws Exception {
+  void sendsTheResourceAndEveryIncludeStringOfLanguagesForAResource() throws Exception {
+    expectLanguages("resource=write&include=beta&include=future");
+    client.getLanguagesForResource(
+        "write", new GetLanguagesForResourceOptions().setInclude(Arrays.asList("beta", "future")));
+  }
+
+  @Test
+  void sendsEveryLanguageIncludeValueOfLanguagesForAResource() throws Exception {
     expectLanguages("resource=write&include=beta&include=external");
     client.getLanguagesForResource(
-        "write", Arrays.asList(LanguageSupport.INCLUDE_BETA, LanguageSupport.INCLUDE_EXTERNAL));
+        "write",
+        new GetLanguagesForResourceOptions()
+            .setInclude(LanguageInclude.Beta, LanguageInclude.External));
+  }
+
+  @Test
+  void sendsTheValueOfALanguageResourceName() throws Exception {
+    expectLanguages("resource=translation_memory");
+    client.getLanguagesForResource(LanguageResourceName.TranslationMemory);
+  }
+
+  @Test
+  void sendsTheValueOfALanguageResourceNameWithOptions() throws Exception {
+    expectLanguages("resource=style_rules&include=beta");
+    client.getLanguagesForResource(
+        LanguageResourceName.StyleRules,
+        new GetLanguagesForResourceOptions().setInclude(LanguageInclude.Beta));
+  }
+
+  @Test
+  void sendsOnlyTheResourceWhenTheOptionsSetNoInclude() throws Exception {
+    expectLanguages("resource=glossary");
+    client.getLanguagesForResource("glossary", new GetLanguagesForResourceOptions());
   }
 
   @Test

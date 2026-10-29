@@ -37,7 +37,7 @@ class LanguagesTest {
       for (Map.Entry<String, ResourceFeature> feature : resource.getFeatures().entrySet()) {
         assertEquals(feature.getKey(), feature.getValue().getName());
       }
-      if (resource.getName().equals(LanguageResource.RESOURCE_TRANSLATE_TEXT)) {
+      if (resource.getName().equals(LanguageResourceName.TranslateText.getValue())) {
         translateText = resource;
       }
     }

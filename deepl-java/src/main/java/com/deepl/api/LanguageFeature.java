@@ -5,7 +5,7 @@ package com.deepl.api;
 
 /**
  * Support level of a single feature for a language, as returned by {@link
- * DeepLClient#getLanguagesForResource(String, java.util.List)}.
+ * DeepLClient#getLanguagesForResource(String, GetLanguagesForResourceOptions)}.
  */
 public class LanguageFeature {
   /** Feature: automatic source-language detection. */

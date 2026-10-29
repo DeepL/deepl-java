@@ -1327,23 +1327,23 @@ public class DeepLClient extends Translator {
    * Retrieves the languages supported by the given DeepL API resource, along with the features each
    * language supports for that resource.
    *
-   * @param resource Resource to retrieve languages for, for example {@link
-   *     LanguageResource#RESOURCE_TRANSLATE_TEXT} or {@link LanguageResource#RESOURCE_GLOSSARY}.
-   * @param include Optional list of include values, for example {@link
-   *     LanguageSupport#INCLUDE_BETA} or {@link LanguageSupport#INCLUDE_EXTERNAL}. By default, or
-   *     if <code>null</code>, only stable languages and features are returned.
+   * @param resource Resource to retrieve languages for, for example "translate_text" or "glossary".
+   *     See {@link LanguageResourceName} for the known values.
+   * @param options Options influencing the request, or <code>null</code> to return only stable
+   *     languages and features.
    * @return List of {@link LanguageSupport} objects with per-feature support information.
    * @throws IllegalArgumentException If resource is <code>null</code> or empty.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
   public List<LanguageSupport> getLanguagesForResource(
-      String resource, @Nullable List<String> include) throws DeepLException, InterruptedException {
+      String resource, @Nullable GetLanguagesForResourceOptions options)
+      throws DeepLException, InterruptedException {
     validateParameter("resource", resource);
     ArrayList<KeyValuePair<String, String>> queryParams = new ArrayList<>();
     queryParams.add(new KeyValuePair<>("resource", resource));
-    if (include != null) {
-      for (String value : include) {
+    if (options != null && options.getInclude() != null) {
+      for (String value : options.getInclude()) {
         queryParams.add(new KeyValuePair<>("include", value));
       }
     }
@@ -1354,14 +1354,38 @@ public class DeepLClient extends Translator {
   }
 
   /**
-   * Functions the same as {@link DeepLClient#getLanguagesForResource(String, List)} but returns
-   * only stable languages and features.
+   * Functions the same as {@link DeepLClient#getLanguagesForResource(String,
+   * GetLanguagesForResourceOptions)} but returns only stable languages and features.
    *
-   * @see DeepLClient#getLanguagesForResource(String, List)
+   * @see DeepLClient#getLanguagesForResource(String, GetLanguagesForResourceOptions)
    */
   public List<LanguageSupport> getLanguagesForResource(String resource)
       throws DeepLException, InterruptedException {
     return getLanguagesForResource(resource, null);
+  }
+
+  /**
+   * Functions the same as {@link DeepLClient#getLanguagesForResource(String,
+   * GetLanguagesForResourceOptions)} but accepts a {@link LanguageResourceName}.
+   *
+   * @see DeepLClient#getLanguagesForResource(String, GetLanguagesForResourceOptions)
+   */
+  public List<LanguageSupport> getLanguagesForResource(
+      LanguageResourceName resource, @Nullable GetLanguagesForResourceOptions options)
+      throws DeepLException, InterruptedException {
+    return getLanguagesForResource(resource.getValue(), options);
+  }
+
+  /**
+   * Functions the same as {@link DeepLClient#getLanguagesForResource(String,
+   * GetLanguagesForResourceOptions)} but accepts a {@link LanguageResourceName} and returns only
+   * stable languages and features.
+   *
+   * @see DeepLClient#getLanguagesForResource(String, GetLanguagesForResourceOptions)
+   */
+  public List<LanguageSupport> getLanguagesForResource(LanguageResourceName resource)
+      throws DeepLException, InterruptedException {
+    return getLanguagesForResource(resource.getValue(), null);
   }
 
   /**
