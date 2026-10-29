@@ -11,11 +11,14 @@ import static com.github.tomakehurst.wiremock.client.WireMock.patch;
 import static com.github.tomakehurst.wiremock.client.WireMock.patchRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
+import java.net.Proxy;
+import java.net.UnknownHostException;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -129,6 +132,8 @@ class HttpClientTest {
     ConnectionException thrown =
         assertThrows(ConnectionException.class, () -> externalClient().getUsage());
     assertTrue(thrown.getMessage().contains("Connection refused"), thrown.getMessage());
+    assertTrue(thrown.getShouldRetry(), "a refused connection is retried");
+    assertNull(thrown.getHttpStatusCode());
   }
 
   @Test
@@ -138,6 +143,54 @@ class HttpClientTest {
             ConnectionException.class,
             () -> externalClient().updateMultilingualGlossaryName("g1", "n"));
     assertTrue(thrown.getMessage().contains("Connection refused"), thrown.getMessage());
+    assertTrue(thrown.getShouldRetry(), "a refused connection is retried");
+  }
+
+  @Test
+  void retriesAfterAFailedDnsLookup() {
+    DeepLClientOptions options = new DeepLClientOptions();
+    options.setServerUrl("https://example.invalid").setProxy(Proxy.NO_PROXY).setMaxRetries(0);
+    ConnectionException thrown =
+        assertThrows(ConnectionException.class, () -> new DeepLClient("k", options).getUsage());
+    assertTrue(thrown.getCause() instanceof UnknownHostException, thrown.toString());
+    assertTrue(thrown.getShouldRetry(), "a failed DNS lookup is retried");
+  }
+
+  @Test
+  void retriesATimeoutWhileReadingTheResponseBody() throws Exception {
+    wm.stubFor(
+        get("/v2/usage")
+            .inScenario("slow body")
+            .whenScenarioStateIs(Scenario.STARTED)
+            .willSetStateTo("fast")
+            .willReturn(okJson(USAGE).withChunkedDribbleDelay(2, 4000)));
+    wm.stubFor(
+        get("/v2/usage")
+            .inScenario("slow body")
+            .whenScenarioStateIs("fast")
+            .willReturn(okJson(USAGE)));
+    DeepLClient retryingClient =
+        OfflineClient.createClient(
+            wm,
+            (DeepLClientOptions)
+                new DeepLClientOptions().setMaxRetries(1).setTimeout(Duration.ofMillis(300)));
+    retryingClient.getUsage();
+    wm.verify(2, getRequestedFor(urlEqualTo("/v2/usage")));
+  }
+
+  @Test
+  void throwsConnectionExceptionWhenTheResponseBodyIsCutOff() {
+    wm.stubFor(get("/v2/usage").willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
+    assertThrows(ConnectionException.class, () -> client(0).getUsage());
+  }
+
+  @Test
+  void throwsConnectionExceptionWhenThePatchResponseBodyIsCutOff() {
+    wm.stubFor(
+        patch(urlEqualTo("/v3/glossaries/g1"))
+            .willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
+    assertThrows(
+        ConnectionException.class, () -> client(0).updateMultilingualGlossaryName("g1", "n"));
   }
 
   @Test

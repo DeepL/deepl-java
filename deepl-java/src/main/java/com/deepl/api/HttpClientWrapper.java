@@ -7,11 +7,13 @@ import com.deepl.api.http.*;
 import com.deepl.api.utils.*;
 import java.io.*;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.time.*;
 import java.util.*;
 import org.apache.http.HttpHost;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpPatch;
+import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -51,14 +53,14 @@ class HttpClientWrapper {
 
   public HttpResponse sendGetRequestWithBackoff(String relativeUrl)
       throws InterruptedException, DeepLException {
-    return sendRequestWithBackoff(GET, relativeUrl, null).toStringResponse();
+    return sendRequestWithBackoff(GET, relativeUrl, null);
   }
 
   public HttpResponse sendDeleteRequestWithBackoff(
       String relativeUrl, @Nullable Iterable<KeyValuePair<String, String>> params)
       throws InterruptedException, DeepLException {
     HttpContent content = HttpContent.buildFormURLEncodedContent(params);
-    return sendRequestWithBackoff(DELETE, relativeUrl, content).toStringResponse();
+    return sendRequestWithBackoff(DELETE, relativeUrl, content);
   }
 
   public HttpResponse sendDeleteRequestWithBackoff(String relativeUrl)
@@ -68,27 +70,27 @@ class HttpClientWrapper {
 
   public HttpResponse sendRequestWithBackoff(String relativeUrl)
       throws InterruptedException, DeepLException {
-    return sendRequestWithBackoff(POST, relativeUrl, null).toStringResponse();
+    return sendRequestWithBackoff(POST, relativeUrl, null);
   }
 
   public HttpResponse sendRequestWithBackoff(
       String relativeUrl, @Nullable Iterable<KeyValuePair<String, String>> params)
       throws InterruptedException, DeepLException {
     HttpContent content = HttpContent.buildFormURLEncodedContent(params);
-    return sendRequestWithBackoff(POST, relativeUrl, content).toStringResponse();
+    return sendRequestWithBackoff(POST, relativeUrl, content);
   }
 
   public HttpResponse sendPutRequestWithBackoff(
       String relativeUrl, @Nullable Iterable<KeyValuePair<String, String>> params)
       throws InterruptedException, DeepLException {
     HttpContent content = HttpContent.buildFormURLEncodedContent(params);
-    return sendRequestWithBackoff(PUT, relativeUrl, content).toStringResponse();
+    return sendRequestWithBackoff(PUT, relativeUrl, content);
   }
 
   public HttpResponse sendJsonRequestWithBackoff(String relativeUrl, String jsonBody)
       throws InterruptedException, DeepLException {
     HttpContent content = HttpContent.buildJsonContent(jsonBody);
-    return sendRequestWithBackoff(POST, relativeUrl, content).toStringResponse();
+    return sendRequestWithBackoff(POST, relativeUrl, content);
   }
 
   /**
@@ -99,14 +101,15 @@ class HttpClientWrapper {
   public HttpResponse sendJsonRequestRetryingOnlyUnprocessed(String relativeUrl, String jsonBody)
       throws InterruptedException, DeepLException {
     HttpContent content = HttpContent.buildJsonContent(jsonBody);
-    return sendRequestToUrlWithBackoff(POST, serverUrl + relativeUrl, content, this.headers, true)
+    return sendRequestToUrlWithBackoff(
+            POST, serverUrl + relativeUrl, content, this.headers, true, true)
         .toStringResponse();
   }
 
   public HttpResponse sendJsonRequestWithBackoff(String method, String relativeUrl, String jsonBody)
       throws InterruptedException, DeepLException {
     HttpContent content = HttpContent.buildJsonContent(jsonBody);
-    return sendRequestWithBackoff(method, relativeUrl, content).toStringResponse();
+    return sendRequestWithBackoff(method, relativeUrl, content);
   }
 
   public HttpResponse sendJsonPatchRequestWithBackoff(String relativeUrl, String jsonBody)
@@ -171,19 +174,15 @@ class HttpClientWrapper {
       // Execute the request
       org.apache.http.HttpResponse response = httpClient.execute(request);
 
-      // Get the response stream
-      InputStream responseStream =
-          (response.getStatusLine().getStatusCode() >= 200
-                  && response.getStatusLine().getStatusCode() < 400)
-              ? response.getEntity().getContent()
-              : new ByteArrayInputStream(EntityUtils.toByteArray(response.getEntity()));
-
-      return new HttpResponseStream(response.getStatusLine().getStatusCode(), responseStream)
-          .toStringResponse();
-    } catch (SocketTimeoutException e) {
-      throw new ConnectionException(e.getMessage(), true, e);
+      // The body is read here so that a failure while reading it is retried like any other.
+      byte[] body =
+          response.getEntity() == null
+              ? new byte[0]
+              : EntityUtils.toByteArray(response.getEntity());
+      return new HttpResponse(
+          response.getStatusLine().getStatusCode(), new String(body, StandardCharsets.UTF_8));
     } catch (RuntimeException | IOException e) {
-      throw new ConnectionException(e.getMessage(), false, e);
+      throw toConnectionException(e);
     }
   }
 
@@ -191,7 +190,8 @@ class HttpClientWrapper {
       String relativeUrl, @Nullable Iterable<KeyValuePair<String, String>> params)
       throws InterruptedException, DeepLException {
     HttpContent content = HttpContent.buildFormURLEncodedContent(params);
-    return sendRequestWithBackoff(POST, relativeUrl, content);
+    return sendRequestToUrlWithBackoff(
+        POST, serverUrl + relativeUrl, content, this.headers, false, false);
   }
 
   public HttpResponse uploadWithBackoff(
@@ -214,7 +214,7 @@ class HttpClientWrapper {
     } catch (Exception e) {
       throw new DeepLException("Failed building request", e);
     }
-    return sendRequestWithBackoff(POST, relativeUrl, content).toStringResponse();
+    return sendRequestWithBackoff(POST, relativeUrl, content);
   }
 
   /**
@@ -226,7 +226,7 @@ class HttpClientWrapper {
       String url, byte[] fileContent, String contentType)
       throws InterruptedException, DeepLException {
     HttpContent content = HttpContent.buildRawContent(contentType, fileContent);
-    return sendRequestToUrlWithBackoff(PUT, url, content, Collections.emptyMap())
+    return sendRequestToUrlWithBackoff(PUT, url, content, Collections.emptyMap(), false, true)
         .toStringResponse();
   }
 
@@ -237,29 +237,26 @@ class HttpClientWrapper {
    */
   public HttpResponseStream downloadAssetWithBackoff(String url)
       throws InterruptedException, DeepLException {
-    return sendRequestToUrlWithBackoff(GET, url, null, Collections.emptyMap());
+    return sendRequestToUrlWithBackoff(GET, url, null, Collections.emptyMap(), false, false);
   }
 
-  // Sends a request with exponential backoff
-  private HttpResponseStream sendRequestWithBackoff(
-      String method, String relativeUrl, HttpContent content)
+  // Sends a request with exponential backoff and reads the response body
+  private HttpResponse sendRequestWithBackoff(
+      String method, String relativeUrl, @Nullable HttpContent content)
       throws InterruptedException, DeepLException {
-    return sendRequestToUrlWithBackoff(method, serverUrl + relativeUrl, content, this.headers);
+    return sendRequestToUrlWithBackoff(
+            method, serverUrl + relativeUrl, content, this.headers, false, true)
+        .toStringResponse();
   }
 
-  // Sends a request to an absolute URL with exponential backoff
-  private HttpResponseStream sendRequestToUrlWithBackoff(
-      String method, String url, @Nullable HttpContent content, Map<String, String> requestHeaders)
-      throws InterruptedException, DeepLException {
-    return sendRequestToUrlWithBackoff(method, url, content, requestHeaders, false);
-  }
-
+  // With readBody false, the response body is returned as a stream and read by the caller.
   private HttpResponseStream sendRequestToUrlWithBackoff(
       String method,
       String url,
       @Nullable HttpContent content,
       Map<String, String> requestHeaders,
-      boolean retryOnlyUnprocessed)
+      boolean retryOnlyUnprocessed,
+      boolean readBody)
       throws InterruptedException, DeepLException {
     BackoffTimer backoffTimer = new BackoffTimer(this.minTimeout);
     while (true) {
@@ -271,7 +268,8 @@ class HttpClientWrapper {
                 backoffTimer.getTimeoutMillis(),
                 content,
                 requestHeaders,
-                retryOnlyUnprocessed);
+                retryOnlyUnprocessed,
+                readBody);
         if (backoffTimer.getNumRetries() >= this.maxRetries) {
           return response;
         } else if (response.getCode() != 429
@@ -299,7 +297,8 @@ class HttpClientWrapper {
       long timeoutMs,
       @Nullable HttpContent content,
       Map<String, String> requestHeaders,
-      boolean retryOnlyUnprocessed)
+      boolean retryOnlyUnprocessed,
+      boolean readBody)
       throws ConnectionException {
     try {
       URL url = new URL(urlString);
@@ -335,11 +334,28 @@ class HttpClientWrapper {
           (responseCode >= 200 && responseCode < 400)
               ? connection.getInputStream()
               : connection.getErrorStream();
+      if (readBody && responseStream != null) {
+        // Read inside the attempt so that a failure while reading the body is retried.
+        try (InputStream stream = responseStream) {
+          ByteArrayOutputStream body = new ByteArrayOutputStream();
+          StreamUtil.transferTo(stream, body);
+          responseStream = new ByteArrayInputStream(body.toByteArray());
+        }
+      }
       return new HttpResponseStream(responseCode, responseStream);
-    } catch (SocketTimeoutException e) {
-      throw new ConnectionException(e.getMessage(), true, e);
     } catch (RuntimeException | IOException e) {
-      throw new ConnectionException(e.getMessage(), false, e);
+      throw toConnectionException(e);
     }
+  }
+
+  // Connect, DNS and timeout failures are transient: the request is retried.
+  private static ConnectionException toConnectionException(Exception e) {
+    boolean shouldRetry =
+        e instanceof SocketTimeoutException
+            || e instanceof ConnectException
+            || e instanceof NoRouteToHostException
+            || e instanceof UnknownHostException
+            || e instanceof ConnectTimeoutException;
+    return new ConnectionException(e.getMessage(), shouldRetry, e);
   }
 }
