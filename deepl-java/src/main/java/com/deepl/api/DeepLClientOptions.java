@@ -15,13 +15,22 @@ public class DeepLClientOptions extends TranslatorOptions {
    * more modern API (eg. document translation is v2-only), and that not all API subscriptions have
    * access to one or the other API version. If in doubt, always use the most recent API version you
    * have access to.
+   *
+   * @deprecated The API version is not a client option of the other DeepL client libraries and will
+   *     be removed in the next major version; the default, version 2, is always used then.
    */
+  @Deprecated
   public DeepLClientOptions setApiVersion(DeepLApiVersion apiVersion) {
     this.apiVersion = apiVersion;
     return this;
   }
 
-  /** Gets the current API version. */
+  /**
+   * Gets the current API version.
+   *
+   * @deprecated See {@link #setApiVersion(DeepLApiVersion)}.
+   */
+  @Deprecated
   public @Nullable DeepLApiVersion getApiVersion() {
     return apiVersion;
   }
