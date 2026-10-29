@@ -288,6 +288,26 @@ class TranslateDocumentTest {
   }
 
   @Test
+  void throwsIllegalArgumentWhenDocumentGlossaryHasNoSourceLanguage() throws Exception {
+    File input = writeInput("in.txt", "Hello");
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                client.translateDocumentUpload(
+                    input, null, "de", new DocumentTranslationOptions().setGlossary("g1")));
+    assertEquals("sourceLang is required if using a glossary", thrown.getMessage());
+    thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                client.translateDocumentUpload(
+                    input, null, "de", new DocumentTranslationOptions().setGlossaryIds("g1")));
+    assertEquals("sourceLang is required if using glossaries", thrown.getMessage());
+    assertTrue(wm.getAllServeEvents().isEmpty());
+  }
+
+  @Test
   void rejectsANullStyleProfile() {
     assertThrows(
         IllegalArgumentException.class,

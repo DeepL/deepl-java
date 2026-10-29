@@ -178,6 +178,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `setExtraBodyParameters()`, added last to the `rephraseText()` request body.
 
 ### Changed
+- Text translation accepts a glossary (`setGlossary()`) or glossary list
+  (`setGlossaryIds()`) without a source language; the API detects the source
+  language and uses the glossary's dictionary for the detected language pair.
+  Document translation with a glossary still requires a source language.
 - `TranslationMemoryJob.getProduct()`, `getOperation()`, `getCreationTime()`
   and `getUpdatedTime()` are no longer annotated `@Nullable`, as the API always
   returns these fields.

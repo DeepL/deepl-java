@@ -853,7 +853,8 @@ public class Translator {
             formality,
             options != null ? options.getGlossaryId() : null,
             options != null ? options.getGlossaryIds() : null,
-            true);
+            true,
+            false);
     texts.forEach(
         (text) -> {
           if (text.isEmpty()) throw new IllegalArgumentException("text must not be empty");
@@ -964,7 +965,9 @@ public class Translator {
             formality,
             options != null ? options.getGlossaryId() : null,
             options != null ? options.getGlossaryIds() : null,
-            false);
+            false,
+            // Only document translation requires sourceLang with a glossary.
+            true);
 
     if (options != null) {
       if (options.getStyleId() != null) {
@@ -1019,7 +1022,7 @@ public class Translator {
       @Nullable String glossaryId,
       @Nullable List<String> glossaryIds) {
     return createHttpParamsCommonWithFormalityValue(
-        sourceLang, targetLang, formalityValue(formality), glossaryId, glossaryIds, true);
+        sourceLang, targetLang, formalityValue(formality), glossaryId, glossaryIds, true, true);
   }
 
   private static ArrayList<KeyValuePair<String, String>> createHttpParamsCommonWithFormalityValue(
@@ -1028,7 +1031,8 @@ public class Translator {
       @Nullable String formality,
       @Nullable String glossaryId,
       @Nullable List<String> glossaryIds,
-      boolean standardizeLanguages) {
+      boolean standardizeLanguages,
+      boolean requireSourceLangForGlossary) {
     if (standardizeLanguages) {
       targetLang = LanguageCode.standardize(targetLang);
       sourceLang = sourceLang == null ? null : LanguageCode.standardize(sourceLang);
@@ -1046,7 +1050,7 @@ public class Translator {
     }
 
     if (glossaryId != null) {
-      if (sourceLang == null) {
+      if (sourceLang == null && requireSourceLangForGlossary) {
         throw new IllegalArgumentException("sourceLang is required if using a glossary");
       }
       params.add(new KeyValuePair<>("glossary_id", glossaryId));
@@ -1057,7 +1061,7 @@ public class Translator {
         throw new IllegalArgumentException(
             "glossaryIds cannot be used together with glossaryId; use one or the other");
       }
-      if (sourceLang == null) {
+      if (sourceLang == null && requireSourceLangForGlossary) {
         throw new IllegalArgumentException("sourceLang is required if using glossaries");
       }
       if (glossaryIds.size() > 5) {

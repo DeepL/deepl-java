@@ -707,21 +707,34 @@ class TranslateTextTest {
   }
 
   @Test
-  void throwsIllegalArgumentWhenGlossaryHasNoSourceLanguage() {
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                client.translateText(
-                    "Hello", null, "de", new TextTranslationOptions().setGlossary("g1")));
-    assertTrue(thrown.getMessage().contains("sourceLang is required"));
-    thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                client.translateText(
-                    "Hello", null, "de", new TextTranslationOptions().setGlossaryIds("g1")));
-    assertTrue(thrown.getMessage().contains("sourceLang is required"));
+  void sendsGlossaryWithoutSourceLanguage() throws Exception {
+    expectBody(
+        FormBody.of(
+            "target_lang",
+            "de",
+            "glossary_id",
+            "g1",
+            "text",
+            "Hello",
+            "show_billed_characters",
+            "1"));
+    client.translateText("Hello", null, "de", new TextTranslationOptions().setGlossary("g1"));
+  }
+
+  @Test
+  void sendsGlossaryIdsWithoutSourceLanguage() throws Exception {
+    expectBody(
+        FormBody.of(
+            "target_lang",
+            "de",
+            "glossary_ids",
+            "g1,g2",
+            "text",
+            "Hello",
+            "show_billed_characters",
+            "1"));
+    client.translateText(
+        "Hello", null, "de", new TextTranslationOptions().setGlossaryIds("g1", "g2"));
   }
 
   @Test

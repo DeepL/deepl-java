@@ -182,7 +182,7 @@ a `TextTranslationOptions`, with the following setters:
   `IGlossary` objects (`GlossaryInfo`/`MultilingualGlossaryInfo`; for a list of
   glossary objects, pass their IDs as a list of strings).
   Glossaries are applied in the order provided (first match wins). This option
-  requires a source language and cannot be combined with `setGlossary()`.
+  cannot be combined with `setGlossary()`.
     - `setGlossaries()` is deprecated; use `setGlossaryIds()` instead.
 - `setStyleRule()`: specifies a style rule to use with translation, as a string
   containing the ID of the style rule, or a `StyleRuleInfo` object.
@@ -385,12 +385,13 @@ arguments, `translateDocument()` accepts an optional
 - `setFormality()`: same as
   in [Text translation options](#text-translation-options).
 - `setGlossary()`: same as
-  in [Text translation options](#text-translation-options).
+  in [Text translation options](#text-translation-options), but requires a
+  source language.
     - `setGlossaryId()` is deprecated; use `setGlossary()` instead.
 - `setGlossaryIds()`: same as
   in [Text translation options](#text-translation-options). Specifies multiple
   glossaries (up to 5) to use with document translation, as glossary IDs or
-  `IGlossary` objects.
+  `IGlossary` objects. Requires a source language.
     - `setGlossaries()` is deprecated; use `setGlossaryIds()` instead.
 - `setStyleRule()`: same as
   in [Text translation options](#text-translation-options), taking a style rule
@@ -744,8 +745,9 @@ class Example {  // Continuing class Example from above
 #### Using a stored glossary
 
 You can use a stored glossary for text translation by setting the `glossary`
-argument to either the glossary ID or `MultilingualGlossaryInfo` object. You must also
-specify the `source_lang` argument (it is required when using a glossary):
+argument to either the glossary ID or `MultilingualGlossaryInfo` object. The
+`source_lang` argument is optional: if it is `null`, DeepL detects the source
+language and uses the glossary's dictionary for the detected language pair:
 
 ```java
 class Example {  // Continuing class Example from above
@@ -765,8 +767,9 @@ class Example {  // Continuing class Example from above
 }
 ```
 
-Using a stored glossary for document translation is the same: set the `glossary`
-argument and specify the `source_lang` argument:
+Using a stored glossary for document translation is the same, except that the
+`source_lang` argument is required: set the `glossary` argument and specify the
+`source_lang` argument:
 
 ```java
 class Example {  // Continuing class Example from above
