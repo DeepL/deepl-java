@@ -26,23 +26,23 @@ public class LanguageResource {
   /** Resource value: translation memory. */
   public static final String RESOURCE_TRANSLATION_MEMORY = "translation_memory";
 
-  private final String resource;
+  private final String name;
   private final Map<String, ResourceFeature> features;
 
   /**
    * Initializes a new LanguageResource object.
    *
-   * @param resource Name of the resource, for example "translate_text".
+   * @param name Name of the resource, for example "translate_text".
    * @param features Map of feature name to {@link ResourceFeature}.
    */
-  public LanguageResource(String resource, Map<String, ResourceFeature> features) {
-    this.resource = resource;
+  public LanguageResource(String name, Map<String, ResourceFeature> features) {
+    this.name = name;
     this.features = features;
   }
 
   /** @return Name of the resource, for example "translate_text". */
-  public String getResource() {
-    return resource;
+  public String getName() {
+    return name;
   }
 
   /**

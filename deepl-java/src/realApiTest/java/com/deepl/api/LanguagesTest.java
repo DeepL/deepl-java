@@ -33,11 +33,11 @@ class LanguagesTest {
     assertFalse(resources.isEmpty());
     LanguageResource translateText = null;
     for (LanguageResource resource : resources) {
-      assertFalse(resource.getResource().isEmpty());
+      assertFalse(resource.getName().isEmpty());
       for (Map.Entry<String, ResourceFeature> feature : resource.getFeatures().entrySet()) {
         assertEquals(feature.getKey(), feature.getValue().getName());
       }
-      if (resource.getResource().equals(LanguageResource.RESOURCE_TRANSLATE_TEXT)) {
+      if (resource.getName().equals(LanguageResource.RESOURCE_TRANSLATE_TEXT)) {
         translateText = resource;
       }
     }

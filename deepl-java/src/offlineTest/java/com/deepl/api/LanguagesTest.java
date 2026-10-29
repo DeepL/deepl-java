@@ -141,7 +141,7 @@ class LanguagesTest {
                         + "{\"name\":\"write\"}]")));
     List<LanguageResource> resources = client.getLanguageResources();
     LanguageResource translateText = resources.get(0);
-    assertEquals("translate_text", translateText.getResource());
+    assertEquals("translate_text", translateText.getName());
     ResourceFeature glossary = translateText.getFeatures().get(LanguageFeature.FEATURE_GLOSSARY);
     assertEquals(Boolean.TRUE, glossary.getNeedsSourceSupport());
     assertEquals(Boolean.TRUE, glossary.getNeedsTargetSupport());
