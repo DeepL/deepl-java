@@ -393,7 +393,8 @@ arguments, `translateDocument()` accepts an optional
 - `setTimeout()`: a `Duration` limiting how long `translateDocument()` waits
   for the translation after the upload. When it expires, a
   `DocumentTranslationException` with the document handle is thrown. Not sent
-  to the API; by default there is no limit.
+  to the API; by default there is no limit, and a duration longer than about
+  292 years also means no limit.
 - `setOutputFormat()`: the file format of the translated document, as a file
   extension, for example `docx`. By default the translated document has the
   same format as the input document.

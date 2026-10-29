@@ -288,7 +288,8 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
    * after the upload. When it expires, <code>translateDocument</code> throws a {@link
    * DocumentTranslationException} that carries the document handle, so the document can still be
    * retrieved. This is a client-side limit and is not sent to the API. By default, this value is
-   * <code>null</code> and there is no limit.
+   * <code>null</code> and there is no limit; a duration too long to count in nanoseconds (about 292
+   * years) also means no limit.
    */
   public DocumentTranslationOptions setTimeout(@Nullable Duration timeout) {
     this.timeout = timeout;

@@ -17,8 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DocumentTranslationOptions.setExtraBodyParameters()` now return the options
   class, so further setters can be chained after them.
 - Added the `setStyleProfile()` option to `TextTranslationOptions` and
-  `DocumentTranslationOptions`, sent as `style_profile_id` on text and document translation. It accepts a
-  style profile ID or a `StyleProfile` object.
+  `DocumentTranslationOptions`, sent as `style_profile_id` on text and
+  document translation. It accepts a style profile ID or a `StyleProfile`
+  object.
 - Added the `TagHandlingMode`, `TagHandlingVersion` and `ModelType` enums and
   `TextTranslationOptions.setTagHandling()`, `setTagHandlingVersion()` and
   `setModelType()` overloads that take them; the string setters remain.
@@ -31,8 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `TextTranslationOptions.setStyleRule(String)` and
   `setTranslationMemory(String)`, taking the style rule or translation memory
   ID.
-- Added `TextTranslationOptions.setGlossaryIds(IGlossary, IGlossary...)`, taking glossary
-  objects.
+- Added `TextTranslationOptions.setGlossaryIds(IGlossary, IGlossary...)`,
+  taking glossary objects.
 - Added `Translator.translateDocumentGetStatus()`, which returns the status of
   a document translation.
 - Added a `translateDocumentWaitUntilDone(DocumentHandle, Duration)` overload

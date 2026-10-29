@@ -36,6 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -695,6 +696,7 @@ class TranslateDocumentTest {
 
   @Test
   void keepsPollingAfterAnUnknownStatus() throws Exception {
+    client.documentPollIntervalMillis = 10;
     wm.stubFor(
         post("/v2/document/D1")
             .inScenario("unknown")
@@ -712,6 +714,26 @@ class TranslateDocumentTest {
   }
 
   @Test
+  void treatsATimeoutTooLongForNanosecondsAsNoLimit() throws Exception {
+    wm.stubFor(
+        post("/v2/document/D1")
+            .inScenario("long")
+            .whenScenarioStateIs(Scenario.STARTED)
+            .willSetStateTo("done")
+            .willReturn(okJson("{\"document_id\":\"D1\",\"status\":\"queued\"}")));
+    wm.stubFor(
+        post("/v2/document/D1")
+            .inScenario("long")
+            .whenScenarioStateIs("done")
+            .willReturn(okJson(DONE)));
+    client.documentPollIntervalMillis = 10;
+    DocumentStatus status =
+        client.translateDocumentWaitUntilDone(HANDLE_OBJECT, Duration.ofSeconds(Long.MAX_VALUE));
+    assertTrue(status.done());
+  }
+
+  @Test
+  @Timeout(30)
   void throwsDeepLExceptionWhenTheWaitTimeoutExpires() {
     wm.stubFor(
         post("/v2/document/D1")
@@ -724,6 +746,7 @@ class TranslateDocumentTest {
   }
 
   @Test
+  @Timeout(30)
   void throwsDocumentTranslationExceptionWithTheHandleWhenTheTimeoutOptionExpires()
       throws Exception {
     File input = writeInput("example.txt", "a");

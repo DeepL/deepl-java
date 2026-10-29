@@ -28,6 +28,8 @@ public class Translator {
   protected final Parser jsonParser = new Parser();
   protected final HttpClientWrapper httpClientWrapper;
   protected final DeepLApiVersion apiVersion;
+  // Package-private so offline tests can shorten the wait between document status requests.
+  int documentPollIntervalMillis = 5000;
 
   /**
    * Initializes a new Translator object using your Authentication Key.
@@ -582,11 +584,19 @@ public class Translator {
   public DocumentStatus translateDocumentWaitUntilDone(
       DocumentHandle handle, @Nullable Duration timeout)
       throws InterruptedException, DeepLException {
-    long deadline = timeout != null ? System.nanoTime() + timeout.toNanos() : 0;
+    Long timeoutNanos = null;
+    if (timeout != null) {
+      try {
+        timeoutNanos = timeout.toNanos();
+      } catch (ArithmeticException exception) {
+        // Longer than about 292 years: treated as no limit.
+      }
+    }
+    long deadline = timeoutNanos != null ? System.nanoTime() + timeoutNanos : 0;
     DocumentStatus status = translateDocumentGetStatus(handle);
     while (status.ok() && !status.done()) {
       long sleepMillis = calculateDocumentWaitTimeMillis(status.getSecondsRemaining());
-      if (timeout != null) {
+      if (timeoutNanos != null) {
         long remainingMillis = (deadline - System.nanoTime()) / 1_000_000;
         if (remainingMillis <= 0) {
           throw new DeepLException(
@@ -1197,6 +1207,6 @@ public class Translator {
 
   private int calculateDocumentWaitTimeMillis(Long secondsRemaining) {
     // secondsRemaining is currently unreliable, so just poll equidistantly
-    return 5000;
+    return documentPollIntervalMillis;
   }
 }
