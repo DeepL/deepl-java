@@ -90,6 +90,13 @@ class ErrorsTest {
   }
 
   @Test
+  void throwsWithTheMessageOfAnInfrastructureErrorBody() {
+    respond(400, "{\"error\":{\"message\":\"Request blocked\"}}");
+    DeepLException thrown = assertThrows(DeepLException.class, translator::getUsage);
+    assertEquals("Bad request, error message: message: Request blocked", thrown.getMessage());
+  }
+
+  @Test
   void throwsWithTheRawBodyWhenTheErrorBodyIsNotJson() {
     respond(500, "<html>Bad gateway</html>");
     DeepLException thrown = assertThrows(DeepLException.class, translator::getUsage);

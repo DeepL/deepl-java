@@ -13,11 +13,19 @@ import org.jetbrains.annotations.Nullable;
 class ErrorResponse {
   @Nullable private String message;
   @Nullable private String detail;
+  // Edge infrastructure errors carry the message as {"error": {"message": ...}}.
+  @Nullable private InfrastructureError error;
+
+  private static class InfrastructureError {
+    @Nullable private String message;
+  }
 
   /** Returns a diagnostic string including the message and detail (if available). */
   public String getErrorMessage() {
     StringBuilder sb = new StringBuilder();
-    if (getMessage() != null) sb.append("message: ").append(getMessage());
+    String message = getMessage();
+    if (message == null && getDetail() == null && error != null) message = error.message;
+    if (message != null) sb.append("message: ").append(message);
     if (getDetail() != null) {
       if (sb.length() != 0) sb.append(", ");
       sb.append("detail: ").append(getDetail());

@@ -1842,6 +1842,9 @@ invalid arguments are provided, they may raise the standard exceptions
   read.
 - A malformed API response raises a `DeepLException`.
 
+The exception message includes the error message of the response body, or the
+raw body if it carries no message.
+
 `DeepLException.getHttpStatusCode()` returns the HTTP status code of the failed
 response, or `null` if there was none. `DeepLException.getShouldRetry()`
 returns `true` for transient errors (HTTP 429, HTTP 5xx, connection, DNS and

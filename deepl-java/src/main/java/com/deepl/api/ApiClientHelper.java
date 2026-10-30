@@ -105,7 +105,9 @@ final class ApiClientHelper {
     String body = response.getBody();
     if (body != null && !body.isEmpty()) {
       try {
-        messageSuffix = ", error message: " + jsonParser.parseErrorMessage(body);
+        String errorMessage = jsonParser.parseErrorMessage(body);
+        messageSuffix =
+            errorMessage.isEmpty() ? ", response: " + body : ", error message: " + errorMessage;
       } catch (JsonSyntaxException ignored) {
         messageSuffix = ", response: " + body;
       }
