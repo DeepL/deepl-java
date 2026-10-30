@@ -12,9 +12,9 @@ import org.jetbrains.annotations.*;
 
 /**
  * Parses Admin API responses tolerantly: entries that are not objects or have no key_id are
- * skipped, missing optional fields (labels, usage limits, dates) are null, and other missing or
- * malformed fields get neutral defaults. A response of the wrong overall shape, or a single key
- * without key_id, is an error.
+ * skipped, missing optional fields (labels, usage limits, dates, a report's total usage and
+ * speech-to-speech minutes) are null, and other missing or malformed fields get neutral defaults. A
+ * response of the wrong overall shape, or a single key without key_id, is an error.
  *
  * <p>This class is internal; you should not use this class directly.
  */
@@ -84,7 +84,7 @@ class AdminResponseParser {
   AdminUsageReport parseUsageReport(JsonElement json) {
     JsonObject report = asObject(requireObject(json, "Usage report").get("usage_report"));
     return new AdminUsageReport(
-        parseBreakdown(report.get("total_usage")),
+        breakdownOrNull(report.get("total_usage")),
         utcDay(report, "start_date"),
         utcDay(report, "end_date"),
         stringOrNull(report, "group_by"),
@@ -135,7 +135,11 @@ class AdminResponseParser {
         count(object, "document_translation_characters"),
         count(object, "text_improvement_characters"),
         number(object, "speech_to_text_minutes"),
-        number(object, "speech_to_speech_minutes"));
+        numberOrNull(object, "speech_to_speech_minutes"));
+  }
+
+  private @Nullable AdminUsageBreakdown breakdownOrNull(@Nullable JsonElement json) {
+    return json != null && json.isJsonObject() ? parseBreakdown(json) : null;
   }
 
   private CustomTagUsageBreakdown parseCustomTagBreakdown(@Nullable JsonElement json) {
@@ -199,11 +203,16 @@ class AdminResponseParser {
   }
 
   private static double number(JsonObject object, String name) {
+    Double value = numberOrNull(object, name);
+    return value != null ? value : 0;
+  }
+
+  private static @Nullable Double numberOrNull(JsonObject object, String name) {
     JsonElement element = object.get(name);
     try {
-      return element == null || element.isJsonNull() ? 0 : element.getAsDouble();
+      return element == null || element.isJsonNull() ? null : element.getAsDouble();
     } catch (RuntimeException e) {
-      return 0;
+      return null;
     }
   }
 

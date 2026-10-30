@@ -10,7 +10,7 @@ import org.jetbrains.annotations.*;
 /** Usage analytics report for a date range, see {@link DeepLAdminClient#getUsageAnalytics}. */
 public class AdminUsageReport {
   @SerializedName(value = "total_usage")
-  private final AdminUsageBreakdown totalUsage;
+  private final @Nullable AdminUsageBreakdown totalUsage;
 
   @SerializedName(value = "start_date")
   private final @Nullable Date startDate;
@@ -30,7 +30,8 @@ public class AdminUsageReport {
   /**
    * Initializes a new {@link AdminUsageReport}.
    *
-   * @param totalUsage Usage totals over the whole date range.
+   * @param totalUsage Usage totals over the whole date range, or <code>null</code> if the report
+   *     does not include them.
    * @param startDate Start day of the report period, as midnight UTC.
    * @param endDate End day of the report period, as midnight UTC.
    * @param groupBy Grouping used for the report, if any.
@@ -38,7 +39,7 @@ public class AdminUsageReport {
    * @param keyAndDayUsages Usage per key and day, present when grouped by key and day.
    */
   public AdminUsageReport(
-      AdminUsageBreakdown totalUsage,
+      @Nullable AdminUsageBreakdown totalUsage,
       @Nullable Date startDate,
       @Nullable Date endDate,
       @Nullable String groupBy,
@@ -52,8 +53,11 @@ public class AdminUsageReport {
     this.keyAndDayUsages = keyAndDayUsages;
   }
 
-  /** @return Usage totals over the whole date range. */
-  public AdminUsageBreakdown getTotalUsage() {
+  /**
+   * @return Usage totals over the whole date range, or <code>null</code> if the report does not
+   *     include them.
+   */
+  public @Nullable AdminUsageBreakdown getTotalUsage() {
     return totalUsage;
   }
 

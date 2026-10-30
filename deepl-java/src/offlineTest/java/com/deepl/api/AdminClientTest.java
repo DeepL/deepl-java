@@ -121,7 +121,6 @@ class AdminClientTest {
     assertEquals(0, report.getTotalUsage().getTotalCharacters());
     assertEquals(0, report.getTotalUsage().getSpeechToTextMinutes());
     assertEquals(2.5, report.getTotalUsage().getSpeechToSpeechMinutes());
-    assertEquals(0, report.getKeyUsages().get(1).getUsage().getSpeechToSpeechMinutes());
     assertNull(report.getStartDate());
     assertEquals(utcMidnight("2025-10-01"), report.getEndDate());
     assertEquals(2, report.getKeyUsages().size());
@@ -132,6 +131,38 @@ class AdminClientTest {
     assertEquals(1, tagReport.getUsage().size());
     assertNull(tagReport.getUsage().get(0).getUsageDate());
     assertEquals(4, tagReport.getUsage().get(0).getBreakdown().getTotalCharacters());
+  }
+
+  @Test
+  void readsAbsentSpeechToSpeechMinutesAsNull() throws Exception {
+    wm.stubFor(
+        get("/v2/admin/analytics?start_date=2025-09-29&end_date=2025-10-01&group_by=key")
+            .willReturn(
+                okJson(
+                    "{\"usage_report\":{\"total_usage\":{\"total_characters\":9,"
+                        + "\"speech_to_speech_minutes\":0},"
+                        + "\"key_usages\":[{\"api_key\":\"a\",\"usage\":{\"total_characters\":9}}]}}")));
+
+    AdminUsageReport report =
+        client.getUsageAnalytics(
+            LocalDate.of(2025, 9, 29), LocalDate.of(2025, 10, 1), AdminUsageGroupBy.Key);
+    assertEquals(0.0, report.getTotalUsage().getSpeechToSpeechMinutes());
+    assertNull(report.getKeyUsages().get(0).getUsage().getSpeechToSpeechMinutes());
+  }
+
+  @Test
+  void readsAbsentTotalUsageAsNull() throws Exception {
+    wm.stubFor(
+        get("/v2/admin/analytics?start_date=2025-09-29&end_date=2025-10-01")
+            .willReturn(okJson("{\"usage_report\":{\"start_date\":\"2025-09-29T00:00:00\"}}")));
+    wm.stubFor(
+        get("/v2/admin/analytics?start_date=2025-09-29&end_date=2025-10-01&group_by=key")
+            .willReturn(okJson("{\"usage_report\":{\"total_usage\":\"x\"}}")));
+
+    LocalDate start = LocalDate.of(2025, 9, 29);
+    LocalDate end = LocalDate.of(2025, 10, 1);
+    assertNull(client.getUsageAnalytics(start, end).getTotalUsage());
+    assertNull(client.getUsageAnalytics(start, end, AdminUsageGroupBy.Key).getTotalUsage());
   }
 
   @Test

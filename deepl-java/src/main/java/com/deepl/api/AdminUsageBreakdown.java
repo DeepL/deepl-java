@@ -4,6 +4,7 @@
 package com.deepl.api;
 
 import com.google.gson.annotations.*;
+import org.jetbrains.annotations.*;
 
 /** Usage totals in a usage analytics report, see {@link AdminUsageReport}. */
 public class AdminUsageBreakdown {
@@ -23,7 +24,7 @@ public class AdminUsageBreakdown {
   private final double speechToTextMinutes;
 
   @SerializedName(value = "speech_to_speech_minutes")
-  private final double speechToSpeechMinutes;
+  private final @Nullable Double speechToSpeechMinutes;
 
   /**
    * Initializes a new {@link AdminUsageBreakdown}.
@@ -33,7 +34,8 @@ public class AdminUsageBreakdown {
    * @param documentTranslationCharacters Number of characters used for document translation.
    * @param textImprovementCharacters Number of characters used for text improvement.
    * @param speechToTextMinutes Number of speech-to-text minutes used.
-   * @param speechToSpeechMinutes Number of speech-to-speech minutes used.
+   * @param speechToSpeechMinutes Number of speech-to-speech minutes used, or <code>null</code> if
+   *     the report does not include it.
    */
   public AdminUsageBreakdown(
       long totalCharacters,
@@ -41,7 +43,7 @@ public class AdminUsageBreakdown {
       long documentTranslationCharacters,
       long textImprovementCharacters,
       double speechToTextMinutes,
-      double speechToSpeechMinutes) {
+      @Nullable Double speechToSpeechMinutes) {
     this.totalCharacters = totalCharacters;
     this.textTranslationCharacters = textTranslationCharacters;
     this.documentTranslationCharacters = documentTranslationCharacters;
@@ -75,8 +77,11 @@ public class AdminUsageBreakdown {
     return speechToTextMinutes;
   }
 
-  /** @return Number of speech-to-speech minutes used. */
-  public double getSpeechToSpeechMinutes() {
+  /**
+   * @return Number of speech-to-speech minutes used, or <code>null</code> if the report does not
+   *     include it.
+   */
+  public @Nullable Double getSpeechToSpeechMinutes() {
     return speechToSpeechMinutes;
   }
 }

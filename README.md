@@ -1767,6 +1767,8 @@ empty if the report uses a different grouping. `KeyUsage.getApiKeyLabel()` is
 `getGroupBy()` returns the grouping as the API sends it, for example `"key"` or
 `"keyAndDay"`. Each usage breakdown has the characters used in total and per
 product, `getSpeechToTextMinutes()` and `getSpeechToSpeechMinutes()`.
+`getTotalUsage()` and `getSpeechToSpeechMinutes()` (a `Double`) are `null` if
+the report does not include them.
 
 ```java
 import com.deepl.api.*;
@@ -1777,8 +1779,10 @@ class AdminExample {  // Continuing class AdminExample from above
         AdminUsageReport report = adminClient.getUsageAnalytics(
                 LocalDate.of(2026, 6, 1), LocalDate.of(2026, 7, 1),
                 AdminUsageGroupBy.Key);
-        System.out.printf("Total characters: %d%n",
-                          report.getTotalUsage().getTotalCharacters());
+        if (report.getTotalUsage() != null) {
+            System.out.printf("Total characters: %d%n",
+                              report.getTotalUsage().getTotalCharacters());
+        }
         for (KeyUsage keyUsage : report.getKeyUsages()) {
             System.out.printf("%s: %d%n",
                               keyUsage.getApiKeyLabel(),
