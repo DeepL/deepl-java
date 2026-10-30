@@ -1808,13 +1808,15 @@ invalid arguments are provided, they may raise the standard exceptions
 - `TooManyRequestsException`: HTTP 429 after all retries.
 - `QuotaExceededException`: the quota is exceeded (HTTP 456).
 - `ConnectionException`: no HTTP response was received, for example after a
-  connection, DNS or timeout failure.
+  connection, DNS or timeout failure or a connection reset, or the connection
+  failed while a downloaded document or translation memory export was being
+  read.
 - A malformed API response raises a `DeepLException`.
 
 `DeepLException.getHttpStatusCode()` returns the HTTP status code of the failed
 response, or `null` if there was none. `DeepLException.getShouldRetry()`
 returns `true` for transient errors (HTTP 429, HTTP 5xx, connection, DNS and
-timeout failures); the client has already retried these up to the configured
+timeout failures, connection resets and broken pipes); the client has already retried these up to the configured
 maximum number of retries.
 
 ### Writing a Plugin
@@ -1857,8 +1859,10 @@ The available options setters are:
 
 - `setMaxRetries()`: maximum number of failed HTTP requests to retry, the
   default is 5. Note: only failures due to transient conditions are retried:
-  HTTP 429, HTTP 5xx, and connection, DNS and timeout failures, including a
-  timeout while reading the response.
+  HTTP 429, HTTP 5xx, and connection, DNS and timeout failures, connection
+  resets and broken pipes, including a timeout while reading the response.
+  Every request, including `PATCH` requests, is sent at most `maxRetries + 1`
+  times.
 - `setTimeout()`: connection timeout for each HTTP request.
 - `setProxy()`: provide details about a proxy to use for all HTTP requests to
   DeepL, as a `java.net.Proxy`.

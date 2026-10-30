@@ -652,7 +652,7 @@ public class Translator {
    *
    * @param handle Handle associated with document translation to download.
    * @param outputStream Stream to download translated document to.
-   * @throws IOException If an I/O error occurs.
+   * @throws IOException If an I/O error occurs while writing to the output stream.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
@@ -666,7 +666,7 @@ public class Translator {
     try (HttpResponseStream response = httpClientWrapper.downloadWithBackoff(relativeUrl, params)) {
       checkResponse(response);
       assert response.getBody() != null;
-      StreamUtil.transferTo(response.getBody(), outputStream);
+      HttpClientWrapper.copyBody(response.getBody(), outputStream);
     }
   }
 

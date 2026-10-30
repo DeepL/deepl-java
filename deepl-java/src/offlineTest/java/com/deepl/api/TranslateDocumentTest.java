@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
+import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.http.Request;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
@@ -427,6 +428,16 @@ class TranslateDocumentTest {
     File output = tempDir.resolve("out.txt").toFile();
     client.translateDocumentDownload(HANDLE_OBJECT, output);
     assertEquals("Protonenstrahl", Fixtures.readFile(output));
+  }
+
+  @Test
+  void throwsConnectionExceptionWhenTheDownloadedDocumentIsCutOff() {
+    wm.stubFor(
+        post("/v2/document/D1/result")
+            .willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
+    assertThrows(
+        ConnectionException.class,
+        () -> client.translateDocumentDownload(HANDLE_OBJECT, new ByteArrayOutputStream()));
   }
 
   @Test

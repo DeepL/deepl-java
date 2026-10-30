@@ -2553,7 +2553,7 @@ public class DeepLClient extends Translator {
    *
    * @param job Completed export job carrying the download URL.
    * @param outputStream Stream to download the exported translation memory to.
-   * @throws IOException If an I/O error occurs.
+   * @throws IOException If an I/O error occurs while writing to the output stream.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If the job has no download URL, or any error occurs while downloading.
    * @see DeepLClient#downloadTranslationMemoryExport(TranslationMemoryJob, File)
@@ -2579,7 +2579,7 @@ public class DeepLClient extends Translator {
             .setHttpStatusCode(response.getCode());
       }
       assert response.getBody() != null;
-      StreamUtil.transferTo(response.getBody(), outputStream);
+      HttpClientWrapper.copyBody(response.getBody(), outputStream);
     }
   }
 

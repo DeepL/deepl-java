@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -453,6 +454,16 @@ class TranslationMemoriesTest {
     client.downloadTranslationMemoryExport(completedExport(), output);
     assertEquals(3, output.size());
     assertEquals((byte) 0xff, output.toByteArray()[1]);
+  }
+
+  @Test
+  void throwsConnectionExceptionWhenTheExportDownloadIsCutOff() {
+    wm.stubFor(
+        get("/storage/export").willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
+    assertThrows(
+        ConnectionException.class,
+        () ->
+            client.downloadTranslationMemoryExport(completedExport(), new ByteArrayOutputStream()));
   }
 
   @Test

@@ -147,7 +147,9 @@ class HttpClientWrapper {
   private HttpResponse sendPatchRequest(
       String relativeUrl, HttpContent content, BackoffTimer backoffTimer) throws DeepLException {
     // Like HttpURLConnection, honor the JVM's proxy settings unless a proxy was configured.
-    HttpClientBuilder builder = HttpClients.custom().useSystemProperties();
+    // Automatic retries are disabled so that only the backoff loop retries, up to maxRetries.
+    HttpClientBuilder builder =
+        HttpClients.custom().useSystemProperties().disableAutomaticRetries();
     if (proxy != null) {
       InetSocketAddress addr = (InetSocketAddress) proxy.address();
       builder.setProxy(new HttpHost(addr.getHostName(), addr.getPort()));
@@ -328,7 +330,7 @@ class HttpClientWrapper {
       } catch (IOException e) {
         ConnectionException failure = toConnectionException(e);
         throw new ConnectionException(
-            failure.getMessage(), failure.getShouldRetry(), e, failure.getShouldRetry());
+            failure.getMessage(), failure.getShouldRetry(), e, isUnsentFailure(e));
       }
 
       if (content != null) {
@@ -356,14 +358,50 @@ class HttpClientWrapper {
     }
   }
 
-  // Connect, DNS and timeout failures are transient: the request is retried.
+  /**
+   * Copies a streamed response body to the output stream. A failure while reading the body is a
+   * {@link ConnectionException}; a failure while writing the output stays an {@link IOException}.
+   */
+  static void copyBody(InputStream body, OutputStream outputStream)
+      throws ConnectionException, IOException {
+    final byte[] buffer = new byte[8192];
+    while (true) {
+      int read;
+      try {
+        read = body.read(buffer);
+      } catch (RuntimeException | IOException e) {
+        throw toConnectionException(e);
+      }
+      if (read < 0) {
+        return;
+      }
+      outputStream.write(buffer, 0, read);
+    }
+  }
+
+  // Connect, DNS, timeout, connection reset and broken pipe failures are transient: the request is
+  // retried.
   private static ConnectionException toConnectionException(Exception e) {
-    boolean shouldRetry =
-        e instanceof SocketTimeoutException
-            || e instanceof ConnectException
-            || e instanceof NoRouteToHostException
-            || e instanceof UnknownHostException
-            || e instanceof ConnectTimeoutException;
+    boolean shouldRetry = isUnsentFailure(e) || isConnectionResetOrBrokenPipe(e);
     return new ConnectionException(e.getMessage(), shouldRetry, e);
+  }
+
+  // Failures of the connect step after which the server cannot have received the request.
+  private static boolean isUnsentFailure(Exception e) {
+    return e instanceof SocketTimeoutException
+        || e instanceof ConnectException
+        || e instanceof NoRouteToHostException
+        || e instanceof UnknownHostException
+        || e instanceof ConnectTimeoutException;
+  }
+
+  // Java has no exception types for these, only SocketException messages such as
+  // "Connection reset", "Connection reset by peer" and "Broken pipe (Write failed)".
+  private static boolean isConnectionResetOrBrokenPipe(Exception e) {
+    if (!(e instanceof SocketException) || e.getMessage() == null) {
+      return false;
+    }
+    String message = e.getMessage().toLowerCase(Locale.ROOT);
+    return message.contains("connection reset") || message.contains("broken pipe");
   }
 }

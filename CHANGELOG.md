@@ -227,8 +227,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   They will be removed in the next major version.
 
 ### Fixed
+- A connection failure while reading a downloaded document
+  (`translateDocumentDownload()`) or translation memory export
+  (`downloadTranslationMemoryExport()`) now throws `ConnectionException`
+  instead of a raw `IOException`; `IOException` is left for failures writing
+  the output.
 - A `User-Agent` header passed with `setHeaders()` now replaces the built
   `User-Agent` in any casing, e.g. `user-agent`.
+- `PATCH` requests no longer make up to 3 hidden extra attempts per try on top
+  of `maxRetries`.
+- Connection resets and broken pipes are now retried, and
+  `ConnectionException.getShouldRetry()` returns `true` for them.
 - The language query parameters of `getMultilingualGlossaryDictionaryEntries()`
   and `deleteMultilingualGlossaryDictionary()` now encode a space as `%20`
   instead of `+`.

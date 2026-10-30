@@ -18,8 +18,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import java.net.Proxy;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -116,6 +120,61 @@ class HttpClientTest {
   void throwsConnectionExceptionWhenTheConnectionIsReset() {
     wm.stubFor(get("/v2/usage").willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)));
     assertThrows(ConnectionException.class, () -> client(0).getUsage());
+  }
+
+  // A PATCH request, because HttpURLConnection silently resends a GET once after a reset.
+  @Test
+  void retriesAConnectionReset() throws Exception {
+    wm.stubFor(
+        patch(urlEqualTo("/v3/glossaries/g1"))
+            .inScenario("reset")
+            .whenScenarioStateIs(Scenario.STARTED)
+            .willSetStateTo("recovered")
+            .willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)));
+    wm.stubFor(
+        patch(urlEqualTo("/v3/glossaries/g1"))
+            .inScenario("reset")
+            .whenScenarioStateIs("recovered")
+            .willReturn(okJson(GLOSSARY)));
+    client(1).updateMultilingualGlossaryName("g1", "n");
+    wm.verify(2, patchRequestedFor(urlEqualTo("/v3/glossaries/g1")));
+  }
+
+  // WireMock reads the whole request before failing, so a socket that resets every connection
+  // stands in for a server that drops the connection while the request body is still being sent.
+  @Test
+  void sendsAPatchRequestOnlyOnceWhenMaxRetriesIsZero() throws Exception {
+    AtomicInteger connections = new AtomicInteger();
+    try (ServerSocket server = new ServerSocket(0)) {
+      Thread acceptor =
+          new Thread(
+              () -> {
+                try {
+                  while (true) {
+                    Socket socket = server.accept();
+                    connections.incrementAndGet();
+                    socket.setSoLinger(true, 0);
+                    socket.close();
+                  }
+                } catch (Exception closed) {
+                  // the server socket was closed at the end of the test
+                }
+              });
+      acceptor.start();
+      DeepLClientOptions options =
+          new DeepLClientOptions().setServerUrl("http://127.0.0.1:" + server.getLocalPort());
+      DeepLClient resetClient = new DeepLClient("k", options.setMaxRetries(0));
+      StringBuilder longName = new StringBuilder();
+      for (int i = 0; i < 1 << 23; i++) {
+        longName.append('n');
+      }
+      ConnectionException thrown =
+          assertThrows(
+              ConnectionException.class,
+              () -> resetClient.updateMultilingualGlossaryName("g1", longName.toString()));
+      assertTrue(thrown.getCause() instanceof SocketException, thrown.toString());
+    }
+    assertEquals(1, connections.get());
   }
 
   // A request to any host but the local server goes to the refusing proxy that the offline
