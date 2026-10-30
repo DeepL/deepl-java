@@ -28,6 +28,10 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -36,6 +40,9 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -428,6 +435,65 @@ class TranslateDocumentTest {
     File output = tempDir.resolve("out.txt").toFile();
     client.translateDocumentDownload(HANDLE_OBJECT, output);
     assertEquals("Protonenstrahl", Fixtures.readFile(output));
+  }
+
+  // WireMock sends the headers together with the first body bytes, so a server socket sends the
+  // headers of the first response and then stalls its body until the client times out.
+  @Test
+  @Timeout(30)
+  void retriesADownloadWhoseBodyTimesOutBeforeAnyByteIsWritten() throws Exception {
+    AtomicInteger connections = new AtomicInteger();
+    try (ServerSocket server = new ServerSocket(0)) {
+      Thread acceptor =
+          new Thread(
+              () -> {
+                try {
+                  while (true) {
+                    Socket socket = server.accept();
+                    boolean stall = connections.incrementAndGet() == 1;
+                    new Thread(() -> serveDocument(socket, stall)).start();
+                  }
+                } catch (IOException closed) {
+                  // the server socket was closed at the end of the test
+                }
+              });
+      acceptor.start();
+      DeepLClientOptions options =
+          new DeepLClientOptions().setServerUrl("http://127.0.0.1:" + server.getLocalPort());
+      DeepLClient retryingClient =
+          new DeepLClient("k", options.setMaxRetries(1).setTimeout(Duration.ofMillis(300)));
+      ByteArrayOutputStream output = new ByteArrayOutputStream();
+      retryingClient.translateDocumentDownload(HANDLE_OBJECT, output);
+      assertEquals("Protonenstrahl", output.toString("UTF-8"));
+    }
+    assertEquals(2, connections.get());
+  }
+
+  private static void serveDocument(Socket socket, boolean stall) {
+    try (Socket s = socket) {
+      InputStream in = s.getInputStream();
+      String head = "";
+      while (!head.endsWith("\r\n\r\n")) {
+        head += (char) in.read();
+      }
+      Matcher length = Pattern.compile("(?i)content-length: *(\\d+)").matcher(head);
+      for (int i = length.find() ? Integer.parseInt(length.group(1)) : 0; i > 0; i--) {
+        in.read();
+      }
+      OutputStream out = s.getOutputStream();
+      out.write(
+          "HTTP/1.1 200 OK\r\nContent-Length: 14\r\nConnection: close\r\n\r\n"
+              .getBytes(StandardCharsets.US_ASCII));
+      out.flush();
+      if (stall) {
+        Thread.sleep(5000);
+      } else {
+        out.write("Protonenstrahl".getBytes(StandardCharsets.US_ASCII));
+        out.flush();
+      }
+    } catch (Exception ignored) {
+      // the client closed the connection
+    }
   }
 
   @Test

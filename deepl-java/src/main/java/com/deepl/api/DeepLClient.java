@@ -5,7 +5,6 @@
 package com.deepl.api;
 
 import com.deepl.api.http.HttpResponse;
-import com.deepl.api.http.HttpResponseStream;
 import com.deepl.api.utils.*;
 import java.io.*;
 import java.nio.file.Files;
@@ -2583,17 +2582,18 @@ public class DeepLClient extends Translator {
           "Translation memory export job has no download URL, it may not have completed yet");
     }
 
-    try (HttpResponseStream response = httpClientWrapper.downloadAssetWithBackoff(downloadUrl)) {
-      if (response.getCode() < 200 || response.getCode() >= 300) {
-        throw new DeepLException(
-                String.format(
-                    "Error downloading translation memory export, HTTP status: %d",
-                    response.getCode()))
-            .setHttpStatusCode(response.getCode());
-      }
-      assert response.getBody() != null;
-      HttpClientWrapper.copyBody(response.getBody(), outputStream);
-    }
+    httpClientWrapper.downloadAssetWithBackoff(
+        downloadUrl,
+        response -> {
+          if (response.getCode() < 200 || response.getCode() >= 300) {
+            throw new DeepLException(
+                    String.format(
+                        "Error downloading translation memory export, HTTP status: %d",
+                        response.getCode()))
+                .setHttpStatusCode(response.getCode());
+          }
+        },
+        outputStream);
   }
 
   /**

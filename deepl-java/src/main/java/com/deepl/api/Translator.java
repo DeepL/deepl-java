@@ -671,11 +671,7 @@ public class Translator {
     String relativeUrl =
         String.format(
             "/%s/document/%s/result", apiVersion, encodePathSegment(handle.getDocumentId()));
-    try (HttpResponseStream response = httpClientWrapper.downloadWithBackoff(relativeUrl, params)) {
-      checkResponse(response);
-      assert response.getBody() != null;
-      HttpClientWrapper.copyBody(response.getBody(), outputStream);
-    }
+    httpClientWrapper.downloadWithBackoff(relativeUrl, params, this::checkResponse, outputStream);
   }
 
   /**

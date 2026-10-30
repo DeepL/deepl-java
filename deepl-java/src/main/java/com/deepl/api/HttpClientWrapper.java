@@ -188,12 +188,24 @@ class HttpClientWrapper {
     }
   }
 
-  public HttpResponseStream downloadWithBackoff(
-      String relativeUrl, @Nullable Iterable<KeyValuePair<String, String>> params)
-      throws InterruptedException, DeepLException {
+  /** Checks a download response before its body is copied, throwing for an error status. */
+  interface ResponseCheck {
+    void check(HttpResponseStream response) throws DeepLException;
+  }
+
+  /**
+   * Downloads the response body to the output stream. A transient failure while reading the body is
+   * retried like a failed request as long as nothing has been written to the output stream yet.
+   */
+  public void downloadWithBackoff(
+      String relativeUrl,
+      @Nullable Iterable<KeyValuePair<String, String>> params,
+      ResponseCheck check,
+      OutputStream outputStream)
+      throws InterruptedException, DeepLException, IOException {
     HttpContent content = HttpContent.buildFormURLEncodedContent(params);
-    return sendRequestToUrlWithBackoff(
-        POST, serverUrl + relativeUrl, content, this.headers, false, false);
+    downloadToStreamWithBackoff(
+        POST, serverUrl + relativeUrl, content, this.headers, check, outputStream);
   }
 
   public HttpResponse uploadWithBackoff(
@@ -237,9 +249,64 @@ class HttpClientWrapper {
    * storage URL returned by a completed translation memory export job. The DeepL headers, in
    * particular the Authorization header, are deliberately not sent to third-party storage.
    */
-  public HttpResponseStream downloadAssetWithBackoff(String url)
-      throws InterruptedException, DeepLException {
-    return sendRequestToUrlWithBackoff(GET, url, null, Collections.emptyMap(), false, false);
+  public void downloadAssetWithBackoff(String url, ResponseCheck check, OutputStream outputStream)
+      throws InterruptedException, DeepLException, IOException {
+    downloadToStreamWithBackoff(GET, url, null, Collections.emptyMap(), check, outputStream);
+  }
+
+  // Retrying after the first byte was written would duplicate it in the output stream, which
+  // cannot be rewound; buffering the body instead would hold whole documents in memory.
+  private void downloadToStreamWithBackoff(
+      String method,
+      String url,
+      @Nullable HttpContent content,
+      Map<String, String> requestHeaders,
+      ResponseCheck check,
+      OutputStream outputStream)
+      throws InterruptedException, DeepLException, IOException {
+    BackoffTimer backoffTimer = new BackoffTimer(this.minTimeout);
+    while (true) {
+      WriteTrackingOutputStream output = new WriteTrackingOutputStream(outputStream);
+      try (HttpResponseStream response =
+          sendRequestToUrlWithBackoff(
+              method, url, content, requestHeaders, false, false, backoffTimer)) {
+        check.check(response);
+        if (response.getBody() != null) {
+          copyBody(response.getBody(), output);
+        }
+        return;
+      } catch (ConnectionException exception) {
+        if (!exception.getShouldRetry()
+            || output.written
+            || backoffTimer.getNumRetries() >= this.maxRetries) {
+          throw exception;
+        }
+      }
+      backoffTimer.sleepUntilRetry();
+    }
+  }
+
+  /** Forwards writes to the wrapped stream, recording whether anything was written. */
+  private static class WriteTrackingOutputStream extends FilterOutputStream {
+    private boolean written;
+
+    WriteTrackingOutputStream(OutputStream out) {
+      super(out);
+    }
+
+    @Override
+    public void write(byte[] b, int off, int len) throws IOException {
+      if (len > 0) {
+        written = true;
+      }
+      out.write(b, off, len);
+    }
+
+    @Override
+    public void write(int b) throws IOException {
+      written = true;
+      out.write(b);
+    }
   }
 
   // Sends a request with exponential backoff and reads the response body
@@ -260,7 +327,25 @@ class HttpClientWrapper {
       boolean retryOnlyUnprocessed,
       boolean readBody)
       throws InterruptedException, DeepLException {
-    BackoffTimer backoffTimer = new BackoffTimer(this.minTimeout);
+    return sendRequestToUrlWithBackoff(
+        method,
+        url,
+        content,
+        requestHeaders,
+        retryOnlyUnprocessed,
+        readBody,
+        new BackoffTimer(this.minTimeout));
+  }
+
+  private HttpResponseStream sendRequestToUrlWithBackoff(
+      String method,
+      String url,
+      @Nullable HttpContent content,
+      Map<String, String> requestHeaders,
+      boolean retryOnlyUnprocessed,
+      boolean readBody,
+      BackoffTimer backoffTimer)
+      throws InterruptedException, DeepLException {
     while (true) {
       try {
         HttpResponseStream response =
@@ -362,7 +447,7 @@ class HttpClientWrapper {
    * Copies a streamed response body to the output stream. A failure while reading the body is a
    * {@link ConnectionException}; a failure while writing the output stays an {@link IOException}.
    */
-  static void copyBody(InputStream body, OutputStream outputStream)
+  private static void copyBody(InputStream body, OutputStream outputStream)
       throws ConnectionException, IOException {
     final byte[] buffer = new byte[8192];
     while (true) {

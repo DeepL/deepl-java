@@ -1893,7 +1893,8 @@ The available options setters are:
   default is 5. Note: only failures due to transient conditions are retried:
   HTTP 429, HTTP 5xx, and connection, DNS and timeout failures, connection
   resets and broken pipes, including a timeout while reading the response.
-  Every request, including `PATCH` requests, is sent at most `maxRetries + 1`
+  A document or translation memory export download is retried only while
+  nothing has been written to the output yet. Every request, including `PATCH` requests, is sent at most `maxRetries + 1`
   times.
 - `setTimeout()`: connection timeout for each HTTP request.
 - `setProxy()`: provide details about a proxy to use for all HTTP requests to
