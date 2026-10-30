@@ -93,7 +93,8 @@ variant according to ISO 3166-1, for example `'en-US'`, or `'pt-BR'`. The bare
 codes `'en'` and `'pt'` are also accepted as target languages and translate to
 the default variants `'en-US'` and `'pt-PT'`; use a regional variant to choose
 explicitly. The full list of supported languages is in the
-[API documentation][api-docs-lang-list]. Language codes are
+[API documentation][api-docs-lang-list]. The codes are sent with the language
+part lower-cased and the rest as given, for example `zh-Hans`. Language codes are
 plain strings; the `LanguageCode` constants are deprecated and will be removed
 in the next major version.
 

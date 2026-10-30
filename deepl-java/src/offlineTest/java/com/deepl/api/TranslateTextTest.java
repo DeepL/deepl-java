@@ -75,18 +75,18 @@ class TranslateTextTest {
   }
 
   @Test
-  void sendsLanguageCodesStandardized() throws Exception {
+  void sendsLanguageCodesWithOnlyTheBaseSubtagLowerCased() throws Exception {
     expectBody(
         FormBody.of(
             "source_lang",
             "en",
             "target_lang",
-            "en-US",
+            "zh-Hans",
             "text",
             "Hello",
             "show_billed_characters",
             "1"));
-    client.translateText("Hello", "En", "EN-us");
+    client.translateText("Hello", "EN", "ZH-Hans");
   }
 
   @ParameterizedTest

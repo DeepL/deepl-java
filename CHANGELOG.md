@@ -183,6 +183,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `setExtraBodyParameters()`, added last to the `rephraseText()` request body.
 
 ### Changed
+- `translateText()` sends the language codes with the language part
+  lower-cased and the rest as given, like document translation, for example
+  `zh-Hans`; before, the part after the first `-` was upper-cased.
 - Text translation accepts a glossary (`setGlossary()`) or glossary list
   (`setGlossaryIds()`) without a source language; the API detects the source
   language and uses the glossary's dictionary for the detected language pair.

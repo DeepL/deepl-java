@@ -848,12 +848,12 @@ public class Translator {
     }
     ArrayList<KeyValuePair<String, String>> params =
         createHttpParamsCommonWithFormalityValue(
-            sourceLang,
-            targetLang,
+            lowerCaseBaseSubtag(sourceLang),
+            lowerCaseBaseSubtag(targetLang),
             formality,
             options != null ? options.getGlossaryId() : null,
             options != null ? options.getGlossaryIds() : null,
-            true,
+            false,
             false);
     texts.forEach(
         (text) -> {
