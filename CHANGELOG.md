@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- `DeepLClientOptions` overrides every setter with a `DeepLClientOptions`
+  return type, so `DeepLClientOptions options = new
+  DeepLClientOptions().setMaxRetries(1)` compiles as in the README, and a
+  setter chain passed inline to `DeepLClient` no longer resolves to the
+  deprecated `DeepLClient(String, TranslatorOptions)` constructor.
 - Added `CreateTranslationMemoryImportOptions` (content type, display name,
   extra body parameters) and `createTranslationMemoryImport()` overloads taking
   only the file name and size, or an options object; extra body parameters are
