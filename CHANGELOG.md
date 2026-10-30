@@ -262,6 +262,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`Character.isWhitespace()`) like spoken terms, checks target terms set
   through `replaceAll()` or `Map.Entry.setValue()`, and names an invalid
   character in hexadecimal (`U+001F`).
+- `importTranslationMemoryFromFilepath()` and
+  `exportTranslationMemoryToFilepath()` now throw `DeepLException`, with the
+  original exception as cause, for local I/O failures such as an unreadable
+  input file or a failed write, instead of a raw `IOException`.
+- `exportTranslationMemoryToFilepath()` with a `File` now checks that the output
+  path is free and its directory exists before creating the export job, and
+  throws `DeepLException` otherwise.
+- `waitUntilTranslationMemoryJobDone()` with a timeout, and the import and
+  export helpers that use it, now cut the last poll wait short at the timeout
+  instead of overrunning it by up to 5 seconds.
 - Translation memory and translation memory job IDs are now URL-encoded in
   request paths.
 - The style rule and custom instruction methods now URL-encode the style rule

@@ -1326,8 +1326,12 @@ class Example {  // Continuing class Example from above
 ```
 
 The optional timeout is the maximum time to wait for the import to finish; omit
-it to wait indefinitely. The job status is polled every 5 seconds, so the
-timeout is not accurate to the millisecond.
+it to wait indefinitely. The job status is polled every 5 seconds, and the last
+wait is cut short at the timeout.
+
+A missing input file throws `IllegalArgumentException` before any request is
+sent. Any other local I/O failure, such as an unreadable file, throws
+`DeepLException` with the I/O error as its cause.
 
 `ImportTranslationMemoryOptions` groups the import options: `setDisplayName()`,
 `setContentType()` (declared when the job is created and sent with the upload;
@@ -1409,8 +1413,11 @@ class Example {  // Continuing class Example from above
 }
 ```
 
-As with import, the timeout is optional; omit it to wait indefinitely. Instead of
-a `File`, you can pass an `OutputStream`, which is not closed:
+As with import, the timeout is optional; omit it to wait indefinitely. The output
+path is checked before the export job is created: if a file already exists there
+or its directory does not exist, `DeepLException` is thrown. A failure while
+writing the file also throws `DeepLException`, with the I/O error as its cause.
+Instead of a `File`, you can pass an `OutputStream`, which is not closed:
 
 ```java
 class Example {  // Continuing class Example from above

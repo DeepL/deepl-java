@@ -2458,8 +2458,7 @@ public class DeepLClient extends Translator {
    *
    * @param jobId ID of the job to wait for.
    * @param timeout Maximum time to wait before throwing, or <code>null</code> to wait indefinitely.
-   *     Note that this is not accurate to the millisecond, as the job status is only polled every 5
-   *     seconds.
+   *     The job status is polled every 5 seconds; the last wait is cut short at the timeout.
    * @return {@link TranslationMemoryJob} object with the status of the finished job.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If the timeout is exceeded, the job failed or expired, or any error
@@ -2468,7 +2467,15 @@ public class DeepLClient extends Translator {
    */
   public TranslationMemoryJob waitUntilTranslationMemoryJobDone(
       String jobId, @Nullable Duration timeout) throws DeepLException, InterruptedException {
-    long startTimeMillis = System.currentTimeMillis();
+    Long timeoutNanos = null;
+    if (timeout != null) {
+      try {
+        timeoutNanos = timeout.toNanos();
+      } catch (ArithmeticException exception) {
+        // Longer than about 292 years: treated as no limit.
+      }
+    }
+    long deadline = timeoutNanos != null ? System.nanoTime() + timeoutNanos : 0;
     TranslationMemoryJob job = getTranslationMemoryJob(jobId);
     while (!job.done()) {
       // The API always returns exactly one result; an empty list would never reach a terminal
@@ -2476,12 +2483,18 @@ public class DeepLClient extends Translator {
       if (job.getResults().isEmpty()) {
         throw new DeepLException("Translation memory job " + jobId + " returned no results");
       }
-      if (timeout != null && System.currentTimeMillis() - startTimeMillis > timeout.toMillis()) {
-        throw new DeepLException(
-            String.format(
-                "Manual timeout of %ds exceeded for translation memory job", timeout.getSeconds()));
+      long sleepMillis = TRANSLATION_MEMORY_JOB_POLL_INTERVAL_MILLIS;
+      if (timeoutNanos != null) {
+        long remainingMillis = (deadline - System.nanoTime()) / 1_000_000;
+        if (remainingMillis <= 0) {
+          throw new DeepLException(
+              String.format(
+                  "Manual timeout of %ds exceeded for translation memory job",
+                  timeout.getSeconds()));
+        }
+        sleepMillis = Math.min(sleepMillis, remainingMillis);
       }
-      Thread.sleep(TRANSLATION_MEMORY_JOB_POLL_INTERVAL_MILLIS);
+      Thread.sleep(sleepMillis);
       job = getTranslationMemoryJob(jobId);
     }
     if (!job.ok()) {
@@ -2592,10 +2605,12 @@ public class DeepLClient extends Translator {
    *     name.
    * @return {@link TranslationMemoryJob} object for the completed import; its result carries the ID
    *     of the new translation memory.
-   * @throws IOException If the input file cannot be read.
+   * @throws IllegalArgumentException If the input file does not exist.
+   * @throws IOException Not thrown; local I/O failures are reported as {@link DeepLException}.
+   *     Declared for source compatibility.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
-   * @throws DeepLException If the import fails, or any error occurs while communicating with the
-   *     DeepL API.
+   * @throws DeepLException If the input file cannot be read (with the I/O error as cause), the
+   *     import fails, or any error occurs while communicating with the DeepL API.
    */
   public TranslationMemoryJob importTranslationMemoryFromFilepath(
       File inputFile, @Nullable String displayName)
@@ -2611,23 +2626,23 @@ public class DeepLClient extends Translator {
    * @param displayName Optional name for the resulting translation memory, defaults to the file
    *     name.
    * @param timeout Maximum time to wait for the import to finish, or <code>null</code> to wait
-   *     indefinitely. Note that this is not accurate to the millisecond, as the job status is only
-   *     polled every 5 seconds.
+   *     indefinitely. The job status is polled every 5 seconds; the last wait is cut short at the
+   *     timeout.
    * @return {@link TranslationMemoryJob} object for the completed import; its result carries the ID
    *     of the new translation memory.
-   * @throws IOException If the input file cannot be read.
+   * @throws IllegalArgumentException If the input file does not exist.
+   * @throws IOException Not thrown; local I/O failures are reported as {@link DeepLException}.
+   *     Declared for source compatibility.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
-   * @throws DeepLException If the timeout is exceeded, the import fails, or any error occurs while
-   *     communicating with the DeepL API.
+   * @throws DeepLException If the input file cannot be read (with the I/O error as cause), the
+   *     timeout is exceeded, the import fails, or any error occurs while communicating with the
+   *     DeepL API.
    * @see DeepLClient#importTranslationMemoryFromFilepath(File, String)
    */
   public TranslationMemoryJob importTranslationMemoryFromFilepath(
       File inputFile, @Nullable String displayName, @Nullable Duration timeout)
       throws DeepLException, IOException, InterruptedException {
-    if (inputFile == null || !inputFile.exists()) {
-      throw new IllegalArgumentException("inputFile must be an existing file");
-    }
-    byte[] fileContent = Files.readAllBytes(inputFile.toPath());
+    byte[] fileContent = readTranslationMemoryFile(inputFile);
     TranslationMemoryImport translationMemoryImport =
         createTranslationMemoryImport(inputFile.getName(), fileContent.length, null, displayName);
     uploadTranslationMemoryFile(translationMemoryImport, fileContent);
@@ -2643,18 +2658,18 @@ public class DeepLClient extends Translator {
    *     parameters), or <code>null</code>.
    * @return {@link TranslationMemoryJob} object for the completed import; its result carries the ID
    *     of the new translation memory.
-   * @throws IOException If the input file cannot be read.
+   * @throws IllegalArgumentException If the input file does not exist.
+   * @throws IOException Not thrown; local I/O failures are reported as {@link DeepLException}.
+   *     Declared for source compatibility.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
-   * @throws DeepLException If the timeout is exceeded, the import fails, or any error occurs while
-   *     communicating with the DeepL API.
+   * @throws DeepLException If the input file cannot be read (with the I/O error as cause), the
+   *     timeout is exceeded, the import fails, or any error occurs while communicating with the
+   *     DeepL API.
    */
   public TranslationMemoryJob importTranslationMemoryFromFilepath(
       File inputFile, @Nullable ImportTranslationMemoryOptions options)
       throws DeepLException, IOException, InterruptedException {
-    if (inputFile == null || !inputFile.exists()) {
-      throw new IllegalArgumentException("inputFile must be an existing file");
-    }
-    byte[] fileContent = Files.readAllBytes(inputFile.toPath());
+    byte[] fileContent = readTranslationMemoryFile(inputFile);
     return importTranslationMemoryFromFilepath(fileContent, inputFile.getName(), options);
   }
 
@@ -2722,10 +2737,12 @@ public class DeepLClient extends Translator {
    * @param translationMemoryId ID of the translation memory to export.
    * @param outputFile File to write the exported translation memory to.
    * @return {@link TranslationMemoryJob} object for the completed export.
-   * @throws IOException If the output path is occupied.
+   * @throws IOException Not thrown; local I/O failures are reported as {@link DeepLException}.
+   *     Declared for source compatibility.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
-   * @throws DeepLException If the export fails, or any error occurs while communicating with the
-   *     DeepL API.
+   * @throws DeepLException If the output path is occupied or its directory does not exist (checked
+   *     before the export job is created), writing the file fails (with the I/O error as cause),
+   *     the export fails, or any error occurs while communicating with the DeepL API.
    */
   public TranslationMemoryJob exportTranslationMemoryToFilepath(
       String translationMemoryId, File outputFile)
@@ -2740,23 +2757,31 @@ public class DeepLClient extends Translator {
    * @param translationMemoryId ID of the translation memory to export.
    * @param outputFile File to write the exported translation memory to.
    * @param timeout Maximum time to wait for the export to finish, or <code>null</code> to wait
-   *     indefinitely. Note that this is not accurate to the millisecond, as the job status is only
-   *     polled every 5 seconds.
+   *     indefinitely. The job status is polled every 5 seconds; the last wait is cut short at the
+   *     timeout.
    * @return {@link TranslationMemoryJob} object for the completed export.
-   * @throws IOException If the output path is occupied.
+   * @throws IOException Not thrown; local I/O failures are reported as {@link DeepLException}.
+   *     Declared for source compatibility.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
-   * @throws DeepLException If the timeout is exceeded, the export fails, or any error occurs while
-   *     communicating with the DeepL API.
+   * @throws DeepLException If the output path is occupied or its directory does not exist (checked
+   *     before the export job is created), writing the file fails (with the I/O error as cause),
+   *     the timeout is exceeded, the export fails, or any error occurs while communicating with the
+   *     DeepL API.
    * @see DeepLClient#exportTranslationMemoryToFilepath(String, File)
    */
   public TranslationMemoryJob exportTranslationMemoryToFilepath(
       String translationMemoryId, File outputFile, @Nullable Duration timeout)
       throws DeepLException, IOException, InterruptedException {
+    checkExportOutputFile(outputFile);
     TranslationMemoryExport translationMemoryExport =
         createTranslationMemoryExport(translationMemoryId);
     TranslationMemoryJob job =
         waitUntilTranslationMemoryJobDone(translationMemoryExport.getJobId(), timeout);
-    downloadTranslationMemoryExport(job, outputFile);
+    try {
+      downloadTranslationMemoryExport(job, outputFile);
+    } catch (IOException exception) {
+      throw wrapLocalIOException("Failed to write translation memory export", exception);
+    }
     return job;
   }
 
@@ -2806,7 +2831,11 @@ public class DeepLClient extends Translator {
         createTranslationMemoryExport(translationMemoryId);
     TranslationMemoryJob job =
         waitUntilTranslationMemoryJobDone(translationMemoryExport.getJobId(), timeout);
-    downloadTranslationMemoryExport(job, outputStream);
+    try {
+      downloadTranslationMemoryExport(job, outputStream);
+    } catch (IOException exception) {
+      throw wrapLocalIOException("Failed to write translation memory export", exception);
+    }
     return job;
   }
 
@@ -2888,6 +2917,53 @@ public class DeepLClient extends Translator {
       throw new IllegalArgumentException("job must not be null");
     }
     return job.getJobId();
+  }
+
+  /**
+   * Reads a TMX file for import; a missing file is an argument error, raised before any request.
+   */
+  private static byte[] readTranslationMemoryFile(@Nullable File inputFile)
+      throws DeepLException, InterruptedException {
+    if (inputFile == null || !inputFile.exists()) {
+      throw new IllegalArgumentException("inputFile must be an existing file");
+    }
+    try {
+      return Files.readAllBytes(inputFile.toPath());
+    } catch (IOException exception) {
+      throw wrapLocalIOException("Failed to read translation memory file", exception);
+    }
+  }
+
+  /** Checks the output file of an export so a bad path fails before the export job is created. */
+  private static void checkExportOutputFile(@Nullable File outputFile) throws DeepLException {
+    if (outputFile == null) {
+      throw new IllegalArgumentException("outputFile must not be null");
+    }
+    if (outputFile.exists()) {
+      throw new DeepLException("File already exists at output path");
+    }
+    File directory = outputFile.getAbsoluteFile().getParentFile();
+    if (directory == null || !directory.isDirectory()) {
+      throw new DeepLException("Directory of output path does not exist");
+    }
+  }
+
+  /**
+   * Wraps a local I/O failure in a {@link DeepLException}; an interrupted I/O operation is reported
+   * as {@link InterruptedException} instead, as caller cancellation is never wrapped.
+   */
+  private static DeepLException wrapLocalIOException(String message, IOException exception)
+      throws InterruptedException {
+    boolean interrupted =
+        exception instanceof java.nio.channels.ClosedByInterruptException
+            || (exception instanceof InterruptedIOException
+                && !(exception instanceof java.net.SocketTimeoutException));
+    if (interrupted) {
+      InterruptedException interruptedException = new InterruptedException(exception.getMessage());
+      interruptedException.initCause(exception);
+      throw interruptedException;
+    }
+    return new DeepLException(message + ": " + exception.getMessage(), exception);
   }
 
   /** Extracts the ID of the given Spoken Terms collection. */

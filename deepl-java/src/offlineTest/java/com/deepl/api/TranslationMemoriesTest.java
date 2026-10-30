@@ -13,10 +13,13 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.notMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.put;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -25,6 +28,8 @@ import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -398,6 +403,19 @@ class TranslationMemoriesTest {
   }
 
   @Test
+  void cutsTheLastPollSleepAtTheTimeout() {
+    wm.stubFor(
+        get("/v3/translation_memories/jobs/j1")
+            .willReturn(okJson(job("export", "processing", ""))));
+    long start = System.nanoTime();
+    assertThrows(
+        DeepLException.class,
+        () -> client.waitUntilTranslationMemoryJobDone("j1", Duration.ofMillis(1500)));
+    long elapsedMillis = (System.nanoTime() - start) / 1_000_000;
+    assertTrue(elapsedMillis < 4000, "waited " + elapsedMillis + " ms for a 1.5 s timeout");
+  }
+
+  @Test
   void sendsAnEmptyPostWhenCreatingAnExportAndParsesANewJob() throws Exception {
     wm.stubFor(
         post("/v3/translation_memories/tm1/export")
@@ -528,6 +546,63 @@ class TranslationMemoriesTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> client.importTranslationMemoryFromFilepath(tempDir.resolve("missing.tmx").toFile()));
+  }
+
+  @Test
+  void wrapsAnUnreadableImportFileInDeepLException() {
+    File directory = tempDir.toFile();
+    DeepLException thrown =
+        assertThrows(
+            DeepLException.class, () -> client.importTranslationMemoryFromFilepath(directory));
+    assertInstanceOf(IOException.class, thrown.getCause());
+    wm.verify(0, postRequestedFor(urlPathMatching("/v3/translation_memories/.*")));
+  }
+
+  @Test
+  void checksTheExportOutputPathBeforeCreatingTheExportJob() throws Exception {
+    File occupied = Fixtures.writeFile(tempDir.resolve("export.tmx").toFile(), "mine");
+    DeepLException thrown =
+        assertThrows(
+            DeepLException.class, () -> client.exportTranslationMemoryToFilepath("tm1", occupied));
+    assertTrue(thrown.getMessage().contains("already exists"));
+    assertEquals("mine", Fixtures.readFile(occupied));
+
+    File noDirectory = tempDir.resolve("missing").resolve("export.tmx").toFile();
+    thrown =
+        assertThrows(
+            DeepLException.class,
+            () -> client.exportTranslationMemoryToFilepath("tm1", noDirectory));
+    assertTrue(thrown.getMessage().contains("Directory"));
+    wm.verify(0, postRequestedFor(urlPathMatching("/v3/translation_memories/.*")));
+  }
+
+  @Test
+  void wrapsAFailedExportWriteInDeepLException() {
+    wm.stubFor(
+        post("/v3/translation_memories/tm1/export")
+            .willReturn(
+                okJson("{\"job_id\":\"j1\",\"parameters\":{\"translation_memory_id\":\"tm1\"}}")));
+    wm.stubFor(
+        get("/v3/translation_memories/jobs/j1")
+            .willReturn(
+                okJson(
+                    job(
+                        "export",
+                        "completed",
+                        ",\"download_url\":\"" + wm.baseUrl() + "/storage/export\""))));
+    wm.stubFor(get("/storage/export").willReturn(aResponse().withStatus(200).withBody("<tmx/>")));
+    OutputStream failing =
+        new OutputStream() {
+          @Override
+          public void write(int b) throws IOException {
+            throw new IOException("disk full");
+          }
+        };
+    DeepLException thrown =
+        assertThrows(
+            DeepLException.class, () -> client.exportTranslationMemoryToFilepath("tm1", failing));
+    assertInstanceOf(IOException.class, thrown.getCause());
+    assertTrue(thrown.getMessage().contains("disk full"));
   }
 
   @Test
