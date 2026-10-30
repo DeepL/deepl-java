@@ -554,11 +554,39 @@ class TranslateDocumentTest {
   }
 
   @Test
-  void keepsAnExistingOutputFileWhenTranslatingAFile() throws Exception {
+  void keepsAnExistingOutputFileAndThrowsDocumentTranslationExceptionWhenTranslatingAFile()
+      throws Exception {
     File input = writeInput("example.txt", "a");
     File output = writeInput("out.txt", "already here");
-    assertThrows(IOException.class, () -> client.translateDocument(input, output, "en", "de"));
+    DocumentTranslationException thrown =
+        assertThrows(
+            DocumentTranslationException.class,
+            () -> client.translateDocument(input, output, "en", "de"));
+    assertNull(thrown.getHandle());
     assertEquals("already here", Fixtures.readFile(output));
+    assertTrue(wm.getAllServeEvents().isEmpty());
+  }
+
+  @Test
+  void throwsDocumentTranslationExceptionWhenTheOutputFileCannotBeOpened() throws Exception {
+    File input = writeInput("example.txt", "a");
+    File output = tempDir.resolve("missing-dir").resolve("out.txt").toFile();
+    DocumentTranslationException thrown =
+        assertThrows(
+            DocumentTranslationException.class,
+            () -> client.translateDocument(input, output, "en", "de"));
+    assertTrue(thrown.getCause() instanceof IOException);
+    assertTrue(wm.getAllServeEvents().isEmpty());
+  }
+
+  @Test
+  void throwsIllegalArgumentBeforeAnyRequestWhenTheInputFileIsMissing() {
+    File input = tempDir.resolve("missing.txt").toFile();
+    File output = tempDir.resolve("out.txt").toFile();
+    assertThrows(
+        IllegalArgumentException.class, () -> client.translateDocument(input, output, "en", "de"));
+    assertFalse(output.exists());
+    assertTrue(wm.getAllServeEvents().isEmpty());
   }
 
   @Test

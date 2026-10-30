@@ -355,6 +355,12 @@ class Example {  // Continuing class Example from above
 }
 ```
 
+If the input file does not exist, `translateDocument()` throws an
+`IllegalArgumentException` before sending any request. Every other failure,
+including an existing output file or a file that cannot be opened, is thrown as
+a `DocumentTranslationException`; `getHttpStatusCode()` and `getShouldRetry()`
+report those of the underlying `DeepLException`, if any.
+
 `translateDocument()` is a convenience function that wraps multiple API calls:
 uploading, polling status until the translation is complete, and downloading. If
 your application needs to execute these steps individually, you can instead use

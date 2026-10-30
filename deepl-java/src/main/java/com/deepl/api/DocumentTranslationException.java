@@ -15,7 +15,7 @@ public class DocumentTranslationException extends DeepLException {
   private final @Nullable DocumentHandle handle;
 
   public DocumentTranslationException(
-      String message, Throwable throwable, @Nullable DocumentHandle handle) {
+      String message, @Nullable Throwable throwable, @Nullable DocumentHandle handle) {
     super(message, throwable);
     this.handle = handle;
   }
