@@ -501,7 +501,11 @@ class Example {  // Continuing class Example from above
 
 To construct the GlossaryEntries, you can insert entries using typical Map 
 functions like `put()`. The `fromTsv()` function allows creating GlossaryEntries
-from TSV data.
+from TSV data. Each term is trimmed of leading and trailing whitespace, then
+checked: a term that is empty or contains a control character throws an
+`IllegalArgumentException`. The trimmed terms are stored and sent. Entries can
+also be changed with `replaceAll()` or `Map.Entry.setValue()`, which check the
+new terms the same way.
 
 You can also create a glossary using a glossary downloaded from the DeepL
 website by using `createMultilingualGlossaryFromCsv()` with either a CSV file,

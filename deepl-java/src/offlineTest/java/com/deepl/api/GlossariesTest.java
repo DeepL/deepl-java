@@ -13,11 +13,13 @@ import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
@@ -204,5 +206,31 @@ class GlossariesTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> new GlossaryEntries(Collections.singletonMap("A", "B\tC")));
+  }
+
+  @Test
+  void namesTheInvalidCharacterInHexadecimal() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> new GlossaryEntries(Collections.singletonMap("A", "B\u001fC")));
+    assertTrue(thrown.getMessage().contains("U+001F"), thrown.getMessage());
+  }
+
+  @Test
+  void rejectsInvalidTargetTermsSetThroughReplaceAll() {
+    GlossaryEntries entries = new GlossaryEntries(Collections.singletonMap("a", "b"));
+    assertThrows(IllegalArgumentException.class, () -> entries.replaceAll((k, v) -> "x\ty"));
+    assertEquals("b", entries.get("a"));
+    entries.replaceAll((k, v) -> " c ");
+    assertEquals("c", entries.get("a"));
+  }
+
+  @Test
+  void rejectsInvalidTargetTermsSetThroughEntrySetValue() {
+    GlossaryEntries entries = new GlossaryEntries(Collections.singletonMap("a", "b"));
+    Map.Entry<String, String> entry = entries.entrySet().iterator().next();
+    assertThrows(IllegalArgumentException.class, () -> entry.setValue("x\ty"));
+    assertEquals("b", entries.get("a"));
   }
 }

@@ -5,6 +5,7 @@ package com.deepl.api;
 
 import com.deepl.api.utils.*;
 import java.util.*;
+import java.util.function.BiFunction;
 import org.jetbrains.annotations.*;
 
 /** Stores the entries of a glossary. */
@@ -45,8 +46,6 @@ public class GlossaryEntries implements Map<String, String> {
       } else {
         String sourceTerm = trimWhitespace(splitLine[0]);
         String targetTerm = trimWhitespace(splitLine[1]);
-        validateGlossaryTerm(sourceTerm);
-        validateGlossaryTerm(targetTerm);
         if (result.containsKey(sourceTerm)) {
           throw new IllegalArgumentException(
               String.format(
@@ -98,7 +97,9 @@ public class GlossaryEntries implements Map<String, String> {
   }
 
   /**
-   * Adds the given source term and target term to the glossary entries.
+   * Adds the given source term and target term to the glossary entries. Both terms are trimmed of
+   * leading and trailing whitespace, then checked with {@link #validateGlossaryTerm}; the trimmed
+   * terms are stored.
    *
    * @param sourceTerm key with which the specified value is to be associated
    * @param targetTerm value to be associated with the specified key
@@ -106,9 +107,23 @@ public class GlossaryEntries implements Map<String, String> {
    *     was not present.
    */
   public String put(String sourceTerm, String targetTerm) throws IllegalArgumentException {
-    validateGlossaryTerm(sourceTerm);
-    validateGlossaryTerm(targetTerm);
-    return entries.put(sourceTerm, targetTerm);
+    String source = checkedTerm(sourceTerm);
+    return entries.put(source, checkedTerm(targetTerm));
+  }
+
+  /**
+   * Replaces each target term with the result of the given function. Every new term is trimmed and
+   * checked like in {@link #put}; if any is invalid, no entry is changed.
+   */
+  @Override
+  public void replaceAll(BiFunction<? super String, ? super String, ? extends String> function) {
+    Map<String, String> replaced = new HashMap<>();
+    for (Map.Entry<String, String> entryPair : entries.entrySet()) {
+      replaced.put(
+          entryPair.getKey(),
+          checkedTerm(function.apply(entryPair.getKey(), entryPair.getValue())));
+    }
+    entries.putAll(replaced);
   }
 
   @Override
@@ -140,10 +155,101 @@ public class GlossaryEntries implements Map<String, String> {
     return entries.values();
   }
 
+  /**
+   * Returns a view of the entries. {@link Map.Entry#setValue} trims and checks the new target term
+   * like {@link #put}.
+   */
   @NotNull
   @Override
   public Set<Entry<String, String>> entrySet() {
-    return entries.entrySet();
+    Set<Entry<String, String>> backing = entries.entrySet();
+    return new AbstractSet<Entry<String, String>>() {
+      @Override
+      public @NotNull Iterator<Entry<String, String>> iterator() {
+        Iterator<Entry<String, String>> iterator = backing.iterator();
+        return new Iterator<Entry<String, String>>() {
+          @Override
+          public boolean hasNext() {
+            return iterator.hasNext();
+          }
+
+          @Override
+          public Entry<String, String> next() {
+            return new CheckedEntry(iterator.next());
+          }
+
+          @Override
+          public void remove() {
+            iterator.remove();
+          }
+        };
+      }
+
+      @Override
+      public int size() {
+        return backing.size();
+      }
+
+      @Override
+      public boolean contains(Object o) {
+        return backing.contains(o);
+      }
+
+      @Override
+      public boolean remove(Object o) {
+        return backing.remove(o);
+      }
+
+      @Override
+      public void clear() {
+        backing.clear();
+      }
+    };
+  }
+
+  /** An entry of the backing map whose setValue checks the new target term. */
+  private static final class CheckedEntry implements Map.Entry<String, String> {
+    private final Map.Entry<String, String> entry;
+
+    CheckedEntry(Map.Entry<String, String> entry) {
+      this.entry = entry;
+    }
+
+    @Override
+    public String getKey() {
+      return entry.getKey();
+    }
+
+    @Override
+    public String getValue() {
+      return entry.getValue();
+    }
+
+    @Override
+    public String setValue(String value) {
+      return entry.setValue(checkedTerm(value));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      return entry.equals(o);
+    }
+
+    @Override
+    public int hashCode() {
+      return entry.hashCode();
+    }
+
+    @Override
+    public String toString() {
+      return entry.toString();
+    }
+  }
+
+  /** Validates the given term and returns it trimmed. */
+  private static String checkedTerm(String term) {
+    validateGlossaryTerm(term);
+    return trimWhitespace(term);
   }
 
   /**
@@ -165,7 +271,7 @@ public class GlossaryEntries implements Map<String, String> {
       if ((ch <= 31) || (128 <= ch && ch <= 159) || ch == '\u2028' || ch == '\u2029') {
         throw new IllegalArgumentException(
             String.format(
-                "Term '%s' contains invalid character: '%c' (U+%04d)", term, ch, (int) ch));
+                "Term '%s' contains invalid character: '%c' (U+%04X)", term, ch, (int) ch));
       }
     }
   }
@@ -188,30 +294,21 @@ public class GlossaryEntries implements Map<String, String> {
   }
 
   /**
-   * Strips whitespace characters from the beginning and end of the given string. Implemented here
-   * because String.strip() is not available in Java 8.
+   * Strips whitespace as defined by {@link Character#isWhitespace} from the beginning and end of
+   * the given string, like spoken terms. Implemented here because String.strip() is not in Java 8.
    *
    * @param input String to have whitespace trimmed.
    * @return Input string with whitespace removed from ends.
    */
   private static String trimWhitespace(String input) {
-    int left = 0;
-    for (; left < input.length(); left++) {
-      char ch = input.charAt(left);
-      if (ch != ' ' && ch != '\t') {
-        break;
-      }
+    int start = 0;
+    int end = input.length();
+    while (start < end && Character.isWhitespace(input.charAt(start))) {
+      start++;
     }
-    if (left >= input.length()) {
-      return "";
+    while (end > start && Character.isWhitespace(input.charAt(end - 1))) {
+      end--;
     }
-    int right = input.length() - 1;
-    for (; left < right; right--) {
-      char ch = input.charAt(right);
-      if (ch != ' ' && ch != '\t') {
-        break;
-      }
-    }
-    return input.substring(left, right + 1);
+    return input.substring(start, end);
   }
 }

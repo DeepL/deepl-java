@@ -254,6 +254,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `translateDocumentDownload()` maps an error response without body by its
   status, for example to `QuotaExceededException` or
   `DocumentNotReadyException`, instead of a plain `DeepLException`.
+- `GlossaryEntries` stores and sends trimmed terms, trims all whitespace
+  (`Character.isWhitespace()`) like spoken terms, checks target terms set
+  through `replaceAll()` or `Map.Entry.setValue()`, and names an invalid
+  character in hexadecimal (`U+001F`).
 - Translation memory and translation memory job IDs are now URL-encoded in
   request paths.
 - The style rule and custom instruction methods now URL-encode the style rule

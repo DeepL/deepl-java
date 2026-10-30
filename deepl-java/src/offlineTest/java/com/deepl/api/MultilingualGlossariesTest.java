@@ -234,6 +234,18 @@ class MultilingualGlossariesTest {
   }
 
   @Test
+  void sendsTrimmedTermsWhenReplacingADictionary() throws Exception {
+    wm.stubFor(
+        put("/v3/glossaries/g1/dictionaries")
+            .withRequestBody(
+                equalToJson(
+                    "{\"source_lang\":\"en\",\"target_lang\":\"de\","
+                        + "\"entries\":\"key1\\tvalue1\",\"entries_format\":\"tsv\"}"))
+            .willReturn(okJson(DICTIONARY)));
+    client.replaceMultilingualGlossaryDictionary("g1", "en", "de", entries(" key1\n", "value1 "));
+  }
+
+  @Test
   void sendsTheIdOfAGlossaryObjectWhenReplacingADictionary() throws Exception {
     wm.stubFor(
         put("/v3/glossaries/g2/dictionaries")
