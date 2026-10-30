@@ -1081,7 +1081,7 @@ public class Translator {
    * Lower-cases the base subtag of a language code and keeps the rest as given, so <code>"EN-gb"
    * </code> becomes <code>"en-gb"</code> and <code>"zh-Hans"</code> stays <code>"zh-Hans"</code>.
    */
-  private static @Nullable String lowerCaseBaseSubtag(@Nullable String langCode) {
+  static @Nullable String lowerCaseBaseSubtag(@Nullable String langCode) {
     if (langCode == null) {
       return null;
     }

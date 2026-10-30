@@ -241,6 +241,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   They will be removed in the next major version.
 
 ### Fixed
+- `rephraseText()` and `correctText()` send `targetLang` with only the
+  language part lower-cased and the rest as given, as text and document
+  translation do: `zh-Hans` is no longer sent as `zh-HANS`.
 - A transient failure (connection reset, timeout) while reading a downloaded
   document (`translateDocumentDownload()`) or translation memory export
   (`downloadTranslationMemoryExport()`) is now retried up to `maxRetries` while

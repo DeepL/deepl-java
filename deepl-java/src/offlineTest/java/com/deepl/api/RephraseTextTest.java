@@ -35,9 +35,15 @@ class RephraseTextTest {
   }
 
   @Test
-  void sendsTextAndStandardizedTargetLanguage() throws Exception {
-    expectBody(FormBody.of("target_lang", "en-GB", "text", "a b"));
+  void sendsTextAndTargetLanguageWithOnlyTheBaseSubtagLowerCased() throws Exception {
+    expectBody(FormBody.of("target_lang", "en-gb", "text", "a b"));
     client.rephraseText("a b", "EN-gb", null);
+  }
+
+  @Test
+  void sendsTheScriptSubtagOfTheTargetLanguageAsGiven() throws Exception {
+    expectBody(FormBody.of("target_lang", "zh-Hans", "text", "Hello"));
+    client.rephraseText("Hello", "ZH-Hans", null);
   }
 
   @Test

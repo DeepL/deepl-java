@@ -34,8 +34,8 @@ class CorrectTextTest {
   }
 
   @Test
-  void sendsTextAndStandardizedTargetLanguage() throws Exception {
-    expectBody(FormBody.of("target_lang", "en-GB", "text", "a b"));
+  void sendsTextAndTargetLanguageWithOnlyTheBaseSubtagLowerCased() throws Exception {
+    expectBody(FormBody.of("target_lang", "en-gb", "text", "a b"));
     client.correctText("a b", "EN-gb", null);
   }
 

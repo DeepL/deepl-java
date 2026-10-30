@@ -260,7 +260,8 @@ use `targetLang` to turn it into British or American English). Please note that 
 Write API itself does NOT translate. If you wish to translate and improve a text, you
 will need to make multiple calls in a chain.
 
-Language codes are the same as for translating text.
+Language codes are the same as for translating text, and are sent the same
+way: the language part lower-cased and the rest as given, for example `zh-Hans`.
 
 Example call:
 

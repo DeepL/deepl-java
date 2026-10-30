@@ -3995,7 +3995,7 @@ public class DeepLClient extends Translator {
   protected static ArrayList<KeyValuePair<String, String>> createWriteHttpParams(
       List<String> texts, @Nullable String targetLang, @Nullable TextRephraseOptions options) {
     if (targetLang != null) {
-      targetLang = LanguageCode.standardize(targetLang);
+      targetLang = lowerCaseBaseSubtag(targetLang);
       checkValidLanguages(null, targetLang);
     }
 
