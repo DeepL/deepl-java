@@ -144,6 +144,17 @@ class TranslatorOptionsTest {
             "my custom user agent"));
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = {"USER-AGENT", "user-agent", "User-agent"})
+  void replacesTheUserAgentWithAUserAgentHeaderInAnyCasing(String name) throws Exception {
+    expectUsage("User-Agent", equalTo("my custom user agent"));
+    OfflineClient.createClient(
+            wm,
+            new DeepLClientOptions()
+                .setHeaders(Collections.singletonMap(name, "my custom user agent")))
+        .getUsage();
+  }
+
   @Test
   void throwsIllegalArgumentWhenTheAuthKeyIsEmptyOrNull() {
     assertThrows(IllegalArgumentException.class, () -> new Translator(""));

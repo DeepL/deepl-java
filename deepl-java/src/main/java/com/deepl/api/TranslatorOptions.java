@@ -72,9 +72,9 @@ public class TranslatorOptions {
 
   /**
    * Set HTTP headers attached to every HTTP request. By default, this value is <code>null</code>
-   * and no extra headers are used. A <code>User-Agent</code> header replaces the one built by the
-   * client. An <code>Authorization</code> header is ignored: the authorization is always built from
-   * the key passed to the constructor.
+   * and no extra headers are used. A <code>User-Agent</code> header, in any casing, replaces the
+   * one built by the client. An <code>Authorization</code> header is ignored: the authorization is
+   * always built from the key passed to the constructor.
    */
   public TranslatorOptions setHeaders(Map<String, String> headers) {
     this.headers = headers;
@@ -93,8 +93,8 @@ public class TranslatorOptions {
 
   /**
    * Set whether to send basic platform information with each API call to improve DeepL products.
-   * Defaults to `true`, set to `false` to opt out. This option will be overriden if a
-   * `'User-agent'` header is present in this objects `headers`.
+   * Defaults to `true`, set to `false` to opt out. This option will be overriden if a `User-Agent`
+   * header (in any casing) is present in this objects `headers`.
    */
   public TranslatorOptions setSendPlatformInfo(boolean sendPlatformInfo) {
     this.sendPlatformInfo = sendPlatformInfo;
