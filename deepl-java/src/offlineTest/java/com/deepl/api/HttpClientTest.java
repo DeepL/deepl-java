@@ -240,7 +240,26 @@ class HttpClientTest {
   @Test
   void throwsConnectionExceptionWhenTheResponseBodyIsCutOff() {
     wm.stubFor(get("/v2/usage").willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
-    assertThrows(ConnectionException.class, () -> client(0).getUsage());
+    ConnectionException thrown =
+        assertThrows(ConnectionException.class, () -> client(0).getUsage());
+    assertTrue(thrown.getShouldRetry());
+  }
+
+  @Test
+  void retriesAResponseBodyThatIsCutOff() throws Exception {
+    wm.stubFor(
+        get("/v2/usage")
+            .inScenario("cut off")
+            .whenScenarioStateIs(Scenario.STARTED)
+            .willSetStateTo("recovered")
+            .willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
+    wm.stubFor(
+        get("/v2/usage")
+            .inScenario("cut off")
+            .whenScenarioStateIs("recovered")
+            .willReturn(okJson(USAGE)));
+    client(1).getUsage();
+    wm.verify(2, getRequestedFor(urlEqualTo("/v2/usage")));
   }
 
   @Test
@@ -248,8 +267,10 @@ class HttpClientTest {
     wm.stubFor(
         patch(urlEqualTo("/v3/glossaries/g1"))
             .willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
-    assertThrows(
-        ConnectionException.class, () -> client(0).updateMultilingualGlossaryName("g1", "n"));
+    ConnectionException thrown =
+        assertThrows(
+            ConnectionException.class, () -> client(0).updateMultilingualGlossaryName("g1", "n"));
+    assertTrue(thrown.getShouldRetry());
   }
 
   @Test

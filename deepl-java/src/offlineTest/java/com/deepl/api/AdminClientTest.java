@@ -452,7 +452,7 @@ class AdminClientTest {
   }
 
   @Test
-  void doesNotRetryKeyCreationAfterATimeoutOrConnectionReset() {
+  void doesNotRetryKeyCreationAfterATimeoutConnectionResetOrCutOffBody() {
     DeepLAdminClient timeoutClient =
         OfflineClient.createAdminClient(
             wm, new DeepLAdminClientOptions().setTimeout(Duration.ofMillis(200)));
@@ -464,13 +464,21 @@ class AdminClientTest {
         post("/v2/admin/developer-keys")
             .withRequestBody(equalToJson("{\"label\":\"reset\"}"))
             .willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)));
+    wm.stubFor(
+        post("/v2/admin/developer-keys")
+            .withRequestBody(equalToJson("{\"label\":\"cut off\"}"))
+            .willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
     assertThrows(
         ConnectionException.class,
         () -> timeoutClient.createDeveloperKey(new CreateDeveloperKeyOptions().setLabel("slow")));
     assertThrows(
         ConnectionException.class,
         () -> timeoutClient.createDeveloperKey(new CreateDeveloperKeyOptions().setLabel("reset")));
-    wm.verify(2, postRequestedFor(urlEqualTo("/v2/admin/developer-keys")));
+    assertThrows(
+        ConnectionException.class,
+        () ->
+            timeoutClient.createDeveloperKey(new CreateDeveloperKeyOptions().setLabel("cut off")));
+    wm.verify(3, postRequestedFor(urlEqualTo("/v2/admin/developer-keys")));
   }
 
   @Test

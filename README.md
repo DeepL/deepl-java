@@ -1849,7 +1849,8 @@ raw body if it carries no message.
 `DeepLException.getHttpStatusCode()` returns the HTTP status code of the failed
 response, or `null` if there was none. `DeepLException.getShouldRetry()`
 returns `true` for transient errors (HTTP 429, HTTP 5xx, connection, DNS and
-timeout failures, connection resets and broken pipes); the client has already retried these up to the configured
+timeout failures, connection resets, broken pipes and a response body cut off
+mid-read); the client has already retried these up to the configured
 maximum number of retries.
 
 ### Writing a Plugin
@@ -1893,7 +1894,8 @@ The available options setters are:
 - `setMaxRetries()`: maximum number of failed HTTP requests to retry, the
   default is 5. Note: only failures due to transient conditions are retried:
   HTTP 429, HTTP 5xx, and connection, DNS and timeout failures, connection
-  resets and broken pipes, including a timeout while reading the response.
+  resets and broken pipes, including a timeout while reading the response and
+  a response body cut off mid-read.
   A document or translation memory export download is retried only while
   nothing has been written to the output yet. Every request, including `PATCH` requests, is sent at most `maxRetries + 1`
   times.

@@ -10,7 +10,9 @@ import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.time.*;
 import java.util.*;
+import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpHost;
+import org.apache.http.MalformedChunkCodingException;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.conn.ConnectTimeoutException;
@@ -464,10 +466,11 @@ class HttpClientWrapper {
     }
   }
 
-  // Connect, DNS, timeout, connection reset and broken pipe failures are transient: the request is
-  // retried.
+  // Connect, DNS, timeout, connection reset, broken pipe and cut-off response body failures are
+  // transient: the request is retried.
   private static ConnectionException toConnectionException(Exception e) {
-    boolean shouldRetry = isUnsentFailure(e) || isConnectionResetOrBrokenPipe(e);
+    boolean shouldRetry =
+        isUnsentFailure(e) || isConnectionResetOrBrokenPipe(e) || isPrematureEndOfBody(e);
     return new ConnectionException(e.getMessage(), shouldRetry, e);
   }
 
@@ -488,5 +491,18 @@ class HttpClientWrapper {
     }
     String message = e.getMessage().toLowerCase(Locale.ROOT);
     return message.contains("connection reset") || message.contains("broken pipe");
+  }
+
+  // The response body broke off. HttpURLConnection reports this as an IOException "Premature EOF",
+  // Apache HttpClient (PATCH) as a ConnectionClosedException or MalformedChunkCodingException.
+  private static boolean isPrematureEndOfBody(Exception e) {
+    if (e instanceof EOFException
+        || e instanceof ConnectionClosedException
+        || e instanceof MalformedChunkCodingException) {
+      return true;
+    }
+    return e instanceof IOException
+        && e.getMessage() != null
+        && e.getMessage().toLowerCase(Locale.ROOT).contains("premature eof");
   }
 }

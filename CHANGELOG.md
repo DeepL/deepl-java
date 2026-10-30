@@ -248,6 +248,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   document (`translateDocumentDownload()`) or translation memory export
   (`downloadTranslationMemoryExport()`) is now retried up to `maxRetries` while
   nothing has been written to the output yet.
+- A response body cut off mid-read (the connection closed before the body was
+  complete) is now retried like a connection reset, and
+  `ConnectionException.getShouldRetry()` returns `true` for it. Developer key
+  creation still does not retry it, as the request was already sent.
 - An error response of the form `{"error": {"message": "..."}}` now puts its
   message into the exception message; an error body without any message is
   appended as the raw body instead of an empty `error message: `.

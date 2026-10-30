@@ -11,6 +11,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -24,13 +26,10 @@ import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.http.Request;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
-import com.sun.net.httpserver.HttpServer;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -39,8 +38,6 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -435,42 +432,25 @@ class TranslateDocumentTest {
     assertEquals("Protonenstrahl", Fixtures.readFile(output));
   }
 
-  // WireMock cannot fail a body before its first byte in a retryable way: its dribble delay sends
-  // the headers with the first bytes, and its cut-off body is a non-retryable "Premature EOF".
   @Test
-  @Timeout(30)
-  void retriesADownloadWhoseBodyTimesOutBeforeAnyByteIsWritten() throws Exception {
-    AtomicInteger requests = new AtomicInteger();
-    HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-    server.setExecutor(Executors.newCachedThreadPool());
-    server.createContext(
-        "/v2/document/D1/result",
-        exchange -> {
-          exchange.sendResponseHeaders(200, 14);
-          try (OutputStream body = exchange.getResponseBody()) {
-            if (requests.incrementAndGet() == 1) {
-              Thread.sleep(5000);
-            } else {
-              body.write("Protonenstrahl".getBytes(StandardCharsets.US_ASCII));
-            }
-          } catch (InterruptedException | IOException closedByTheClient) {
-            // the client timed out and closed the connection
-          }
-        });
-    server.start();
-    try {
-      DeepLClientOptions options =
-          new DeepLClientOptions()
-              .setServerUrl("http://127.0.0.1:" + server.getAddress().getPort());
-      DeepLClient retryingClient =
-          new DeepLClient("k", options.setMaxRetries(1).setTimeout(Duration.ofMillis(300)));
-      ByteArrayOutputStream output = new ByteArrayOutputStream();
-      retryingClient.translateDocumentDownload(HANDLE_OBJECT, output);
-      assertEquals("Protonenstrahl", output.toString("UTF-8"));
-    } finally {
-      server.stop(0);
-    }
-    assertEquals(2, requests.get());
+  void retriesADownloadWhoseBodyIsCutOffBeforeAnyByteIsWritten() throws Exception {
+    wm.stubFor(
+        post("/v2/document/D1/result")
+            .inScenario("cut off")
+            .whenScenarioStateIs(Scenario.STARTED)
+            .willSetStateTo("recovered")
+            .willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
+    wm.stubFor(
+        post("/v2/document/D1/result")
+            .inScenario("cut off")
+            .whenScenarioStateIs("recovered")
+            .willReturn(aResponse().withStatus(200).withBody("Protonenstrahl")));
+    DeepLClient retryingClient =
+        OfflineClient.createClient(wm, new DeepLClientOptions().setMaxRetries(1));
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    retryingClient.translateDocumentDownload(HANDLE_OBJECT, output);
+    assertEquals("Protonenstrahl", output.toString("UTF-8"));
+    wm.verify(2, postRequestedFor(urlEqualTo("/v2/document/D1/result")));
   }
 
   @Test
@@ -478,9 +458,15 @@ class TranslateDocumentTest {
     wm.stubFor(
         post("/v2/document/D1/result")
             .willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
-    assertThrows(
-        ConnectionException.class,
-        () -> client.translateDocumentDownload(HANDLE_OBJECT, new ByteArrayOutputStream()));
+    DeepLClient noRetryClient =
+        OfflineClient.createClient(wm, new DeepLClientOptions().setMaxRetries(0));
+    ConnectionException thrown =
+        assertThrows(
+            ConnectionException.class,
+            () ->
+                noRetryClient.translateDocumentDownload(
+                    HANDLE_OBJECT, new ByteArrayOutputStream()));
+    assertTrue(thrown.getShouldRetry());
   }
 
   @Test

@@ -478,10 +478,15 @@ class TranslationMemoriesTest {
   void throwsConnectionExceptionWhenTheExportDownloadIsCutOff() {
     wm.stubFor(
         get("/storage/export").willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
-    assertThrows(
-        ConnectionException.class,
-        () ->
-            client.downloadTranslationMemoryExport(completedExport(), new ByteArrayOutputStream()));
+    DeepLClient noRetryClient =
+        OfflineClient.createClient(wm, new DeepLClientOptions().setMaxRetries(0));
+    ConnectionException thrown =
+        assertThrows(
+            ConnectionException.class,
+            () ->
+                noRetryClient.downloadTranslationMemoryExport(
+                    completedExport(), new ByteArrayOutputStream()));
+    assertTrue(thrown.getShouldRetry());
   }
 
   @Test
