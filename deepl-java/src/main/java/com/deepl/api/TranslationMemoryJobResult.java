@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
 /** The outcome of a translation memory import or export job. */
 public class TranslationMemoryJobResult {
   private final @Nullable Status status;
+  private final @Nullable String statusString;
   private final @Nullable String requiredAction;
   private final @Nullable String downloadUrl;
   private final @Nullable Date expiresAt;
@@ -58,7 +59,42 @@ public class TranslationMemoryJobResult {
       @Nullable String errorMessage,
       @Nullable String translationMemoryId,
       @Nullable Integer skippedSegmentCount) {
+    this(
+        status,
+        statusString(status),
+        requiredAction,
+        downloadUrl,
+        expiresAt,
+        errorMessage,
+        translationMemoryId,
+        skippedSegmentCount);
+  }
+
+  /**
+   * Initializes a new {@link TranslationMemoryJobResult} describing the outcome of a job, keeping
+   * the status as the API sent it.
+   *
+   * @param status Status of the job, or <code>null</code> if the API sent a status not in {@link
+   *     Status}.
+   * @param statusString Status of the job as the API sent it.
+   * @param requiredAction Action the caller must take, set while the job is waiting on the caller.
+   * @param downloadUrl Download URL of the exported TMX file, set once an export completed.
+   * @param expiresAt Timestamp after which the download URL is no longer valid.
+   * @param errorMessage Error description, set when the job failed.
+   * @param translationMemoryId ID of the translation memory created by a completed import.
+   * @param skippedSegmentCount Number of segments an import skipped.
+   */
+  public TranslationMemoryJobResult(
+      @Nullable Status status,
+      @Nullable String statusString,
+      @Nullable String requiredAction,
+      @Nullable String downloadUrl,
+      @Nullable Date expiresAt,
+      @Nullable String errorMessage,
+      @Nullable String translationMemoryId,
+      @Nullable Integer skippedSegmentCount) {
     this.status = status;
+    this.statusString = statusString;
     this.requiredAction = requiredAction;
     this.downloadUrl = downloadUrl;
     this.expiresAt = expiresAt;
@@ -67,9 +103,31 @@ public class TranslationMemoryJobResult {
     this.skippedSegmentCount = skippedSegmentCount;
   }
 
-  /** @return Status of the job, or <code>null</code> if not provided by the API. */
+  /**
+   * @return Status of the job, or <code>null</code> if not provided by the API or not in {@link
+   *     Status}; {@link #getStatusString()} returns it as sent.
+   */
   public @Nullable Status getStatus() {
     return status;
+  }
+
+  /**
+   * @return Status of the job as the API sent it, for example <code>"processing"</code>, including
+   *     values not in {@link Status}; <code>null</code> if the response had no status.
+   */
+  public @Nullable String getStatusString() {
+    return statusString;
+  }
+
+  private static @Nullable String statusString(@Nullable Status status) {
+    if (status == null) {
+      return null;
+    }
+    try {
+      return Status.class.getField(status.name()).getAnnotation(SerializedName.class).value();
+    } catch (NoSuchFieldException exception) {
+      return null;
+    }
   }
 
   /**

@@ -93,10 +93,23 @@ public class TranslationMemoryJob {
     return getResults().isEmpty() ? null : getResults().get(0);
   }
 
-  /** @return Status of the result of the job, or <code>null</code> if there is no result. */
+  /**
+   * @return Status of the result of the job, or <code>null</code> if there is no result or its
+   *     status is not in {@link TranslationMemoryJobResult.Status}; {@link #getStatusString()}
+   *     returns it as sent.
+   */
   public @Nullable TranslationMemoryJobResult.Status getStatus() {
     TranslationMemoryJobResult result = getResult();
     return result == null ? null : result.getStatus();
+  }
+
+  /**
+   * @return Status of the result of the job as the API sent it, including values not in {@link
+   *     TranslationMemoryJobResult.Status}; <code>null</code> if there is no result or no status.
+   */
+  public @Nullable String getStatusString() {
+    TranslationMemoryJobResult result = getResult();
+    return result == null ? null : result.getStatusString();
   }
 
   /**

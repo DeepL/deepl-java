@@ -51,6 +51,7 @@ class TranslationMemoryJobDeserializer implements JsonDeserializer<TranslationMe
 
     return new TranslationMemoryJobResult(
         context.deserialize(jsonObject.get("status"), TranslationMemoryJobResult.Status.class),
+        Parser.getAsStringOrNull(jsonObject, "status"),
         statusMetadata == null ? null : Parser.getAsStringOrNull(statusMetadata, "required_action"),
         Parser.getAsStringOrNull(jsonObject, "download_url"),
         deserializeDate(jsonObject, "expires_at", context),

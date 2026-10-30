@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   DeepLClientOptions().setMaxRetries(1)` compiles as in the README, and a
   setter chain passed inline to `DeepLClient` no longer resolves to the
   deprecated `DeepLClient(String, TranslatorOptions)` constructor.
+- Added `getStatusString()` to `TranslationMemoryJob` and
+  `TranslationMemoryJobResult`, returning the job status as the API sent it,
+  including values not in `TranslationMemoryJobResult.Status` (for which
+  `getStatus()` returns `null`).
 - Added `CreateTranslationMemoryImportOptions` (content type, display name,
   extra body parameters) and `createTranslationMemoryImport()` overloads taking
   only the file name and size, or an options object; extra body parameters are

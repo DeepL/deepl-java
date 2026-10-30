@@ -1383,6 +1383,11 @@ defaults to `application/xml`. `getTranslationMemoryJob()` and
 `waitUntilTranslationMemoryJobDone()` accept a job ID or a `TranslationMemoryJob`
 object.
 
+`TranslationMemoryJob.getStatus()` returns a `TranslationMemoryJobResult.Status`,
+or `null` for a status the library does not know yet; `getStatusString()` returns
+the status as the API sent it. Both are also available on
+`TranslationMemoryJobResult`.
+
 Note that an import job keeps reporting `AwaitingInput` for a while after its
 file has been uploaded, because the API detects the upload asynchronously.
 `waitUntilTranslationMemoryJobDone()` polls through that status like any other
