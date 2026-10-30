@@ -150,8 +150,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   end day are included. Report dates are `Date` values at midnight UTC.
   `DeveloperKey.getLabel()`, `DeveloperKey.getUsageLimits()`,
   `KeyUsage.getApiKeyLabel()`, `AdminUsageReport.getTotalUsage()` and
-  `AdminUsageBreakdown.getSpeechToSpeechMinutes()` (a `Double`) return `null`
-  when the API sends no value.
+  `AdminUsageBreakdown.getSpeechToSpeechMinutes()` and
+  `CustomTagUsageBreakdown.getSpeechToSpeechMinutes()` (both a `Double`) return
+  `null` when the API sends no value.
   `setDeveloperKeyUsageLimits()` takes a `DeveloperKeyUsageLimitsUpdate` and
   changes only the limits set in it, including the speech-to-speech limit.
 - Added the API Pro fields of `GET /v2/usage` to `Usage`:

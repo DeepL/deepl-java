@@ -1798,6 +1798,8 @@ chooses between the whole period (`CustomTagUsageAggregateBy.Period`, the
 default) and per-day usage (`CustomTagUsageAggregateBy.Day`); a string is sent
 as given. The results are paginated: pass the `getNextPage()` value of a report
 as the `page` argument to get the next page.
+`CustomTagUsageBreakdown.getSpeechToSpeechMinutes()` (a `Double`) is `null` if
+the report does not include it.
 
 ```java
 import com.deepl.api.*;

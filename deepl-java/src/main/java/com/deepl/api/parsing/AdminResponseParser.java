@@ -149,7 +149,7 @@ class AdminResponseParser {
         count(object, "text_translation_characters"),
         count(object, "text_improvement_characters"),
         number(object, "speech_to_text_minutes"),
-        number(object, "speech_to_speech_minutes"));
+        numberOrNull(object, "speech_to_speech_minutes"));
   }
 
   private static JsonObject asObject(@Nullable JsonElement json) {

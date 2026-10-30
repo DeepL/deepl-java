@@ -151,6 +151,24 @@ class AdminClientTest {
   }
 
   @Test
+  void readsAbsentCustomTagSpeechToSpeechMinutesAsNull() throws Exception {
+    wm.stubFor(
+        get("/v2/admin/analytics/custom-tags?start_date=2025-09-29&end_date=2025-10-01")
+            .willReturn(
+                okJson(
+                    "{\"custom_tag_usage_report\":{\"usage\":["
+                        + "{\"custom_tag\":\"a\",\"breakdown\":{\"speech_to_speech_minutes\":0}},"
+                        + "{\"custom_tag\":\"b\",\"breakdown\":{\"total_characters\":4}}]}}")));
+
+    List<CustomTagUsage> usage =
+        client
+            .getCustomTagUsageAnalytics(LocalDate.of(2025, 9, 29), LocalDate.of(2025, 10, 1))
+            .getUsage();
+    assertEquals(0.0, usage.get(0).getBreakdown().getSpeechToSpeechMinutes());
+    assertNull(usage.get(1).getBreakdown().getSpeechToSpeechMinutes());
+  }
+
+  @Test
   void readsAbsentTotalUsageAsNull() throws Exception {
     wm.stubFor(
         get("/v2/admin/analytics?start_date=2025-09-29&end_date=2025-10-01")

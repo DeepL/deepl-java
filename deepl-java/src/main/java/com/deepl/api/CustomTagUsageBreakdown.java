@@ -4,6 +4,7 @@
 package com.deepl.api;
 
 import com.google.gson.annotations.*;
+import org.jetbrains.annotations.*;
 
 /** Usage totals for a custom tag, see {@link CustomTagUsage}. */
 public class CustomTagUsageBreakdown {
@@ -20,7 +21,7 @@ public class CustomTagUsageBreakdown {
   private final double speechToTextMinutes;
 
   @SerializedName(value = "speech_to_speech_minutes")
-  private final double speechToSpeechMinutes;
+  private final @Nullable Double speechToSpeechMinutes;
 
   /**
    * Initializes a new {@link CustomTagUsageBreakdown}.
@@ -29,14 +30,15 @@ public class CustomTagUsageBreakdown {
    * @param textTranslationCharacters Number of characters used for text translation.
    * @param textImprovementCharacters Number of characters used for text improvement.
    * @param speechToTextMinutes Number of speech-to-text minutes used.
-   * @param speechToSpeechMinutes Number of speech-to-speech minutes used.
+   * @param speechToSpeechMinutes Number of speech-to-speech minutes used, or <code>null</code> if
+   *     the report does not include it.
    */
   public CustomTagUsageBreakdown(
       long totalCharacters,
       long textTranslationCharacters,
       long textImprovementCharacters,
       double speechToTextMinutes,
-      double speechToSpeechMinutes) {
+      @Nullable Double speechToSpeechMinutes) {
     this.totalCharacters = totalCharacters;
     this.textTranslationCharacters = textTranslationCharacters;
     this.textImprovementCharacters = textImprovementCharacters;
@@ -64,8 +66,11 @@ public class CustomTagUsageBreakdown {
     return speechToTextMinutes;
   }
 
-  /** @return Number of speech-to-speech minutes used. */
-  public double getSpeechToSpeechMinutes() {
+  /**
+   * @return Number of speech-to-speech minutes used, or <code>null</code> if the report does not
+   *     include it.
+   */
+  public @Nullable Double getSpeechToSpeechMinutes() {
     return speechToSpeechMinutes;
   }
 }
