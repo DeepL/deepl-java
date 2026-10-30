@@ -196,6 +196,14 @@ class MultilingualGlossariesTest {
   }
 
   @Test
+  void encodesASpaceInTheLanguageQueryAsPercent20() throws Exception {
+    wm.stubFor(
+        delete(urlEqualTo("/v3/glossaries/g1/dictionaries?source_lang=en%20x&target_lang=de"))
+            .willReturn(aResponse().withStatus(204)));
+    client.deleteMultilingualGlossaryDictionary("g1", "en x", "de");
+  }
+
+  @Test
   void sendsIdAndLanguagesOfGlossaryAndDictionaryObjectsWhenGettingEntries() throws Exception {
     wm.stubFor(
         get(urlEqualTo("/v3/glossaries/g2/entries?source_lang=en&target_lang=de"))

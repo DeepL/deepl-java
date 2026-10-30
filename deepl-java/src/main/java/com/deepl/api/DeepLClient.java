@@ -8,8 +8,6 @@ import com.deepl.api.http.HttpResponse;
 import com.deepl.api.http.HttpResponseStream;
 import com.deepl.api.utils.*;
 import java.io.*;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -3905,19 +3903,10 @@ public class DeepLClient extends Translator {
       throws IllegalArgumentException, DeepLException {
     validateParameter("sourceLanguageCode", sourceLanguageCode);
     validateParameter("targetLanguageCode", targetLanguageCode);
-    try {
-      return "?"
-          + String.join(
-              "&",
-              String.format(
-                  "source_lang=%s",
-                  URLEncoder.encode(sourceLanguageCode, StandardCharsets.UTF_8.name())),
-              String.format(
-                  "target_lang=%s",
-                  URLEncoder.encode(targetLanguageCode, StandardCharsets.UTF_8.name())));
-    } catch (UnsupportedEncodingException exception) {
-      throw new DeepLException("Error while URL-encoding request", exception);
-    }
+    List<KeyValuePair<String, String>> queryParams = new ArrayList<>();
+    queryParams.add(new KeyValuePair<>("source_lang", sourceLanguageCode));
+    queryParams.add(new KeyValuePair<>("target_lang", targetLanguageCode));
+    return ApiClientHelper.createQueryString(queryParams);
   }
 
   private void validateParameter(String paramName, String value) throws IllegalArgumentException {

@@ -229,6 +229,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - A `User-Agent` header passed with `setHeaders()` now replaces the built
   `User-Agent` in any casing, e.g. `user-agent`.
+- The language query parameters of `getMultilingualGlossaryDictionaryEntries()`
+  and `deleteMultilingualGlossaryDictionary()` now encode a space as `%20`
+  instead of `+`.
 - Translation memory and translation memory job IDs are now URL-encoded in
   request paths.
 - The style rule and custom instruction methods now URL-encode the style rule
