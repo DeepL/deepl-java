@@ -24,14 +24,13 @@ import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.http.Request;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
+import com.sun.net.httpserver.HttpServer;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -40,9 +39,8 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -437,63 +435,42 @@ class TranslateDocumentTest {
     assertEquals("Protonenstrahl", Fixtures.readFile(output));
   }
 
-  // WireMock sends the headers together with the first body bytes, so a server socket sends the
-  // headers of the first response and then stalls its body until the client times out.
+  // WireMock cannot fail a body before its first byte in a retryable way: its dribble delay sends
+  // the headers with the first bytes, and its cut-off body is a non-retryable "Premature EOF".
   @Test
   @Timeout(30)
   void retriesADownloadWhoseBodyTimesOutBeforeAnyByteIsWritten() throws Exception {
-    AtomicInteger connections = new AtomicInteger();
-    try (ServerSocket server = new ServerSocket(0)) {
-      Thread acceptor =
-          new Thread(
-              () -> {
-                try {
-                  while (true) {
-                    Socket socket = server.accept();
-                    boolean stall = connections.incrementAndGet() == 1;
-                    new Thread(() -> serveDocument(socket, stall)).start();
-                  }
-                } catch (IOException closed) {
-                  // the server socket was closed at the end of the test
-                }
-              });
-      acceptor.start();
+    AtomicInteger requests = new AtomicInteger();
+    HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+    server.setExecutor(Executors.newCachedThreadPool());
+    server.createContext(
+        "/v2/document/D1/result",
+        exchange -> {
+          exchange.sendResponseHeaders(200, 14);
+          try (OutputStream body = exchange.getResponseBody()) {
+            if (requests.incrementAndGet() == 1) {
+              Thread.sleep(5000);
+            } else {
+              body.write("Protonenstrahl".getBytes(StandardCharsets.US_ASCII));
+            }
+          } catch (InterruptedException | IOException closedByTheClient) {
+            // the client timed out and closed the connection
+          }
+        });
+    server.start();
+    try {
       DeepLClientOptions options =
-          new DeepLClientOptions().setServerUrl("http://127.0.0.1:" + server.getLocalPort());
+          new DeepLClientOptions()
+              .setServerUrl("http://127.0.0.1:" + server.getAddress().getPort());
       DeepLClient retryingClient =
           new DeepLClient("k", options.setMaxRetries(1).setTimeout(Duration.ofMillis(300)));
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       retryingClient.translateDocumentDownload(HANDLE_OBJECT, output);
       assertEquals("Protonenstrahl", output.toString("UTF-8"));
+    } finally {
+      server.stop(0);
     }
-    assertEquals(2, connections.get());
-  }
-
-  private static void serveDocument(Socket socket, boolean stall) {
-    try (Socket s = socket) {
-      InputStream in = s.getInputStream();
-      String head = "";
-      while (!head.endsWith("\r\n\r\n")) {
-        head += (char) in.read();
-      }
-      Matcher length = Pattern.compile("(?i)content-length: *(\\d+)").matcher(head);
-      for (int i = length.find() ? Integer.parseInt(length.group(1)) : 0; i > 0; i--) {
-        in.read();
-      }
-      OutputStream out = s.getOutputStream();
-      out.write(
-          "HTTP/1.1 200 OK\r\nContent-Length: 14\r\nConnection: close\r\n\r\n"
-              .getBytes(StandardCharsets.US_ASCII));
-      out.flush();
-      if (stall) {
-        Thread.sleep(5000);
-      } else {
-        out.write("Protonenstrahl".getBytes(StandardCharsets.US_ASCII));
-        out.flush();
-      }
-    } catch (Exception ignored) {
-      // the client closed the connection
-    }
+    assertEquals(2, requests.get());
   }
 
   @Test
