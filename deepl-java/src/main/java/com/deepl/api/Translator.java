@@ -1181,12 +1181,10 @@ public class Translator {
    */
   private void checkResponse(HttpResponseStream response) throws DeepLException {
     if (response.getCode() >= HttpURLConnection.HTTP_OK
-        && response.getCode() < HttpURLConnection.HTTP_BAD_REQUEST) {
+        && response.getCode() < HttpURLConnection.HTTP_MULT_CHOICE) {
       return;
     }
-    if (response.getBody() == null) {
-      throw new DeepLException("response stream is empty").setHttpStatusCode(response.getCode());
-    }
+    // A response without body is mapped by its status like one with an empty body.
     checkResponse(response.toStringResponse(), true, false);
   }
 

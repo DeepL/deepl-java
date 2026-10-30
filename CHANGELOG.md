@@ -248,6 +248,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The language query parameters of `getMultilingualGlossaryDictionaryEntries()`
   and `deleteMultilingualGlossaryDictionary()` now encode a space as `%20`
   instead of `+`.
+- `translateDocumentDownload()` treats only 2xx responses as success; a 3xx
+  response is no longer written to the output but throws a `DeepLException`
+  with the status code.
+- `translateDocumentDownload()` maps an error response without body by its
+  status, for example to `QuotaExceededException` or
+  `DocumentNotReadyException`, instead of a plain `DeepLException`.
 - Translation memory and translation memory job IDs are now URL-encoded in
   request paths.
 - The style rule and custom instruction methods now URL-encode the style rule

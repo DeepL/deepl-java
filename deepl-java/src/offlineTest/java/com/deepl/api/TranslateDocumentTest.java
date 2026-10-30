@@ -449,6 +449,30 @@ class TranslateDocumentTest {
   }
 
   @Test
+  void throwsDeepLExceptionWithTheStatusWhenTheDownloadIsAnUnfollowedRedirect() {
+    wm.stubFor(
+        post("/v2/document/D1/result").willReturn(aResponse().withStatus(300).withBody("menu")));
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    DeepLException thrown =
+        assertThrows(
+            DeepLException.class, () -> client.translateDocumentDownload(HANDLE_OBJECT, output));
+    assertEquals(300, thrown.getHttpStatusCode());
+    assertEquals(0, output.size());
+  }
+
+  @Test
+  void mapsTheStatusOfADownloadErrorWithoutBody() {
+    wm.stubFor(
+        post("/v2/document/D1/result")
+            .willReturn(aResponse().withStatus(456).withHeader("Content-Length", "0")));
+    QuotaExceededException thrown =
+        assertThrows(
+            QuotaExceededException.class,
+            () -> client.translateDocumentDownload(HANDLE_OBJECT, new ByteArrayOutputStream()));
+    assertEquals(456, thrown.getHttpStatusCode());
+  }
+
+  @Test
   void throwsNotFoundWhenTheHandleIsUnknown() {
     wm.stubFor(post("/v2/document/D1").willReturn(aResponse().withStatus(404)));
     assertThrows(NotFoundException.class, () -> client.translateDocumentStatus(HANDLE_OBJECT));
