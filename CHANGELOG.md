@@ -337,8 +337,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DeepLException` before.
 - A whitespace-only auth key is now rejected by the `DeepLClient` and
   `Translator` constructors with an `IllegalArgumentException`.
-- An `Authorization` header passed with `setHeaders()` no longer replaces the
-  `DeepL-Auth-Key` authorization built from the auth key, in all clients.
 - A malformed or empty API response now throws a `DeepLException` instead of
   a `JsonSyntaxException` or `NullPointerException`.
 - Fixed the doc comments of `LanguageCode.English` and

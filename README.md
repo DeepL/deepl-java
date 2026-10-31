@@ -1905,9 +1905,10 @@ The available options setters are:
 - `setProxyUrl()`: the same as an HTTP proxy URL such as
   `"http://proxy.example.com:3128"` (port 80 if omitted; credentials in the
   URL are not supported).
-- `setHeaders()`: additional HTTP headers to attach to all requests. They may
-  replace the `User-Agent` header (matched in any casing), but not the `Authorization` header, which is
-  always built from the auth key.
+- `setHeaders()`: additional HTTP headers to attach to all requests. A header
+  with the same name as one the library sets, matched in any casing, replaces
+  it, including `Authorization` and `User-Agent`; `Content-Type` keeps the
+  library's value.
 - `setServerUrl()`: base URL for DeepL API, may be overridden for testing
   purposes. By default, the correct DeepL API (Free or Pro) is automatically
   selected.

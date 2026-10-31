@@ -6,15 +6,17 @@ package com.deepl.api;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
-import static com.github.tomakehurst.wiremock.client.WireMock.notMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.github.tomakehurst.wiremock.http.HttpHeader;
 import com.github.tomakehurst.wiremock.matching.StringValuePattern;
+import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -43,30 +45,33 @@ class TranslatorOptionsTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"Authorization", "authorization"})
-  void sendsTheKeyEvenWhenTheHeadersContainAnAuthorizationHeader(String name) throws Exception {
-    Map<String, String> headers = new HashMap<>();
-    headers.put(name, "Bearer token");
-    wm.stubFor(
-        get("/v2/usage")
-            .withHeader("Authorization", equalTo("DeepL-Auth-Key k"))
-            .withHeader("Authorization", notMatching(".*Bearer.*"))
-            .willReturn(okJson(USAGE)));
+  void sendsTheAuthorizationHeaderOfTheHeadersInPlaceOfTheKey(String name) throws Exception {
+    wm.stubFor(get("/v2/usage").willReturn(okJson(USAGE)));
     OfflineClient.createClient(
-            wm, (DeepLClientOptions) new DeepLClientOptions().setHeaders(headers))
+            wm,
+            (DeepLClientOptions)
+                new DeepLClientOptions().setHeaders(Collections.singletonMap(name, "Bearer token")))
         .getUsage();
+    assertEquals(Collections.singletonList("Bearer token"), recordedAuthorizationValues());
   }
 
-  @Test
-  void sendsTheAdminKeyEvenWhenTheHeadersContainAnAuthorizationHeader() throws Exception {
-    wm.stubFor(
-        get("/v2/admin/developer-keys")
-            .withHeader("Authorization", equalTo("DeepL-Auth-Key admin-key"))
-            .willReturn(okJson("[]")));
+  @ParameterizedTest
+  @ValueSource(strings = {"Authorization", "authorization"})
+  void sendsTheAuthorizationHeaderOfTheHeadersInPlaceOfTheAdminKey(String name) throws Exception {
+    wm.stubFor(get("/v2/admin/developer-keys").willReturn(okJson("[]")));
     OfflineClient.createAdminClient(
             wm,
             new DeepLAdminClientOptions()
-                .setHeaders(Collections.singletonMap("Authorization", "Bearer token")))
+                .setHeaders(Collections.singletonMap(name, "Bearer token")))
         .listDeveloperKeys();
+    assertEquals(Collections.singletonList("Bearer token"), recordedAuthorizationValues());
+  }
+
+  private static List<String> recordedAuthorizationValues() {
+    List<ServeEvent> events = wm.getAllServeEvents();
+    assertEquals(1, events.size());
+    HttpHeader header = events.get(0).getRequest().getHeaders().getHeader("Authorization");
+    return header.isPresent() ? header.values() : Collections.emptyList();
   }
 
   @Test
