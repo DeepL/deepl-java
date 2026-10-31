@@ -239,6 +239,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A whitespace-only auth key is now rejected by the `DeepLClient` and
   `Translator` constructors with an `IllegalArgumentException`; previously it
   was sent and failed at the API.
+- A transient failure (connection reset, timeout) while reading a downloaded
+  document (`translateDocumentDownload()`) or translation memory export
+  (`downloadTranslationMemoryExport()`) is now retried up to `maxRetries` while
+  nothing has been written to the output yet; previously it failed at once.
+- `PATCH` requests are now sent at most `maxRetries + 1` times; previously each
+  try could make up to 3 hidden extra attempts on top of `maxRetries`.
+- Developer key creation (`createDeveloperKey()`, added in this release) is
+  retried after HTTP 429, a failed DNS lookup, a refused connection or a
+  connect timeout, as the request was not sent in these cases. A timeout or
+  connection reset after the request was sent is not retried.
 
 ### Deprecated
 - `createStyleRule(String, String, ConfiguredRules, List)` and
@@ -272,10 +282,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `rephraseText()` and `correctText()` send `targetLang` with only the
   language part lower-cased and the rest as given, as text and document
   translation do: `zh-Hans` is no longer sent as `zh-HANS`.
-- A transient failure (connection reset, timeout) while reading a downloaded
-  document (`translateDocumentDownload()`) or translation memory export
-  (`downloadTranslationMemoryExport()`) is now retried up to `maxRetries` while
-  nothing has been written to the output yet.
 - An error response of the form `{"error": {"message": "..."}}` now puts its
   message into the exception message; an error body without any message is
   appended as the raw body instead of an empty `error message: `.
@@ -286,8 +292,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the output.
 - A `User-Agent` header passed with `setHeaders()` now replaces the built
   `User-Agent` in any casing, e.g. `user-agent`.
-- `PATCH` requests no longer make up to 3 hidden extra attempts per try on top
-  of `maxRetries`.
 - The language query parameters of `getMultilingualGlossaryDictionaryEntries()`
   and `deleteMultilingualGlossaryDictionary()` now encode a space as `%20`
   instead of `+`.
@@ -333,10 +337,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `translateText()` no longer fails when a translation in the response has no
   `billed_characters` (`getBilledCharacters()` returns 0) or a `null`
   `model_type_used` (`getModelTypeUsed()` returns `null`).
-- Developer key creation is now also retried after a refused connection or a
-  connect timeout, in addition to HTTP 429 and DNS failures, as the request was
-  not sent in these cases. A timeout or connection reset after the request was
-  sent is still not retried.
 - Fixed the doc comments of `LanguageCode.English` and
   `LanguageCode.Portuguese`, which claimed they may only be used as source
   languages.
