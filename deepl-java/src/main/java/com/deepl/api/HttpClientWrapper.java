@@ -235,25 +235,36 @@ class HttpClientWrapper {
 
   /**
    * Uploads content to an absolute URL outside of the DeepL API, for example a pre-signed storage
-   * URL returned by a translation memory import job. The DeepL headers, in particular the
-   * Authorization header, are deliberately not sent to third-party storage.
+   * URL returned by a translation memory import job. Only the User-Agent header is sent; the
+   * Authorization header and other custom headers are deliberately not sent to third-party storage.
    */
   public HttpResponse sendAssetPutRequestWithBackoff(
       String url, byte[] fileContent, String contentType)
       throws InterruptedException, DeepLException {
     HttpContent content = HttpContent.buildRawContent(contentType, fileContent);
-    return sendRequestToUrlWithBackoff(PUT, url, content, Collections.emptyMap(), false, true)
+    return sendRequestToUrlWithBackoff(PUT, url, content, storageHeaders(), false, true)
         .toStringResponse();
   }
 
   /**
    * Downloads content from an absolute URL outside of the DeepL API, for example a pre-signed
-   * storage URL returned by a completed translation memory export job. The DeepL headers, in
-   * particular the Authorization header, are deliberately not sent to third-party storage.
+   * storage URL returned by a completed translation memory export job. Only the User-Agent header
+   * is sent; the Authorization header and other custom headers are deliberately not sent to
+   * third-party storage.
    */
   public void downloadAssetWithBackoff(String url, ResponseCheck check, OutputStream outputStream)
       throws InterruptedException, DeepLException, IOException {
-    downloadToStreamWithBackoff(GET, url, null, Collections.emptyMap(), check, outputStream);
+    downloadToStreamWithBackoff(GET, url, null, storageHeaders(), check, outputStream);
+  }
+
+  /** The User-Agent entry of the client headers, in whatever casing it was set. */
+  private Map<String, String> storageHeaders() {
+    for (Map.Entry<String, String> header : headers.entrySet()) {
+      if ("User-Agent".equalsIgnoreCase(header.getKey())) {
+        return Collections.singletonMap(header.getKey(), header.getValue());
+      }
+    }
+    return Collections.emptyMap();
   }
 
   // Retrying after the first byte was written would duplicate it in the output stream, which

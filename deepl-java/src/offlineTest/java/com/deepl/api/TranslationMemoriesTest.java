@@ -10,7 +10,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.delete;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.notMatching;
+import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
@@ -35,7 +35,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
@@ -223,13 +225,13 @@ class TranslationMemoriesTest {
   }
 
   @Test
-  void uploadsTheFileBytesWithoutDeepLHeaders() throws Exception {
+  void uploadsTheFileBytesWithTheUserAgentAndWithoutAuthorization() throws Exception {
     byte[] content = new byte[] {0x3c, (byte) 0xff, 0x00, (byte) 0x80, 0x3e};
     wm.stubFor(
         put("/storage")
             .withHeader("Content-Type", equalTo("application/xml"))
             .withHeader("Authorization", absent())
-            .withHeader("User-Agent", notMatching("deepl-java.*"))
+            .withHeader("User-Agent", matching("deepl-java/.*"))
             .withRequestBody(binaryEqualTo(content))
             .willReturn(aResponse().withStatus(200)));
     client.uploadTranslationMemoryFile(storageUrl(), content, "application/xml");
@@ -454,15 +456,40 @@ class TranslationMemoriesTest {
   }
 
   @Test
-  void downloadsTheExportToAFileWithoutDeepLHeaders() throws Exception {
+  void downloadsTheExportToAFileWithTheUserAgentAndWithoutAuthorization() throws Exception {
     wm.stubFor(
         get("/storage/export")
             .withHeader("Authorization", absent())
-            .withHeader("User-Agent", notMatching("deepl-java.*"))
+            .withHeader("User-Agent", matching("deepl-java/.*"))
             .willReturn(aResponse().withStatus(200).withBody("<tmx/>")));
     File output = tempDir.resolve("export.tmx").toFile();
     client.downloadTranslationMemoryExport(completedExport(), output);
     assertEquals("<tmx/>", Fixtures.readFile(output));
+  }
+
+  @Test
+  void sendsOnlyTheCallersUserAgentToStorage() throws Exception {
+    Map<String, String> headers = new HashMap<>();
+    headers.put("user-agent", "my-app/1.0");
+    headers.put("X-Custom", "v");
+    headers.put("Authorization", "Bearer t");
+    DeepLClient customClient =
+        OfflineClient.createClient(
+            wm, (DeepLClientOptions) new DeepLClientOptions().setHeaders(headers));
+    wm.stubFor(
+        put("/storage")
+            .withHeader("User-Agent", equalTo("my-app/1.0"))
+            .withHeader("X-Custom", absent())
+            .withHeader("Authorization", absent())
+            .willReturn(aResponse().withStatus(200)));
+    wm.stubFor(
+        get("/storage/export")
+            .withHeader("User-Agent", equalTo("my-app/1.0"))
+            .withHeader("X-Custom", absent())
+            .withHeader("Authorization", absent())
+            .willReturn(aResponse().withStatus(200).withBody("<tmx/>")));
+    customClient.uploadTranslationMemoryFile(storageUrl(), new byte[] {0x3c}, "application/xml");
+    customClient.downloadTranslationMemoryExport(completedExport(), new ByteArrayOutputStream());
   }
 
   @Test

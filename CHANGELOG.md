@@ -190,6 +190,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `setExtraBodyParameters()`, added last to the `rephraseText()` request body.
 
 ### Changed
+- Requests to the pre-signed translation memory storage URLs now send the same
+  `User-Agent` as DeepL API requests (the one set with `setHeaders()`, if any);
+  previously they sent the JVM default. They still get no `Authorization` or
+  other custom headers.
 - `translateText()` sends the language codes with the language part
   lower-cased and the rest as given, like document translation, for example
   `zh-Hans`; before, the part after the first `-` was upper-cased.
