@@ -383,7 +383,9 @@ until the document is done; an overload taking a `Duration` timeout throws a
 `getStatus()` (a `DocumentStatus.StatusCode`, or `null` for a status the
 library does not know yet), `getStatusString()` (the status as the API sent
 it), `ok()` (not failed) and `done()` (succeeded). An unknown status counts as
-in progress, so waiting continues.
+in progress, so waiting continues. The wait has no default limit, so pass a
+timeout (`translateDocumentWaitUntilDone(handle, Duration)` or
+`DocumentTranslationOptions.setTimeout()`) to bound it.
 
 The source and target language codes are sent with the language part
 lower-cased and the rest as given, for example `zh-Hans`.
@@ -1399,8 +1401,9 @@ the status as the API sent it. Both are also available on
 Note that an import job keeps reporting `AwaitingInput` for a while after its
 file has been uploaded, because the API detects the upload asynchronously.
 `waitUntilTranslationMemoryJobDone()` polls through that status like any other
-non-terminal one. A job whose file is never uploaded does not finish on its own,
-so pass a timeout when that is a possibility.
+non-terminal one, and an unknown status also keeps polling. A job whose file is
+never uploaded does not finish on its own, and the wait has no default limit, so
+pass a timeout to bound it.
 
 #### Exporting a translation memory
 

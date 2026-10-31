@@ -6,11 +6,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- `DeepLClientOptions` overrides every setter with a `DeepLClientOptions`
-  return type, so `DeepLClientOptions options = new
-  DeepLClientOptions().setMaxRetries(1)` compiles as in the README, and a
-  setter chain passed inline to `DeepLClient` no longer resolves to the
-  deprecated `DeepLClient(String, TranslatorOptions)` constructor.
 - Added `getStatusString()` to `TranslationMemoryJob` and
   `TranslationMemoryJobResult`, returning the job status as the API sent it,
   including values not in `TranslationMemoryJobResult.Status` (for which
@@ -204,13 +199,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `TranslationMemoryJob.getProduct()`, `getOperation()`, `getCreationTime()`
   and `getUpdatedTime()` are no longer annotated `@Nullable`, as the API always
   returns these fields.
-- The bare target languages `en` and `pt` are no longer rejected
-  client-side in text translation, document translation and rephrasing. The
-  API translates them to `en-US` and `pt-PT` respectively.
+- The bare target languages `en` and `pt` are now accepted in text
+  translation, document translation and rephrasing (the API uses `en-US` and
+  `pt-PT`); previously they were rejected with an `IllegalArgumentException`.
 - `getSourceLanguages()`, `getTargetLanguages()`, `getLanguages()` and
   `getGlossaryLanguages()` now use `GET /v3/languages` instead of the
   deprecated v2 endpoints. The returned lists may contain additional
   languages, including the bare `en` and `pt` as target languages.
+  `setApiVersion()` no longer applies to these calls; previously a v1 setting
+  also changed their path.
+- Connection resets, broken pipes and a response body cut off mid-read are now
+  retried up to `maxRetries`, and `ConnectionException.getShouldRetry()`
+  returns `true` for them; previously they failed at once. Developer key
+  creation still does not retry a cut-off body.
+- Refused connections, unreachable hosts and failed DNS lookups are now retried
+  up to `maxRetries` like timeouts, in all request types including `PATCH`;
+  previously they failed at once.
+- A failure while reading the response body, for example a read timeout, now
+  throws a `ConnectionException` and is retried up to `maxRetries`; previously
+  it threw a `DeepLException` and was not retried.
+- `GlossaryEntries` now stores and sends terms trimmed of leading and trailing
+  whitespace (`Character.isWhitespace()`), so `get(" foo ")` no longer finds an
+  entry added as `" foo "`; previously terms were stored as given. Target terms
+  set through `replaceAll()` or `Map.Entry.setValue()` are now checked, and an
+  invalid character is named in hexadecimal (`U+001F`).
+- A document status the library does not know yet now counts as in progress:
+  `translateDocumentWaitUntilDone()` and `translateDocument()` keep polling and
+  `DocumentStatus.getStatus()` returns `null`; previously they stopped with
+  "Unknown error". Pass a timeout to bound the wait.
+- `DeepLClientOptions` setters now return `DeepLClientOptions`; previously they
+  returned `TranslatorOptions`, so `DeepLClientOptions options = new
+  DeepLClientOptions().setMaxRetries(1)` did not compile and an inline setter
+  chain resolved to the deprecated `DeepLClient(String, TranslatorOptions)`
+  constructor.
+- HTTP 401 now throws `AuthorizationException`, like HTTP 403; previously a
+  `DeepLException` with "Unknown error".
+- A malformed or empty API response now throws a `DeepLException`; previously a
+  `JsonSyntaxException` or `NullPointerException`.
+- A whitespace-only auth key is now rejected by the `DeepLClient` and
+  `Translator` constructors with an `IllegalArgumentException`; previously it
+  was sent and failed at the API.
 
 ### Deprecated
 - `createStyleRule(String, String, ConfiguredRules, List)` and
@@ -248,10 +276,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   document (`translateDocumentDownload()`) or translation memory export
   (`downloadTranslationMemoryExport()`) is now retried up to `maxRetries` while
   nothing has been written to the output yet.
-- A response body cut off mid-read (the connection closed before the body was
-  complete) is now retried like a connection reset, and
-  `ConnectionException.getShouldRetry()` returns `true` for it. Developer key
-  creation still does not retry it, as the request was already sent.
 - An error response of the form `{"error": {"message": "..."}}` now puts its
   message into the exception message; an error body without any message is
   appended as the raw body instead of an empty `error message: `.
@@ -264,8 +288,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `User-Agent` in any casing, e.g. `user-agent`.
 - `PATCH` requests no longer make up to 3 hidden extra attempts per try on top
   of `maxRetries`.
-- Connection resets and broken pipes are now retried, and
-  `ConnectionException.getShouldRetry()` returns `true` for them.
 - The language query parameters of `getMultilingualGlossaryDictionaryEntries()`
   and `deleteMultilingualGlossaryDictionary()` now encode a space as `%20`
   instead of `+`.
@@ -275,10 +297,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `translateDocumentDownload()` maps an error response without body by its
   status, for example to `QuotaExceededException` or
   `DocumentNotReadyException`, instead of a plain `DeepLException`.
-- `GlossaryEntries` stores and sends trimmed terms, trims all whitespace
-  (`Character.isWhitespace()`) like spoken terms, checks target terms set
-  through `replaceAll()` or `Map.Entry.setValue()`, and names an invalid
-  character in hexadecimal (`U+001F`).
 - `exportTranslationMemoryToFilepath()` with a `File` now checks the output
   path before it creates the export job: an existing file throws `IOException`
   and a missing directory `FileNotFoundException`, the same classes as before.
@@ -305,10 +323,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   contain one complete result per input text. Before, the single-text
   overload threw an `IndexOutOfBoundsException` or returned `null`, and the
   list overload returned a short list.
-- A document status the library does not know yet no longer stops
-  `translateDocumentWaitUntilDone()` and `translateDocument()` with
-  "Unknown error": it counts as in progress and polling continues.
-  `DocumentStatus.getStatus()` returns `null` for it.
 - `translateDocumentGetStatus()` and `translateDocumentDownload()` now
   URL-encode the document ID in the request path.
 - `translateDocumentUpload()` and `translateDocument()` with an input stream
@@ -319,22 +333,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `translateText()` no longer fails when a translation in the response has no
   `billed_characters` (`getBilledCharacters()` returns 0) or a `null`
   `model_type_used` (`getModelTypeUsed()` returns `null`).
-- HTTP 401 now throws `AuthorizationException`, like HTTP 403, instead of a
-  `DeepLException` with "Unknown error".
-- Connection failures (refused connections, unreachable hosts) and failed DNS
-  lookups are now retried like timeouts, in all request types including
-  `PATCH`.
 - Developer key creation is now also retried after a refused connection or a
   connect timeout, in addition to HTTP 429 and DNS failures, as the request was
   not sent in these cases. A timeout or connection reset after the request was
   sent is still not retried.
-- A failure while reading the response body, for example a read timeout, now
-  throws a `ConnectionException` and is retried. It threw a non-retried
-  `DeepLException` before.
-- A whitespace-only auth key is now rejected by the `DeepLClient` and
-  `Translator` constructors with an `IllegalArgumentException`.
-- A malformed or empty API response now throws a `DeepLException` instead of
-  a `JsonSyntaxException` or `NullPointerException`.
 - Fixed the doc comments of `LanguageCode.English` and
   `LanguageCode.Portuguese`, which claimed they may only be used as source
   languages.
