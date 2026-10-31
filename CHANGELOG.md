@@ -185,6 +185,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `setExtraBodyParameters()`, added last to the `rephraseText()` request body.
 
 ### Changed
+- Code recompiled against this release that passes a literal `null` to
+  `DeepLClient.importTranslationMemoryFromFilepath(File, ...)` as the second
+  argument, or to `setFormality()`, `setStyleRule()` or
+  `setTranslationMemory()` of `TextTranslationOptions` or
+  `DocumentTranslationOptions`, to `setTagHandling()`,
+  `setTagHandlingVersion()`, `setSentenceSplittingMode()`, `setModelType()`,
+  `setIgnoreTags()`, `setSplittingTags()` or `setNonSplittingTags()` of
+  `TextTranslationOptions`, or to `setWritingStyle()` or `setTone()` of
+  `TextRephraseOptions`, fails to compile (`reference to ... is ambiguous`),
+  because these methods gained overloads; cast the `null` to the parameter
+  type, e.g. `(String) null`. Already-compiled code is not affected.
 - Requests to the pre-signed translation memory storage URLs now send the same
   `User-Agent` as DeepL API requests (the one set with `setHeaders()`, if any);
   previously they sent the JVM default. They still get no `Authorization` or
