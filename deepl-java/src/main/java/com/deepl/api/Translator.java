@@ -330,12 +330,10 @@ public class Translator {
    * @param options Options influencing translation.
    * @return Status when document translation completed, this allows the number of billed characters
    *     to be queried.
-   * @throws IllegalArgumentException If the input file does not exist; no request is sent.
-   * @throws DocumentTranslationException If the output path is occupied, a file cannot be opened,
-   *     any error occurs while communicating with the DeepL API, or the thread is interrupted
-   *     during execution of this function. The exception includes the document handle that may be
-   *     used to retrieve the document, if the document was uploaded.
-   * @throws IOException Not thrown; declared for compatibility.
+   * @throws IOException If the output path is occupied or the input file does not exist.
+   * @throws DocumentTranslationException If any error occurs while communicating with the DeepL
+   *     API, or if the thread is interrupted during execution of this function. The exception
+   *     includes the document handle that may be used to retrieve the document.
    */
   public DocumentStatus translateDocument(
       File inputFile,
@@ -344,25 +342,17 @@ public class Translator {
       String targetLang,
       @Nullable DocumentTranslationOptions options)
       throws DocumentTranslationException, IOException {
-    if (!inputFile.exists()) {
-      throw new IllegalArgumentException("Input file does not exist: " + inputFile.getPath());
-    }
     // Checked before the try block: its handler deletes the output file.
     if (outputFile.exists()) {
-      throw new DocumentTranslationException(
-          "File already exists at output path: " + outputFile.getPath(), null, null);
+      throw new IOException("File already exists at output path");
     }
     try (InputStream inputStream = new FileInputStream(inputFile);
         OutputStream outputStream = new FileOutputStream(outputFile)) {
       return translateDocument(
           inputStream, inputFile.getName(), outputStream, sourceLang, targetLang, options);
-    } catch (DocumentTranslationException exception) {
+    } catch (Exception exception) {
       outputFile.delete();
       throw exception;
-    } catch (IOException exception) {
-      outputFile.delete();
-      throw new DocumentTranslationException(
-          "Error occurred during document translation: " + exception.getMessage(), exception, null);
     }
   }
 

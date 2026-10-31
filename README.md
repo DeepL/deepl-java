@@ -341,25 +341,29 @@ class Example {  // Continuing class Example from above
         try {
             client.translateDocument(inputFile, outputFile, "en", "de");
         } catch (DocumentTranslationException exception) {
-            // If an error occurs during document translation after the document was
-            // already uploaded, a DocumentTranslationException is thrown. The
-            // document_handle property contains the document handle that may be used to
-            // later retrieve the document from the server, or contact DeepL support.
+            // If an error occurs during document translation, a
+            // DocumentTranslationException is thrown. If the document was already
+            // uploaded, getHandle() returns the document handle that may be used to
+            // later retrieve the document from the server, or contact DeepL support;
+            // otherwise it returns null.
             DocumentHandle handle = exception.getHandle();
-            System.out.printf(
-                    "Error after uploading %s, document handle: id: %s key: %s",
-                    exception.getMessage(),
-                    handle.getDocumentId(),
-                    handle.getDocumentKey());
+            System.out.printf("Error during document translation: %s%n", exception.getMessage());
+            if (handle != null) {
+                System.out.printf(
+                        "Document handle: id: %s key: %s%n",
+                        handle.getDocumentId(),
+                        handle.getDocumentKey());
+            }
         }
     }
 }
 ```
 
-If the input file does not exist, `translateDocument()` throws an
-`IllegalArgumentException` before sending any request. Every other failure,
-including an existing output file or a file that cannot be opened, is thrown as
-a `DocumentTranslationException`; `getHttpStatusCode()` and `getShouldRetry()`
+If a file already exists at the output path, `translateDocument()` throws an
+`IOException` and leaves that file unchanged. A missing or unreadable input file,
+or an output file that cannot be created, throws a `FileNotFoundException`. No
+request is sent in these cases. Later failures are thrown as a
+`DocumentTranslationException`; `getHttpStatusCode()` and `getShouldRetry()`
 report those of the underlying `DeepLException`, if any.
 
 `translateDocument()` is a convenience function that wraps multiple API calls:
@@ -1330,9 +1334,8 @@ The optional timeout is the maximum time to wait for the import to finish; omit
 it to wait indefinitely. The job status is polled every 5 seconds, and the last
 wait is cut short at the timeout.
 
-A missing input file throws `IllegalArgumentException` before any request is
-sent. Any other local I/O failure, such as an unreadable file, throws
-`DeepLException` with the I/O error as its cause.
+A missing input file throws `IllegalArgumentException` and an unreadable file
+throws `IOException`, both before any request is sent.
 
 `ImportTranslationMemoryOptions` groups the import options: `setDisplayName()`,
 `setContentType()` (declared when the job is created and sent with the upload;
@@ -1415,9 +1418,9 @@ class Example {  // Continuing class Example from above
 ```
 
 As with import, the timeout is optional; omit it to wait indefinitely. The output
-path is checked before the export job is created: if a file already exists there
-or its directory does not exist, `DeepLException` is thrown. A failure while
-writing the file also throws `DeepLException`, with the I/O error as its cause.
+path is checked before the export job is created: if a file already exists there,
+`IOException` is thrown, and if its directory does not exist,
+`FileNotFoundException`. A failure while writing the file throws `IOException`.
 Instead of a `File`, you can pass an `OutputStream`, which is not closed:
 
 ```java

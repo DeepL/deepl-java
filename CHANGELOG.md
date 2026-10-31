@@ -193,10 +193,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `translateText()` sends the language codes with the language part
   lower-cased and the rest as given, like document translation, for example
   `zh-Hans`; before, the part after the first `-` was upper-cased.
-- `translateDocument(File, File, ...)` throws a `DocumentTranslationException`
-  instead of an `IOException` when the output file exists or a file cannot be
-  opened, and an `IllegalArgumentException` before any request when the input
-  file does not exist.
 - Text translation accepts a glossary (`setGlossary()`) or glossary list
   (`setGlossaryIds()`) without a source language; the API detects the source
   language and uses the glossary's dictionary for the detected language pair.
@@ -279,13 +275,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`Character.isWhitespace()`) like spoken terms, checks target terms set
   through `replaceAll()` or `Map.Entry.setValue()`, and names an invalid
   character in hexadecimal (`U+001F`).
-- `importTranslationMemoryFromFilepath()` and
-  `exportTranslationMemoryToFilepath()` now throw `DeepLException`, with the
-  original exception as cause, for local I/O failures such as an unreadable
-  input file or a failed write, instead of a raw `IOException`.
-- `exportTranslationMemoryToFilepath()` with a `File` now checks that the output
-  path is free and its directory exists before creating the export job, and
-  throws `DeepLException` otherwise.
+- `exportTranslationMemoryToFilepath()` with a `File` now checks the output
+  path before it creates the export job: an existing file throws `IOException`
+  and a missing directory `FileNotFoundException`, the same classes as before.
 - `waitUntilTranslationMemoryJobDone()` with a timeout, and the import and
   export helpers that use it, now cut the last poll wait short at the timeout
   instead of overrunning it by up to 5 seconds.

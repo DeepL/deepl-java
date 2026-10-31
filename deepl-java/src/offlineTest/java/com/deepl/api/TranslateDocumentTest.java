@@ -29,6 +29,7 @@ import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -607,37 +608,31 @@ class TranslateDocumentTest {
   }
 
   @Test
-  void keepsAnExistingOutputFileAndThrowsDocumentTranslationExceptionWhenTranslatingAFile()
-      throws Exception {
+  void keepsAnExistingOutputFileAndThrowsIOExceptionWhenTranslatingAFile() throws Exception {
     File input = writeInput("example.txt", "a");
     File output = writeInput("out.txt", "already here");
-    DocumentTranslationException thrown =
-        assertThrows(
-            DocumentTranslationException.class,
-            () -> client.translateDocument(input, output, "en", "de"));
-    assertNull(thrown.getHandle());
+    IOException thrown =
+        assertThrows(IOException.class, () -> client.translateDocument(input, output, "en", "de"));
+    assertEquals("File already exists at output path", thrown.getMessage());
     assertEquals("already here", Fixtures.readFile(output));
     assertTrue(wm.getAllServeEvents().isEmpty());
   }
 
   @Test
-  void throwsDocumentTranslationExceptionWhenTheOutputFileCannotBeOpened() throws Exception {
+  void throwsFileNotFoundExceptionWhenTheOutputFileCannotBeOpened() throws Exception {
     File input = writeInput("example.txt", "a");
     File output = tempDir.resolve("missing-dir").resolve("out.txt").toFile();
-    DocumentTranslationException thrown =
-        assertThrows(
-            DocumentTranslationException.class,
-            () -> client.translateDocument(input, output, "en", "de"));
-    assertTrue(thrown.getCause() instanceof IOException);
+    assertThrows(
+        FileNotFoundException.class, () -> client.translateDocument(input, output, "en", "de"));
     assertTrue(wm.getAllServeEvents().isEmpty());
   }
 
   @Test
-  void throwsIllegalArgumentBeforeAnyRequestWhenTheInputFileIsMissing() {
+  void throwsFileNotFoundExceptionBeforeAnyRequestWhenTheInputFileIsMissing() {
     File input = tempDir.resolve("missing.txt").toFile();
     File output = tempDir.resolve("out.txt").toFile();
     assertThrows(
-        IllegalArgumentException.class, () -> client.translateDocument(input, output, "en", "de"));
+        FileNotFoundException.class, () -> client.translateDocument(input, output, "en", "de"));
     assertFalse(output.exists());
     assertTrue(wm.getAllServeEvents().isEmpty());
   }
