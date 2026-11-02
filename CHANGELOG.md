@@ -306,8 +306,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A `User-Agent` header passed with `setHeaders()` now replaces the built
   `User-Agent` in any casing, e.g. `user-agent`.
 - An `Authorization` header passed with `setHeaders()` now replaces the built
-  `Authorization` header in any casing, e.g. `authorization`; previously both
-  were sent.
+  `Authorization` header in any casing, e.g. `authorization`; previously the
+  header that was sent depended on map iteration order.
 - The language query parameters of `getMultilingualGlossaryDictionaryEntries()`
   and `deleteMultilingualGlossaryDictionary()` now encode a space as `%20`
   instead of `+`.
