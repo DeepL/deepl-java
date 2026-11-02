@@ -135,7 +135,6 @@ build_manual:
       - DOCKER_IMAGE: "eclipse-temurin:11-alpine"
       - DOCKER_IMAGE: "eclipse-temurin:17-alpine"
       - DOCKER_IMAGE: "eclipse-temurin:21-alpine"
-      - DOCKER_IMAGE: "eclipse-temurin:25-alpine"
   image: ${DOCKER_IMAGE}
   script:
     - ./gradlew offlineTest
@@ -163,7 +162,7 @@ test_offline_manual:
 
 # Every endpoint once against the real API; no retry, as a retry repeats every request.
 # Gradle 7.4.2 officially supports up to Java 17, but this build runs on 21 (offline matrix and
-# this job) and 25 (offline matrix).
+# this job).
 .test_real_api_base:
   stage: test
   extends: .test

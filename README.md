@@ -22,8 +22,8 @@ account you can consume up to 500,000 characters/month for free.
 
 ## Requirements
 
-Java 8 or later. The library is tested on the LTS releases 8, 11, 17, 21
-and 25.
+Java 8 or later. The library is tested on the LTS releases 8, 11, 17 and
+21.
 
 ## Installation
 
