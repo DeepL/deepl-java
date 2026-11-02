@@ -135,6 +135,7 @@ build_manual:
       - DOCKER_IMAGE: "eclipse-temurin:11-alpine"
       - DOCKER_IMAGE: "eclipse-temurin:17-alpine"
       - DOCKER_IMAGE: "eclipse-temurin:21-alpine"
+      - DOCKER_IMAGE: "eclipse-temurin:25-alpine"
   image: ${DOCKER_IMAGE}
   script:
     # Gradle needs Java 17+. On Java 8 and 11 it runs on a downloaded Temurin 17 (the jobs

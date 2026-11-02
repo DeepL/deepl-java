@@ -6,8 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Changed
-- The library is now tested on the Java LTS releases 8, 11, 17 and 21 only;
-  Java 8 remains the minimum.
+- The library is now tested on the Java LTS releases 8, 11, 17, 21 and 25
+  only; Java 8 remains the minimum.
 
 ### Removed
 - Removed `Translator.getLanguages(LanguageType)` and the `LanguageType` enum,
