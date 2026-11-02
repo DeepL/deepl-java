@@ -112,17 +112,6 @@ class TranslateTextTest {
         "Hello", new Language("English", "en", null), new Language("German", "de", true));
   }
 
-  @Test
-  void sendsApiVersionOneInThePath() throws Exception {
-    DeepLClient v1 =
-        OfflineClient.createClient(
-            wm, new DeepLClientOptions().setApiVersion(DeepLApiVersion.VERSION_1));
-    expectBody(
-        "/v1/translate",
-        FormBody.of("target_lang", "de", "text", "Hello", "show_billed_characters", "1"));
-    v1.translateText("Hello", null, "de");
-  }
-
   @ParameterizedTest
   @CsvSource({
     "Default,default",
@@ -253,14 +242,6 @@ class TranslateTextTest {
   }
 
   @Test
-  void sendsStyleId() throws Exception {
-    expectBody(
-        FormBody.of(
-            "target_lang", "de", "text", "Hello", "show_billed_characters", "1", "style_id", "s1"));
-    client.translateText("Hello", null, "de", new TextTranslationOptions().setStyleId("s1"));
-  }
-
-  @Test
   void sendsTheIdOfAStyleRule() throws Exception {
     StyleRuleInfo rule = new StyleRuleInfo("s2", "n", new Date(), new Date(), "de", 1, null, null);
     expectBody(
@@ -306,12 +287,12 @@ class TranslateTextTest {
         "Hello",
         "en",
         "de",
-        new TextTranslationOptions().setStyleId("s1").setStyleProfile(profile));
+        new TextTranslationOptions().setStyleRule("s1").setStyleProfile(profile));
   }
 
   @Test
   void omitsStyleProfileIdWhenUnset() throws Exception {
-    TextTranslationOptions options = new TextTranslationOptions().setStyleId("s1");
+    TextTranslationOptions options = new TextTranslationOptions().setStyleRule("s1");
     expectBody(
         FormBody.of(
             "target_lang", "de", "text", "Hello", "show_billed_characters", "1", "style_id", "s1"));
@@ -344,9 +325,7 @@ class TranslateTextTest {
         "Hello",
         null,
         "de",
-        new TextTranslationOptions()
-            .setTranslationMemoryId("tm1")
-            .setTranslationMemoryThreshold(80));
+        new TextTranslationOptions().setTranslationMemory("tm1").setTranslationMemoryThreshold(80));
   }
 
   @Test
@@ -747,7 +726,7 @@ class TranslateTextTest {
                     "Hello",
                     "en",
                     "de",
-                    new TextTranslationOptions().setGlossaryId("g1").setGlossaryIds("g2")));
+                    new TextTranslationOptions().setGlossary("g1").setGlossaryIds("g2")));
     assertTrue(thrown.getMessage().contains("cannot be used together with glossaryId"));
   }
 

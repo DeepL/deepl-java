@@ -95,8 +95,9 @@ the default variants `'en-US'` and `'pt-PT'`; use a regional variant to choose
 explicitly. The full list of supported languages is in the
 [API documentation][api-docs-lang-list]. The codes are sent with the language
 part lower-cased and the rest as given, for example `zh-Hans`. Language codes are
-plain strings; the `LanguageCode` constants are deprecated and will be removed
-in the next major version.
+plain strings; to list the codes supported at runtime, use `getSourceLanguages()`
+and `getTargetLanguages()`, see
+[Listing available languages](#listing-available-languages).
 
 There are additional optional arguments to control translation, see
 [Text translation options](#text-translation-options) below.
@@ -177,17 +178,14 @@ a `TextTranslationOptions`, with the following setters:
   containing the glossary ID, or a `GlossaryInfo`/`MultilingualGlossaryInfo` 
   object (this object is returned by glossary lookup functions, for example 
   `listGlossaries()` or `listMultilingualGlossaries()`).
-    - `setGlossaryId()` is deprecated; use `setGlossary()` instead.
 - `setGlossaryIds()`: specifies multiple glossaries to use with translation
   (up to 5), as a list or varargs of glossary ID strings, or as one or more
   `IGlossary` objects (`GlossaryInfo`/`MultilingualGlossaryInfo`; for a list of
   glossary objects, pass their IDs as a list of strings).
   Glossaries are applied in the order provided (first match wins). This option
   cannot be combined with `setGlossary()`.
-    - `setGlossaries()` is deprecated; use `setGlossaryIds()` instead.
 - `setStyleRule()`: specifies a style rule to use with translation, as a string
   containing the ID of the style rule, or a `StyleRuleInfo` object.
-    - `setStyleId()` is deprecated; use `setStyleRule()` instead.
 - `setStyleProfile()`: specifies a style profile to use with translation, as a
   string containing the style profile ID, or a `StyleProfile` object. The profile's glossaries, style rules and translation
   memories are applied per text once the source language is known; a component
@@ -197,7 +195,6 @@ a `TextTranslationOptions`, with the following setters:
 - `setTranslationMemory()`: specifies a translation memory to use with translation,
   as a string containing the translation memory ID, or a `TranslationMemoryInfo`
   object.
-    - `setTranslationMemoryId()` is deprecated; use `setTranslationMemory()` instead.
     - `setTranslationMemoryThreshold()` is also available, accepting an integer
       from 0 to 100 to control the minimum matching percentage for translation
       memory matches. We recommend a minimum threshold of 75%.
@@ -376,8 +373,7 @@ the following functions directly:
   `translateDocumentWaitUntilDone()`), and
 - `translateDocumentDownload()`
 
-`translateDocumentStatus()` is deprecated; use `translateDocumentGetStatus()`
-instead. `translateDocumentWaitUntilDone()` polls the status every 5 seconds
+`translateDocumentWaitUntilDone()` polls the status every 5 seconds
 until the document is done; an overload taking a `Duration` timeout throws a
 `DeepLException` when the timeout expires. The returned `DocumentStatus` has
 `getStatus()` (a `DocumentStatus.StatusCode`, or `null` for a status the
@@ -401,16 +397,13 @@ arguments, `translateDocument()` accepts an optional
 - `setGlossary()`: same as
   in [Text translation options](#text-translation-options), but requires a
   source language.
-    - `setGlossaryId()` is deprecated; use `setGlossary()` instead.
 - `setGlossaryIds()`: same as
   in [Text translation options](#text-translation-options). Specifies multiple
   glossaries (up to 5) to use with document translation, as glossary IDs or
   `IGlossary` objects. Requires a source language.
-    - `setGlossaries()` is deprecated; use `setGlossaryIds()` instead.
 - `setStyleRule()`: same as
   in [Text translation options](#text-translation-options), taking a style rule
   ID or a `StyleRuleInfo` object.
-    - `setStyleId()` is deprecated; use `setStyleRule()` instead.
 - `setStyleProfile()`: same as
   in [Text translation options](#text-translation-options). An unknown style
   profile is not rejected at upload; the document status reports an error and
@@ -419,7 +412,6 @@ arguments, `translateDocument()` accepts an optional
 - `setTranslationMemory()`/`setTranslationMemoryThreshold()`:
   same as in [Text translation options](#text-translation-options), taking a
   translation memory ID or a `TranslationMemoryInfo` object.
-    - `setTranslationMemoryId()` is deprecated; use `setTranslationMemory()` instead.
 - `setFilename()`: the file name sent with the upload, for example
   `report.docx`; its extension determines the document type. Used in place of
   the input file's name and of the `fileName` argument of the stream overloads.
@@ -1919,11 +1911,6 @@ The available options setters are:
 - `setServerUrl()`: base URL for DeepL API, may be overridden for testing
   purposes. By default, the correct DeepL API (Free or Pro) is automatically
   selected.
-- `setApiVersion()` (deprecated, removed in the next major version): Version
-  of the DeepL API, may be overridden to use e.g. the v1 API. By default, the
-  most recent API version is automatically selected. Please note: The v1 API
-  does not support all features of the API, e.g. document translation or
-  rephrase.
 
 #### Anonymous platform information
 

@@ -62,18 +62,6 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
   }
 
   /**
-   * Sets the ID of a glossary to use with the translation. By default, this value is <code>
-   * null</code> and no glossary is used.
-   *
-   * @deprecated Use {@link #setGlossary(String)} instead.
-   */
-  @Deprecated
-  public DocumentTranslationOptions setGlossaryId(String glossaryId) {
-    this.glossaryId = glossaryId;
-    return this;
-  }
-
-  /**
    * Sets the glossary to use with the translation. By default, this value is <code>null</code> and
    * no glossary is used.
    */
@@ -127,17 +115,6 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
     return this;
   }
 
-  /**
-   * Sets the list of glossaries to use with the translation, up to a maximum of 5.
-   *
-   * @deprecated Use {@link #setGlossaryIds(IGlossary, IGlossary...)} instead.
-   */
-  @Deprecated
-  public DocumentTranslationOptions setGlossaries(IGlossary... glossaries) {
-    this.glossaryIds = glossaryIdsOf(glossaries);
-    return this;
-  }
-
   private static List<String> glossaryIdsOf(IGlossary[] glossaries) {
     List<String> ids = new ArrayList<>();
     for (IGlossary glossary : glossaries) {
@@ -147,18 +124,6 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
       ids.add(glossary.getGlossaryId());
     }
     return ids;
-  }
-
-  /**
-   * Sets the ID of a style rule to use with the translation. By default, this value is <code>
-   * null</code> and no style rule is used.
-   *
-   * @deprecated Use {@link #setStyleRule(String)} instead.
-   */
-  @Deprecated
-  public DocumentTranslationOptions setStyleId(String styleId) {
-    this.styleId = styleId;
-    return this;
   }
 
   /**
@@ -202,18 +167,6 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
       throw new IllegalArgumentException("styleProfile must not be null");
     }
     return setStyleProfile(styleProfile.getStyleProfileId());
-  }
-
-  /**
-   * Sets the ID of a translation memory to use with the translation. By default, this value is
-   * <code>null</code> and no translation memory is used.
-   *
-   * @deprecated Use {@link #setTranslationMemory(String)} instead.
-   */
-  @Deprecated
-  public DocumentTranslationOptions setTranslationMemoryId(String translationMemoryId) {
-    this.translationMemoryId = translationMemoryId;
-    return this;
   }
 
   /**

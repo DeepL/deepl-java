@@ -47,24 +47,6 @@ public class DeepLClient extends Translator {
    *     href="https://www.deepl.com/pro-account/">DeepL account</a>.
    * @param options Additional options controlling Client behaviour.
    * @throws IllegalArgumentException If authKey is invalid.
-   * @deprecated Use the constructor that takes {@link DeepLClientOptions} instead of {@link
-   *     TranslatorOptions}
-   */
-  @Deprecated
-  public DeepLClient(String authKey, TranslatorOptions options) throws IllegalArgumentException {
-    super(authKey, options);
-  }
-
-  /**
-   * Initializes a new DeepLClient object using your Authentication Key.
-   *
-   * <p>Note: This function does not establish a connection to the DeepL API. To check connectivity,
-   * use {@link DeepLClient#getUsage()}.
-   *
-   * @param authKey DeepL Authentication Key as found in your <a
-   *     href="https://www.deepl.com/pro-account/">DeepL account</a>.
-   * @param options Additional options controlling Client behaviour.
-   * @throws IllegalArgumentException If authKey is invalid.
    */
   @SuppressWarnings("deprecation")
   public DeepLClient(String authKey, DeepLClientOptions options) throws IllegalArgumentException {

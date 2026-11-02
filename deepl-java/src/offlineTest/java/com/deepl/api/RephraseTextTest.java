@@ -55,7 +55,7 @@ class RephraseTextTest {
   @Test
   void sendsBareEnglishTargetLanguage() throws Exception {
     expectBody(FormBody.of("target_lang", "en", "text", "Hello"));
-    client.rephraseText("Hello", LanguageCode.English, null);
+    client.rephraseText("Hello", "en", null);
   }
 
   @Test

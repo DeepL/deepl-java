@@ -267,7 +267,7 @@ public class Translator {
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
   public List<Language> getSourceLanguages() throws DeepLException, InterruptedException {
-    return getLanguages(LanguageType.Source);
+    return getLanguages(false);
   }
 
   /**
@@ -279,26 +279,14 @@ public class Translator {
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
   public List<Language> getTargetLanguages() throws DeepLException, InterruptedException {
-    return getLanguages(LanguageType.Target);
+    return getLanguages(true);
   }
 
-  /**
-   * Retrieves the list of supported translation source or target languages.
-   *
-   * @param languageType The type of languages to retrieve, source or target.
-   * @return List of {@link Language} objects representing the available translation source or
-   *     target languages.
-   * @throws InterruptedException If the thread is interrupted during execution of this function.
-   * @throws DeepLException If any error occurs while communicating with the DeepL API.
-   * @deprecated Use {@link #getSourceLanguages()} or {@link #getTargetLanguages()} instead.
-   */
-  @Deprecated
-  public List<Language> getLanguages(LanguageType languageType)
-      throws DeepLException, InterruptedException {
+  private List<Language> getLanguages(boolean target) throws DeepLException, InterruptedException {
     HttpResponse response =
         httpClientWrapper.sendGetRequestWithBackoff("/v3/languages?resource=translate_text");
     checkResponse(response, false, false);
-    return jsonParser.parseV3Languages(response.getBody(), languageType == LanguageType.Target);
+    return jsonParser.parseV3Languages(response.getBody(), target);
   }
 
   /**
@@ -538,17 +526,6 @@ public class Translator {
     HttpResponse response = httpClientWrapper.sendRequestWithBackoff(relativeUrl, params);
     checkResponse(response, false, false);
     return jsonParser.parseDocumentStatus(response.getBody());
-  }
-
-  /**
-   * Retrieve the status of in-progress document translation associated with specified handle.
-   *
-   * @deprecated Use {@link #translateDocumentGetStatus(DocumentHandle)} instead.
-   */
-  @Deprecated
-  public DocumentStatus translateDocumentStatus(DocumentHandle handle)
-      throws DeepLException, InterruptedException {
-    return translateDocumentGetStatus(handle);
   }
 
   /**

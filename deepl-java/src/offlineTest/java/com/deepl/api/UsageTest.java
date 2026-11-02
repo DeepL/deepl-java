@@ -32,16 +32,6 @@ class UsageTest {
   }
 
   @Test
-  void sendsApiVersionOneInThePath() throws Exception {
-    DeepLClient v1 =
-        OfflineClient.createClient(
-            wm, new DeepLClientOptions().setApiVersion(DeepLApiVersion.VERSION_1));
-    wm.stubFor(
-        get("/v1/usage").willReturn(okJson("{\"character_count\":1,\"character_limit\":2}")));
-    v1.getUsage();
-  }
-
-  @Test
   void parsesCharacterAndDocumentUsage() throws Exception {
     wm.stubFor(
         get("/v2/usage")

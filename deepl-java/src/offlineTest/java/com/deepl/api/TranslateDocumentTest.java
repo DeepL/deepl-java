@@ -148,10 +148,10 @@ class TranslateDocumentTest {
         "de",
         new DocumentTranslationOptions()
             .setFormality(Formality.PreferMore)
-            .setGlossaryId("g1")
-            .setStyleId("s1")
+            .setGlossary("g1")
+            .setStyleRule("s1")
             .setStyleProfile("sp1")
-            .setTranslationMemoryId("tm1")
+            .setTranslationMemory("tm1")
             .setTranslationMemoryThreshold(80)
             .setOutputFormat("pdf"));
     assertPartNames(
@@ -280,7 +280,7 @@ class TranslateDocumentTest {
   @Test
   void omitsStyleProfileIdWhenUnset() throws Exception {
     File input = writeInput("example.txt", "a");
-    DocumentTranslationOptions options = new DocumentTranslationOptions().setStyleId("s1");
+    DocumentTranslationOptions options = new DocumentTranslationOptions().setStyleRule("s1");
     assertNull(options.getStyleProfileId());
     expectUpload(
         "/v2/document",
@@ -505,7 +505,7 @@ class TranslateDocumentTest {
   @Test
   void throwsNotFoundWhenTheHandleIsUnknown() {
     wm.stubFor(post("/v2/document/D1").willReturn(aResponse().withStatus(404)));
-    assertThrows(NotFoundException.class, () -> client.translateDocumentStatus(HANDLE_OBJECT));
+    assertThrows(NotFoundException.class, () -> client.translateDocumentGetStatus(HANDLE_OBJECT));
   }
 
   @Test

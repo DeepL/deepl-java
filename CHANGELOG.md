@@ -6,6 +6,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- Removed `Translator.getLanguages(LanguageType)` and the `LanguageType` enum,
+  deprecated in 1.18.0. Call `getSourceLanguages()` or `getTargetLanguages()`
+  instead.
+- Removed `TextTranslationOptions.setGlossaryId()`, `setGlossaries()`,
+  `setStyleId()` and `setTranslationMemoryId()`, deprecated in 1.18.0. Call
+  `setGlossary()`, `setGlossaryIds()`, `setStyleRule()` and
+  `setTranslationMemory()` instead.
+- Removed the `DeepLClient(String, TranslatorOptions)` constructor, deprecated
+  in 1.18.0. Pass a `DeepLClientOptions` instead.
+- Removed `DeepLClientOptions.setApiVersion()` and `getApiVersion()`,
+  deprecated in 1.18.0. Delete the calls; the client always uses API version 2.
+- Removed `DocumentTranslationOptions.setGlossaryId()`, `setGlossaries()`,
+  `setStyleId()` and `setTranslationMemoryId()`, deprecated in 1.18.0. Call
+  `setGlossary()`, `setGlossaryIds()`, `setStyleRule()` and
+  `setTranslationMemory()` instead.
+- Removed `Translator.translateDocumentStatus()`, deprecated in 1.18.0. Call
+  `translateDocumentGetStatus()` instead.
+- Removed the language code constants of `LanguageCode` (for example
+  `LanguageCode.German`), deprecated in 1.18.0. Pass the language code as a
+  string, for example `"de"`, or take it from `getSourceLanguages()` /
+  `getTargetLanguages()`. `LanguageCode.removeRegionalVariant()` and
+  `LanguageCode.standardize()` remain.
+
 ## [1.18.0] - 2026-11-02
 TL;DR: new APIs in this release: the Admin API, spoken terms, style profiles and text correction.
 Translation memories, style rules and multilingual glossaries gained many options and fixes.
