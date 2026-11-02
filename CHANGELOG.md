@@ -5,7 +5,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-
 ### Removed
 - Removed `Translator.getLanguages(LanguageType)` and the `LanguageType` enum,
   deprecated in 1.18.0. Call `getSourceLanguages()` or `getTargetLanguages()`
@@ -15,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `setGlossary()`, `setGlossaryIds()`, `setStyleRule()` and
   `setTranslationMemory()` instead.
 - Removed the `DeepLClient(String, TranslatorOptions)` constructor, deprecated
-  in 1.18.0. Pass a `DeepLClientOptions` instead.
+  in 1.8.1. Pass a `DeepLClientOptions` instead.
 - Removed `DeepLClientOptions.setApiVersion()` and `getApiVersion()`,
   deprecated in 1.18.0. Delete the calls; the client always uses API version 2.
 - Removed `DocumentTranslationOptions.setGlossaryId()`, `setGlossaries()`,
