@@ -57,6 +57,7 @@ Be careful not to expose your key, for example when sharing source code.
 
 ```java
 import com.deepl.api.*;
+import java.util.*;
 
 class Example {
     DeepLClient client;
