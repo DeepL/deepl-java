@@ -6,9 +6,9 @@ package com.deepl.api;
 import java.util.*;
 
 /**
- * Language codes for the languages currently supported by DeepL translation. New languages may be
- * added in the future; to retrieve the currently supported languages use {@link
- * Translator#getSourceLanguages()} and {@link Translator#getTargetLanguages()}.
+ * Helpers for language code strings. To retrieve the languages currently supported by DeepL
+ * translation, use {@link Translator#getSourceLanguages()} and {@link
+ * Translator#getTargetLanguages()}.
  */
 public class LanguageCode {
   /**
