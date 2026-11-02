@@ -22,7 +22,8 @@ account you can consume up to 500,000 characters/month for free.
 
 ## Requirements
 
-Java 1.8 or later.
+Java 8 or later. The library is tested on the LTS releases 8, 11, 17, 21
+and 25.
 
 ## Installation
 
@@ -124,7 +125,7 @@ class Example {  // Continuing class Example from above
 
         // Translate multiple texts into British English
         List<TextResult> results =
-                client.translateText(List.of("お元気ですか？", "¿Cómo estás?"),
+                client.translateText(Arrays.asList("お元気ですか？", "¿Cómo estás?"),
                                          null,
                                          "en-GB");
         System.out.println(results.get(0).getText()); // "How are you?"
