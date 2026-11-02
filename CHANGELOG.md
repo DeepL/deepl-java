@@ -162,7 +162,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   format of the translated document, for example `docx`. By default the
   translated document has the same format as the input document.
 - Added `LanguageCode` constants for the target language variants `de-CH`,
-  `de-DE`, `es-ES`, `es-419`, `fr-CA`, `fr-FR`, `zh-Hans` and `zh-Hant`.
+  `de-DE`, `es-ES`, `es-419`, `fr-CA`, `fr-FR`, `zh-Hans` and `zh-Hant`. They
+  are deprecated, like the other `LanguageCode` constants.
 - Added `DeepLClient.getLanguagesForResource()`, which calls
   `GET /v3/languages` for a given resource (`translate_text`, `glossary`,
   `write`, ...) and returns `LanguageSupport` objects with per-language
@@ -246,7 +247,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - HTTP 401 now throws `AuthorizationException`, like HTTP 403; previously a
   `DeepLException` with "Unknown error".
 - A malformed or empty API response now throws a `DeepLException`; previously a
-  `JsonSyntaxException` or `NullPointerException`.
+  `JsonSyntaxException`, a `NullPointerException`, or `null` (for example from
+  `getUsage()`).
 - A whitespace-only auth key is now rejected by the `DeepLClient` and
   `Translator` constructors with an `IllegalArgumentException`; previously it
   was sent and failed at the API.
@@ -303,6 +305,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the output.
 - A `User-Agent` header passed with `setHeaders()` now replaces the built
   `User-Agent` in any casing, e.g. `user-agent`.
+- An `Authorization` header passed with `setHeaders()` now replaces the built
+  `Authorization` header in any casing, e.g. `authorization`; previously both
+  were sent.
 - The language query parameters of `getMultilingualGlossaryDictionaryEntries()`
   and `deleteMultilingualGlossaryDictionary()` now encode a space as `%20`
   instead of `+`.
