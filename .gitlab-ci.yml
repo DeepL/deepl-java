@@ -137,7 +137,28 @@ build_manual:
       - DOCKER_IMAGE: "eclipse-temurin:21-alpine"
   image: ${DOCKER_IMAGE}
   script:
-    - ./gradlew offlineTest
+    # Gradle needs Java 17+. On Java 8 and 11 it runs on a downloaded Temurin 17 (the jobs
+    # cannot install packages) and the tests run on the image's JVM.
+    - |
+      if java -version 2>&1 | grep -qE 'version "(1\.8|11)\.'; then
+        IMAGE_JAVA="$(readlink -f "$(command -v java)")"
+        # On musl, the Java 17 launcher puts its own libraries on LD_LIBRARY_PATH, which Gradle's
+        # processes inherit, and musl searches it before the RPATH of the image's java: that
+        # binary would load Java 17's libjli and start Java 17. So the tests start through a
+        # wrapper that clears the variable; Gradle probes and runs <testJavaHome>/bin/java.
+        TEST_JAVA_HOME="$PWD/.testjvm"
+        mkdir -p "$TEST_JAVA_HOME/bin"
+        printf '#!/bin/sh\nunset LD_LIBRARY_PATH\nexec "%s" "$@"\n' "$IMAGE_JAVA" > "$TEST_JAVA_HOME/bin/java"
+        chmod +x "$TEST_JAVA_HOME/bin/java"
+        if [ -f /etc/alpine-release ]; then OS=alpine-linux; else OS=linux; fi
+        case "$(uname -m)" in aarch64) ARCH=aarch64 ;; *) ARCH=x64 ;; esac
+        JDK_URL="https://api.adoptium.net/v3/binary/latest/17/ga/$OS/$ARCH/jdk/hotspot/normal/eclipse"
+        mkdir -p .jdk17
+        if command -v curl >/dev/null; then curl -fsSL "$JDK_URL"; else wget -qO- "$JDK_URL"; fi | tar -xz -C .jdk17
+        JAVA_HOME="$(ls -d "$PWD"/.jdk17/jdk-17*)" ./gradlew offlineTest -PtestJavaHome="$TEST_JAVA_HOME"
+      else
+        ./gradlew offlineTest
+      fi
   artifacts:
     paths:
       - deepl-java/build/reports/jacoco/offlineTestCoverage
@@ -161,8 +182,6 @@ test_offline_manual:
     - if: $CI_PIPELINE_SOURCE != "schedule"
 
 # Every endpoint once against the real API; no retry, as a retry repeats every request.
-# Gradle 7.4.2 officially supports up to Java 17, but this build runs on 21 (offline matrix and
-# this job).
 .test_real_api_base:
   stage: test
   extends: .test

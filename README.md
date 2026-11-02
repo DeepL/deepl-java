@@ -1959,7 +1959,9 @@ There are two test suites.
 The offline tests need no auth key and no network. They test the options,
 request encoding, error handling, retries and polling against a local
 [WireMock][wiremock] server and check each outgoing request exactly. Execute
-them using `./gradlew offlineTest`. They run on Java 8 and newer.
+them using `./gradlew offlineTest`. They run on Java 8 and newer. Gradle
+itself needs Java 17 or newer; to run the tests on an older JVM, pass its home
+directory, for example `./gradlew offlineTest -PtestJavaHome=/path/to/jdk8`.
 
 The real-API tests send each request the library supports once to the DeepL
 API, using the auth key defined by the `DEEPL_AUTH_KEY` environment variable.

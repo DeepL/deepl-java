@@ -6,7 +6,7 @@ plugins {
     `java-library`
     `maven-publish`
     signing
-    id("com.diffplug.spotless") version "6.8.0"
+    id("com.diffplug.spotless") version "6.25.0"
     jacoco
     `java-test-fixtures`
 }
@@ -14,7 +14,7 @@ plugins {
 group = "com.deepl.api"
 version = "1.18.0"
 
-val sharedManifest = the<JavaPluginConvention>().manifest {
+val sharedManifest = java.manifest {
     attributes (
         "Implementation-Title" to "Gradle",
         "Implementation-Version" to version
@@ -24,6 +24,8 @@ java {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
 }
+// Gradle itself needs Java 17+; --release 8 also checks the code against the Java 8 API.
+tasks.withType<JavaCompile>().configureEach { options.release.set(8) }
 
 repositories {
     mavenCentral()
@@ -38,15 +40,15 @@ dependencies {
 }
 
 
-jacoco { toolVersion = "0.8.12" }
+jacoco { toolVersion = "0.8.14" }
 
 // offlineTest needs no key and no network; realApiTest needs DEEPL_AUTH_KEY and DEEPL_ADMIN_KEY.
 testing {
     suites {
-        val offlineTest by registering(JvmTestSuite::class) {
+        register<JvmTestSuite>("offlineTest") {
             useJUnitJupiter("5.10.0")
             dependencies {
-                implementation(project)
+                implementation(project())
                 // The last WireMock line that runs on Java 8.
                 implementation("com.github.tomakehurst:wiremock-jre8:2.35.2")
                 // Encodes the expected form bodies independently of the SDK's own encoder.
@@ -62,10 +64,10 @@ testing {
                 }
             }
         }
-        val realApiTest by registering(JvmTestSuite::class) {
+        register<JvmTestSuite>("realApiTest") {
             useJUnitJupiter("5.10.0")
             dependencies {
-                implementation(project)
+                implementation(project())
                 // Java 11+, which is why this is not part of offlineTest.
                 implementation("io.github.littleproxy:littleproxy:2.9.1")
             }
@@ -73,7 +75,10 @@ testing {
     }
 }
 
+// -PtestJavaHome=<JDK> runs the tests on that JVM, e.g. Java 8 or 11, which cannot run Gradle.
+val testJavaHome = findProperty("testJavaHome") as String?
 tasks.withType<Test>().configureEach {
+    if (testJavaHome != null) executable = "$testJavaHome/bin/java"
     testLogging {
         events("failed")
         exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
@@ -81,8 +86,8 @@ tasks.withType<Test>().configureEach {
 }
 
 dependencies {
-    "offlineTestImplementation"(testFixtures(project))
-    "realApiTestImplementation"(testFixtures(project))
+    "offlineTestImplementation"(testFixtures(project(":deepl-java")))
+    "realApiTestImplementation"(testFixtures(project(":deepl-java")))
 }
 
 tasks.named("check") {
@@ -111,7 +116,7 @@ listOf("offlineTest", "realApiTest").forEach { suite ->
 
 spotless {
     java {
-        googleJavaFormat("1.7")
+        googleJavaFormat("1.10.0")
         removeUnusedImports()
     }
 }
@@ -119,7 +124,7 @@ spotless {
 tasks.register<Jar>("sourcesJar") {
     archiveClassifier.set("sources")
     from(sourceSets.main.get().allJava)
-    manifest = project.the<JavaPluginConvention>().manifest {
+    manifest = project.java.manifest {
         from(sharedManifest)
     }
 }
@@ -127,7 +132,7 @@ tasks.register<Jar>("sourcesJar") {
 tasks.register<Jar>("javadocJar") {
     archiveClassifier.set("javadoc")
     from(tasks.javadoc.get().destinationDir)
-    manifest = project.the<JavaPluginConvention>().manifest {
+    manifest = project.java.manifest {
         from(sharedManifest)
     }
 }
@@ -135,8 +140,8 @@ tasks.register<Jar>("javadocJar") {
 publishing {
     repositories {
         maven {
-            val mavenUploadUsername: String? by project
-            val mavenUploadPassword: String? by project
+            val mavenUploadUsername = findProperty("mavenUploadUsername") as String?
+            val mavenUploadPassword = findProperty("mavenUploadPassword") as String?
             name = "MavenCentral"
             val releasesRepoUrl = "https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/"
             val snapshotsRepoUrl = "https://central.sonatype.com/repository/maven-snapshots/"
@@ -189,16 +194,16 @@ publishing {
 }
 
 signing {
-    val signingKey: String? by project
-    val signingPassword: String? by project
+    val signingKey = findProperty("signingKey") as String?
+    val signingPassword = findProperty("signingPassword") as String?
     useInMemoryPgpKeys(signingKey, signingPassword)
     sign(publishing.publications["mavenJava"])
 }
 
 tasks.register("triggerDeployment") {
     doLast {
-        val mavenUploadUsername: String? by project
-        val mavenUploadPassword: String? by project
+        val mavenUploadUsername = findProperty("mavenUploadUsername") as String?
+        val mavenUploadPassword = findProperty("mavenUploadPassword") as String?
         val namespace = "com.deepl.api"
         val url = "https://ossrh-staging-api.central.sonatype.com/manual/upload/defaultRepository/$namespace?publishing_type=automatic"
 
