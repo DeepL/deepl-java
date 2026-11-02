@@ -129,13 +129,13 @@ build_manual:
     KUBERNETES_MEMORY_LIMIT: 8Gi
   parallel:
     matrix:
-      - DOCKER_IMAGE: "eclipse-temurin:18-alpine"
+      # LTS releases only.
       - DOCKER_IMAGE: "amazoncorretto:8-alpine"
       - DOCKER_IMAGE: "eclipse-temurin:8-focal"
       - DOCKER_IMAGE: "eclipse-temurin:11-alpine"
       - DOCKER_IMAGE: "eclipse-temurin:17-alpine"
-      - DOCKER_IMAGE: "eclipse-temurin:19-alpine"
       - DOCKER_IMAGE: "eclipse-temurin:21-alpine"
+      - DOCKER_IMAGE: "eclipse-temurin:25-alpine"
   image: ${DOCKER_IMAGE}
   script:
     - ./gradlew offlineTest
@@ -162,8 +162,8 @@ test_offline_manual:
     - if: $CI_PIPELINE_SOURCE != "schedule"
 
 # Every endpoint once against the real API; no retry, as a retry repeats every request.
-# Java 21 is the current LTS. Gradle 7.4.2 officially supports up to Java 17, but this build runs
-# on 21 (offline matrix and this job).
+# Gradle 7.4.2 officially supports up to Java 17, but this build runs on 21 (offline matrix and
+# this job) and 25 (offline matrix).
 .test_real_api_base:
   stage: test
   extends: .test

@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- The library is now tested on the Java LTS releases 8, 11, 17, 21 and 25
+  only; Java 8 remains the minimum.
 ### Removed
 - Removed `Translator.getLanguages(LanguageType)` and the `LanguageType` enum,
   deprecated in 1.18.0. Call `getSourceLanguages()` or `getTargetLanguages()`
