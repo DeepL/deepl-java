@@ -1966,7 +1966,9 @@ directory, for example `./gradlew offlineTest -PtestJavaHome=/path/to/jdk8`.
 The real-API tests send each request the library supports once to the DeepL
 API, using the auth key defined by the `DEEPL_AUTH_KEY` environment variable.
 Set `DEEPL_SERVER_URL` to test against another server, for example the test
-API. Execute them using `./gradlew realApiTest`, with Java 11 or newer. They
+API. Execute them using `./gradlew realApiTest`. They run on Java 11 and newer;
+as with the offline tests, Gradle itself needs Java 17 or newer, so pass
+`-PtestJavaHome=/path/to/jdk11` to run them on Java 11. They
 create glossaries, style rules and translation memories named
 `sdktest-java-...` and delete them again. The real-API suite also requires the
 admin key defined by the `DEEPL_ADMIN_KEY` environment variable for the Admin
