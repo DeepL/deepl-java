@@ -151,12 +151,19 @@ build_manual:
         mkdir -p "$TEST_JAVA_HOME/bin"
         printf '#!/bin/sh\nunset LD_LIBRARY_PATH\nexec "%s" "$@"\n' "$IMAGE_JAVA" > "$TEST_JAVA_HOME/bin/java"
         chmod +x "$TEST_JAVA_HOME/bin/java"
-        if [ -f /etc/alpine-release ]; then OS=alpine-linux; else OS=linux; fi
-        case "$(uname -m)" in aarch64) ARCH=aarch64 ;; *) ARCH=x64 ;; esac
-        JDK_URL="https://api.adoptium.net/v3/binary/latest/17/ga/$OS/$ARCH/jdk/hotspot/normal/eclipse"
-        mkdir -p .jdk17
-        if command -v curl >/dev/null; then curl -fsSL "$JDK_URL"; else wget -qO- "$JDK_URL"; fi | tar -xz -C .jdk17
-        JAVA_HOME="$(ls -d "$PWD"/.jdk17/jdk-17*)" ./gradlew offlineTest -PtestJavaHome="$TEST_JAVA_HOME"
+        # One pinned Temurin 17 release, checked against its published SHA-256 (x64 only).
+        [ "$(uname -m)" = x86_64 ] || { echo "No pinned Temurin 17 for $(uname -m)" >&2; exit 1; }
+        if [ -f /etc/alpine-release ]; then
+          JDK_OS=alpine-linux JDK_SHA256=db018054d52c1c109ad128c1412ead2d84ae91052ce60ca370df17b6a89831f5
+        else
+          JDK_OS=linux JDK_SHA256=8b9b611d917e3dfd8419d3566b5949226f69b052fed7e109c1368add1dfe8711
+        fi
+        JDK_FILE="OpenJDK17U-jdk_x64_${JDK_OS}_hotspot_17.0.21_9.tar.gz"
+        JDK_URL="https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.21%2B9/$JDK_FILE"
+        if command -v curl >/dev/null; then curl -fsSL -o "$JDK_FILE" "$JDK_URL"; else wget -qO "$JDK_FILE" "$JDK_URL"; fi || exit 1
+        echo "$JDK_SHA256  $JDK_FILE" | sha256sum -c - || exit 1
+        mkdir -p .jdk17 && tar -xzf "$JDK_FILE" -C .jdk17 || exit 1
+        JAVA_HOME="$PWD/.jdk17/jdk-17.0.21+9" ./gradlew offlineTest -PtestJavaHome="$TEST_JAVA_HOME"
       else
         ./gradlew offlineTest
       fi
