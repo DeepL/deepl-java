@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Changed
+- `StyleRuleInfo.getConfiguredRules()` now returns the configured rules as the
+  API sends them, as a `Map<String, Map<String, String>>` from category to rule
+  to value in snake_case form, instead of a `ConfiguredRules` object. Categories
+  outside the former seven fields are no longer dropped. Replace getters such as
+  `getConfiguredRules().getDatesAndTimes()` with
+  `getConfiguredRules().get("dates_and_times")`; the `StyleRuleInfo`
+  constructor takes the map as well.
 - The library is now tested on the Java LTS releases 8, 11, 17, 21 and 25
   only; Java 8 remains the minimum.
 
@@ -28,6 +35,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `setTranslationMemory()` instead.
 - Removed the `DeepLClient(String, TranslatorOptions)` constructor, deprecated
   in 1.8.1. Pass a `DeepLClientOptions` instead.
+- Removed the overloads `createStyleRule(String, String, ConfiguredRules, List)`
+  and `updateStyleRuleConfiguredRules(String, ConfiguredRules)`, deprecated in
+  1.18.0, and the `ConfiguredRules` class they took. Pass the configured rules as a `Map<String, Map<String, String>>` to
+  `createStyleRule(String, String, Map, List, CreateStyleRuleOptions)` and
+  `updateStyleRuleConfiguredRules(String, Map,
+  UpdateStyleRuleConfiguredRulesOptions)`, with `null` as the options.
 - Removed `DeepLClientOptions.setApiVersion()` and `getApiVersion()`,
   deprecated in 1.18.0. Delete the calls; the client always uses API version 2.
 - Removed `DocumentTranslationOptions.setGlossaryId()`, `setGlossaries()`,

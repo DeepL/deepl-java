@@ -29,7 +29,7 @@ public class StyleRuleInfo {
 
   @SerializedName(value = "configured_rules")
   @Nullable
-  private final ConfiguredRules configuredRules;
+  private final Map<String, Map<String, String>> configuredRules;
 
   @SerializedName(value = "custom_instructions")
   @Nullable
@@ -44,7 +44,8 @@ public class StyleRuleInfo {
    * @param updatedTime Timestamp when the style rule list was last updated.
    * @param language Language code for the style rule list.
    * @param version Version number of the style rule list.
-   * @param configuredRules The predefined rules that have been enabled.
+   * @param configuredRules The predefined rules that have been enabled, as a map from category to
+   *     rule to value.
    * @param customInstructions Optional list of custom instructions.
    */
   public StyleRuleInfo(
@@ -54,7 +55,7 @@ public class StyleRuleInfo {
       Date updatedTime,
       String language,
       int version,
-      @Nullable ConfiguredRules configuredRules,
+      @Nullable Map<String, Map<String, String>> configuredRules,
       @Nullable List<CustomInstruction> customInstructions) {
     this.styleId = styleId;
     this.name = name;
@@ -96,9 +97,13 @@ public class StyleRuleInfo {
     return version;
   }
 
-  /** @return The predefined rules that have been enabled. */
+  /**
+   * @return The predefined rules that have been enabled, as a map from category to rule to value in
+   *     the API's snake_case form (e.g. {@code "dates_and_times" -> {"calendar_era" ->
+   *     "use_bc_and_ad"}}), as sent by the API.
+   */
   @Nullable
-  public ConfiguredRules getConfiguredRules() {
+  public Map<String, Map<String, String>> getConfiguredRules() {
     return configuredRules;
   }
 

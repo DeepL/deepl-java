@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -21,17 +22,11 @@ class StyleRulesTest {
       throws Exception {
     DeepLClient client = RealApiClient.createClient();
     String name = RealApiNames.getUniqueName("style-rule");
-    ConfiguredRules rules =
-        new ConfiguredRules(
-            Collections.singletonMap("calendar_era", "use_bc_and_ad"),
-            null,
-            null,
-            null,
-            null,
-            null,
-            null);
+    Map<String, Map<String, String>> rules =
+        Collections.singletonMap(
+            "dates_and_times", Collections.singletonMap("calendar_era", "use_bc_and_ad"));
 
-    StyleRuleInfo styleRule = client.createStyleRule(name, "en", rules, null);
+    StyleRuleInfo styleRule = client.createStyleRule(name, "en", rules, null, null);
     String styleId = styleRule.getStyleId();
     try {
       assertNotNull(styleId);
@@ -56,7 +51,7 @@ class StyleRulesTest {
       StyleRuleInfo renamed = client.updateStyleRuleName(styleId, name + "-renamed");
       assertEquals(name + "-renamed", renamed.getName());
 
-      StyleRuleInfo configured = client.updateStyleRuleConfiguredRules(styleId, rules);
+      StyleRuleInfo configured = client.updateStyleRuleConfiguredRules(styleId, rules, null);
       assertEquals(styleId, configured.getStyleId());
 
       CustomInstruction instruction =

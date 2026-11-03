@@ -4168,30 +4168,6 @@ public class DeepLClient {
    *
    * @param name User-defined name for the style rule.
    * @param language Language code for the style rule (e.g. "en", "de").
-   * @param configuredRules Optional configured rules for the style rule.
-   * @param customInstructions Optional list of custom instructions for the style rule.
-   * @return {@link StyleRuleInfo} object with details about the newly created style rule.
-   * @throws InterruptedException If the thread is interrupted during execution of this function.
-   * @throws DeepLException If any error occurs while communicating with the DeepL API.
-   * @deprecated Use {@link #createStyleRule(String, String, Map, List, CreateStyleRuleOptions)}
-   *     instead.
-   */
-  @Deprecated
-  public StyleRuleInfo createStyleRule(
-      String name,
-      String language,
-      @Nullable ConfiguredRules configuredRules,
-      @Nullable List<CustomInstruction> customInstructions)
-      throws DeepLException, InterruptedException {
-    return createStyleRuleInternal(name, language, configuredRules, customInstructions, null);
-  }
-
-  /**
-   * Creates a new style rule with the specified details and returns a {@link StyleRuleInfo} object
-   * with details about the newly created style rule.
-   *
-   * @param name User-defined name for the style rule.
-   * @param language Language code for the style rule (e.g. "en", "de").
    * @param configuredRules Optional configured rules, as a map from category to rule to value in
    *     the API's snake_case form (e.g. {@code "dates_and_times" -> {"calendar_era" ->
    *     "use_bc_and_ad"}}), sent as given.
@@ -4208,16 +4184,6 @@ public class DeepLClient {
       @Nullable Map<String, Map<String, String>> configuredRules,
       @Nullable List<CustomInstruction> customInstructions,
       @Nullable CreateStyleRuleOptions options)
-      throws DeepLException, InterruptedException {
-    return createStyleRuleInternal(name, language, configuredRules, customInstructions, options);
-  }
-
-  private StyleRuleInfo createStyleRuleInternal(
-      String name,
-      String language,
-      @Nullable Object configuredRules,
-      @Nullable List<CustomInstruction> customInstructions,
-      @Nullable BaseRequestOptions options)
       throws DeepLException, InterruptedException {
     validateParameter("name", name);
     validateParameter("language", language);
@@ -4367,30 +4333,6 @@ public class DeepLClient {
   public void deleteStyleRule(StyleRuleInfo styleRule)
       throws DeepLException, InterruptedException, NotFoundException {
     deleteStyleRule(styleRuleId(styleRule));
-  }
-
-  /**
-   * Replaces the configured rules of the style rule with the specified ID and returns the updated
-   * {@link StyleRuleInfo} object.
-   *
-   * @param styleId ID of the style rule to update.
-   * @param configuredRules The new configured rules to set for the style rule.
-   * @return {@link StyleRuleInfo} object with updated details about the style rule.
-   * @throws NotFoundException If no style rule with the given ID is found.
-   * @throws InterruptedException If the thread is interrupted during execution of this function.
-   * @throws DeepLException If any error occurs while communicating with the DeepL API.
-   * @deprecated Use {@link #updateStyleRuleConfiguredRules(String, Map,
-   *     UpdateStyleRuleConfiguredRulesOptions)} instead.
-   */
-  @Deprecated
-  public StyleRuleInfo updateStyleRuleConfiguredRules(
-      String styleId, ConfiguredRules configuredRules)
-      throws DeepLException, InterruptedException, NotFoundException {
-    String relativeUrl = styleRulePath(styleId);
-    if (configuredRules == null) {
-      throw new IllegalArgumentException("configuredRules must not be null");
-    }
-    return sendStyleRuleConfiguredRules(relativeUrl, jsonParser.getGson().toJson(configuredRules));
   }
 
   /**

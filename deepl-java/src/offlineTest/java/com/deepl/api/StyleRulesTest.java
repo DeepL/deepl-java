@@ -37,7 +37,7 @@ class StyleRulesTest {
       "{\"style_id\":\"s1\",\"name\":\"n\",\"creation_time\":\"2021-08-03T14:16:18.329Z\","
           + "\"updated_time\":\"2021-08-03T14:16:18.329Z\",\"language\":\"en\",\"version\":3,"
           + "\"configured_rules\":{\"dates_and_times\":{\"calendar_era\":\"use_bc_and_ad\"},"
-          + "\"numbers\":{\"x\":\"y\"}},"
+          + "\"new_category\":{\"new_rule\":\"on\"}},"
           + "\"custom_instructions\":[{\"id\":\"i1\",\"label\":\"L\",\"prompt\":\"P\","
           + "\"source_language\":\"de\"}]}";
   private static final String INSTRUCTION =
@@ -46,15 +46,9 @@ class StyleRulesTest {
 
   private final DeepLClient client = OfflineClient.createClient(wm);
 
-  private static ConfiguredRules calendarRule() {
-    return new ConfiguredRules(
-        Collections.singletonMap("calendar_era", "use_bc_and_ad"),
-        null,
-        null,
-        null,
-        null,
-        null,
-        null);
+  private static Map<String, Map<String, String>> calendarRule() {
+    return Collections.singletonMap(
+        "dates_and_times", Collections.singletonMap("calendar_era", "use_bc_and_ad"));
   }
 
   @Test
@@ -91,9 +85,10 @@ class StyleRulesTest {
     assertEquals("s1", rule.getStyleId());
     assertEquals(1628000178329L, rule.getCreationTime().getTime());
     assertEquals(1628000178329L, rule.getUpdatedTime().getTime());
-    Map<String, String> dates = rule.getConfiguredRules().getDatesAndTimes();
-    assertEquals("use_bc_and_ad", dates.get("calendar_era"));
-    assertNull(rule.getConfiguredRules().getVocabulary());
+    Map<String, Map<String, String>> configured = rule.getConfiguredRules();
+    assertEquals("use_bc_and_ad", configured.get("dates_and_times").get("calendar_era"));
+    assertEquals("on", configured.get("new_category").get("new_rule"));
+    assertEquals(2, configured.size());
     CustomInstruction instruction = rule.getCustomInstructions().get(0);
     assertEquals("de", instruction.getSourceLanguage());
   }
@@ -114,7 +109,7 @@ class StyleRulesTest {
             .withHeader("Content-Type", equalTo(JSON))
             .withRequestBody(equalToJson("{\"name\":\"Rule\",\"language\":\"en\"}"))
             .willReturn(okJson(RULE)));
-    client.createStyleRule("Rule", "en", null, null);
+    client.createStyleRule("Rule", "en", null, null, null);
   }
 
   @Test
@@ -134,13 +129,14 @@ class StyleRulesTest {
         "en",
         calendarRule(),
         Arrays.asList(
-            new CustomInstruction("L", "P", null), new CustomInstruction("L2", "P2", "de")));
+            new CustomInstruction("L", "P", null), new CustomInstruction("L2", "P2", "de")),
+        null);
   }
 
   @Test
   void parsesTheCreatedStyleRule() throws Exception {
     wm.stubFor(post("/v3/style_rules").willReturn(okJson(RULE)));
-    StyleRuleInfo rule = client.createStyleRule("Rule", "en", null, null);
+    StyleRuleInfo rule = client.createStyleRule("Rule", "en", null, null, null);
     assertEquals("s1", rule.getStyleId());
   }
 
@@ -160,17 +156,6 @@ class StyleRulesTest {
             .withRequestBody(equalToJson("{\"name\":\"New \\\"name\\\" é\"}"))
             .willReturn(okJson(RULE)));
     client.updateStyleRuleName("s1", "New \"name\" é");
-  }
-
-  @Test
-  void sendsConfiguredRulesAsJsonPutWhenUpdatingConfiguredRules() throws Exception {
-    wm.stubFor(
-        put("/v3/style_rules/s1/configured_rules")
-            .withHeader("Content-Type", equalTo(JSON))
-            .withRequestBody(
-                equalToJson("{\"dates_and_times\":{\"calendar_era\":\"use_bc_and_ad\"}}"))
-            .willReturn(okJson(RULE)));
-    client.updateStyleRuleConfiguredRules("s1", calendarRule());
   }
 
   @Test
@@ -255,7 +240,7 @@ class StyleRulesTest {
     client.getStyleRule(id);
     client.updateStyleRuleName(id, "n");
     client.deleteStyleRule(id);
-    client.updateStyleRuleConfiguredRules(id, calendarRule());
+    client.updateStyleRuleConfiguredRules(id, calendarRule(), null);
     client.createStyleRuleCustomInstruction(id, "L", "P", null);
     client.getStyleRuleCustomInstruction(id, "i/1#");
     client.updateStyleRuleCustomInstruction(id, "i/1#", "L", "P", null);
@@ -416,19 +401,21 @@ class StyleRulesTest {
 
   @Test
   void throwsIllegalArgumentWhenAnArgumentIsEmpty() {
-    ConfiguredRules rules = new ConfiguredRules(null, null, null, null, null, null, null);
+    Map<String, Map<String, String>> rules = Collections.emptyMap();
     assertThrows(
-        IllegalArgumentException.class, () -> client.createStyleRule("", "en", null, null));
+        IllegalArgumentException.class, () -> client.createStyleRule("", "en", null, null, null));
     assertThrows(
-        IllegalArgumentException.class, () -> client.createStyleRule("Test", "", null, null));
+        IllegalArgumentException.class, () -> client.createStyleRule("Test", "", null, null, null));
     assertThrows(IllegalArgumentException.class, () -> client.getStyleRule(""));
     assertThrows(IllegalArgumentException.class, () -> client.updateStyleRuleName("", "New"));
     assertThrows(IllegalArgumentException.class, () -> client.updateStyleRuleName("s1", ""));
     assertThrows(IllegalArgumentException.class, () -> client.deleteStyleRule(""));
     assertThrows(
-        IllegalArgumentException.class, () -> client.updateStyleRuleConfiguredRules("", rules));
+        IllegalArgumentException.class,
+        () -> client.updateStyleRuleConfiguredRules("", rules, null));
     assertThrows(
-        IllegalArgumentException.class, () -> client.updateStyleRuleConfiguredRules("s1", null));
+        IllegalArgumentException.class,
+        () -> client.updateStyleRuleConfiguredRules("s1", null, null));
     assertThrows(
         IllegalArgumentException.class,
         () -> client.createStyleRuleCustomInstruction("", "L", "P", null));

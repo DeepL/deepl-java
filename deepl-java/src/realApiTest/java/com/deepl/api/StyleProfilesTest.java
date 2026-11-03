@@ -21,7 +21,7 @@ class StyleProfilesTest {
     DeepLClient client = RealApiClient.createClient();
     String styleId =
         client
-            .createStyleRule(RealApiNames.getUniqueName("styleProfileRule"), "de", null, null)
+            .createStyleRule(RealApiNames.getUniqueName("styleProfileRule"), "de", null, null, null)
             .getStyleId();
     String profileId = null;
     try {

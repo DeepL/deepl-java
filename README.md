@@ -930,9 +930,7 @@ category to rule to value, in the API's snake_case form (for example
 `"dates_and_times"` → `"calendar_era"` → `"use_bc_and_ad"`), and are sent as
 given, so new categories and rules can be used as soon as the API supports
 them. The last argument is a `CreateStyleRuleOptions` object or `null`; its
-`setExtraBodyParameters()` adds further body parameters, sent last. The
-overload taking a `ConfiguredRules` object is deprecated; use the `Map`
-overload instead.
+`setExtraBodyParameters()` adds further body parameters, sent last.
 
 ```java
 class Example {  // Continuing class Example from above
@@ -962,7 +960,9 @@ style rules. The method accepts optional parameters: `page` (page number for
 pagination, 0-indexed), `pageSize` (number of items per page), and `detailed`.
 When `true`, the response includes `configuredRules` and `customInstructions`
 for each style rule. When `false` (default), these fields are omitted for faster
-responses.
+responses. `getConfiguredRules()` returns the configured rules as the API sends
+them, as a `Map<String, Map<String, String>>` from category to rule to value in
+snake_case form, including categories added to the API later.
 
 ```java
 class Example {  // Continuing class Example from above
@@ -980,9 +980,10 @@ class Example {  // Continuing class Example from above
         // Get style rules with detailed configuration
         List<StyleRuleInfo> styleRulesDetailed = client.getAllStyleRules(null, null, true);
         for (StyleRuleInfo r : styleRulesDetailed) {
-            if (r.getConfiguredRules() != null && r.getConfiguredRules().getNumbers() != null) {
+            Map<String, Map<String, String>> configured = r.getConfiguredRules();
+            if (configured != null && configured.get("numbers") != null) {
                 System.out.println(String.format("Number formatting rules: %s",
-                    String.join(", ", r.getConfiguredRules().getNumbers().keySet())));
+                    String.join(", ", configured.get("numbers").keySet())));
             }
         }
     }
@@ -994,7 +995,7 @@ class Example {  // Continuing class Example from above
 Use `updateStyleRuleName()` to rename a style rule, and
 `updateStyleRuleConfiguredRules()` to replace its configured rules. The
 configured rules are a `Map<String, Map<String, String>>` sent as given as the
-request body; the overload taking a `ConfiguredRules` object is deprecated.
+request body.
 Both methods have overloads that take an options object
 (`UpdateStyleRuleNameOptions`, `UpdateStyleRuleConfiguredRulesOptions`) whose
 extra body parameters are sent last; for configured rules they are added to the
