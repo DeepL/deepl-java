@@ -57,30 +57,18 @@ class MultilingualGlossariesTest {
   }
 
   @Test
-  void sendsEveryDictionaryWithIndexedKeysWhenCreatingAGlossary() throws Exception {
+  void sendsEveryDictionaryWhenCreatingAGlossary() throws Exception {
     wm.stubFor(
         post("/v3/glossaries")
-            .withHeader("Content-Type", equalTo(FORM))
+            .withHeader("Content-Type", equalTo(JSON))
             .withRequestBody(
-                FormBody.of(
+                JsonBody.of(
                     "name",
                     "n",
-                    "dictionaries[0].source_lang",
-                    "en",
-                    "dictionaries[0].target_lang",
-                    "de",
-                    "dictionaries[0].entries",
-                    "Hello\tHallo",
-                    "dictionaries[0].entries_format",
-                    "tsv",
-                    "dictionaries[1].source_lang",
-                    "de",
-                    "dictionaries[1].target_lang",
-                    "en",
-                    "dictionaries[1].entries",
-                    "Hallo\tHello",
-                    "dictionaries[1].entries_format",
-                    "tsv"))
+                    "dictionaries",
+                    JsonBody.list(
+                        JsonBody.dictionary("en", "de", "Hello\tHallo", "tsv"),
+                        JsonBody.dictionary("de", "en", "Hallo\tHello", "tsv"))))
             .willReturn(okJson(GLOSSARY)));
     client.createMultilingualGlossary(
         "n",
@@ -95,17 +83,11 @@ class MultilingualGlossariesTest {
     wm.stubFor(
         post("/v3/glossaries")
             .withRequestBody(
-                FormBody.of(
+                JsonBody.of(
                     "name",
                     name,
-                    "dictionaries[0].source_lang",
-                    "en",
-                    "dictionaries[0].target_lang",
-                    "de",
-                    "dictionaries[0].entries",
-                    "A%=&\tB&=%",
-                    "dictionaries[0].entries_format",
-                    "tsv"))
+                    "dictionaries",
+                    JsonBody.list(JsonBody.dictionary("en", "de", "A%=&\tB&=%", "tsv"))))
             .willReturn(okJson(GLOSSARY)));
     client.createMultilingualGlossary(
         name,
@@ -114,20 +96,14 @@ class MultilingualGlossariesTest {
   }
 
   @Test
-  void sendsCsvDictionaryBeforeTheNameWhenCreatingAGlossaryFromCsv() throws Exception {
+  void sendsTheCsvDictionaryAndTheNameWhenCreatingAGlossaryFromCsv() throws Exception {
     String csv = "sourceEntry1,targetEntry1\n\"source\"\"Entry\",\"target,Entry\"";
     wm.stubFor(
         post("/v3/glossaries")
             .withRequestBody(
-                FormBody.of(
-                    "dictionaries[0].source_lang",
-                    "en",
-                    "dictionaries[0].target_lang",
-                    "de",
-                    "dictionaries[0].entries",
-                    csv,
-                    "dictionaries[0].entries_format",
-                    "csv",
+                JsonBody.of(
+                    "dictionaries",
+                    JsonBody.list(JsonBody.dictionary("en", "de", csv, "csv")),
                     "name",
                     "n"))
             .willReturn(okJson(GLOSSARY)));
@@ -140,15 +116,9 @@ class MultilingualGlossariesTest {
     wm.stubFor(
         post("/v3/glossaries")
             .withRequestBody(
-                FormBody.of(
-                    "dictionaries[0].source_lang",
-                    "en",
-                    "dictionaries[0].target_lang",
-                    "de",
-                    "dictionaries[0].entries",
-                    "a,b\n",
-                    "dictionaries[0].entries_format",
-                    "csv",
+                JsonBody.of(
+                    "dictionaries",
+                    JsonBody.list(JsonBody.dictionary("en", "de", "a,b\n", "csv")),
                     "name",
                     "n"))
             .willReturn(okJson(GLOSSARY)));
@@ -274,21 +244,15 @@ class MultilingualGlossariesTest {
   }
 
   @Test
-  void sendsADictionaryUpdateAsPatchWithIndexedKeys() throws Exception {
+  void sendsADictionaryUpdateAsPatchWithADictionariesArray() throws Exception {
     wm.stubFor(
         patch(urlEqualTo("/v3/glossaries/g1"))
-            .withHeader("Content-Type", equalTo(FORM))
+            .withHeader("Content-Type", equalTo(JSON))
             .withHeader("Authorization", equalTo("DeepL-Auth-Key k"))
             .withRequestBody(
-                FormBody.of(
-                    "dictionaries[0].source_lang",
-                    "en",
-                    "dictionaries[0].target_lang",
-                    "de",
-                    "dictionaries[0].entries",
-                    "key1\tvalue2",
-                    "dictionaries[0].entries_format",
-                    "tsv"))
+                JsonBody.of(
+                    "dictionaries",
+                    JsonBody.list(JsonBody.dictionary("en", "de", "key1\tvalue2", "tsv"))))
             .willReturn(okJson(GLOSSARY)));
     client.updateMultilingualGlossaryDictionary("g1", "en", "de", entries("key1", "value2"));
   }
@@ -312,15 +276,9 @@ class MultilingualGlossariesTest {
     wm.stubFor(
         patch(urlEqualTo("/v3/glossaries/g1"))
             .withRequestBody(
-                FormBody.of(
-                    "dictionaries[0].source_lang",
-                    "en",
-                    "dictionaries[0].target_lang",
-                    "de",
-                    "dictionaries[0].entries",
-                    "key1,value1\n",
-                    "dictionaries[0].entries_format",
-                    "csv"))
+                JsonBody.of(
+                    "dictionaries",
+                    JsonBody.list(JsonBody.dictionary("en", "de", "key1,value1\n", "csv"))))
             .willReturn(okJson(GLOSSARY)));
     client.updateMultilingualGlossaryDictionaryFromCsv("g1", "en", "de", file);
   }
@@ -330,15 +288,9 @@ class MultilingualGlossariesTest {
     wm.stubFor(
         patch(urlEqualTo("/v3/glossaries/g2"))
             .withRequestBody(
-                FormBody.of(
-                    "dictionaries[0].source_lang",
-                    "en",
-                    "dictionaries[0].target_lang",
-                    "de",
-                    "dictionaries[0].entries",
-                    "key1\tvalue2",
-                    "dictionaries[0].entries_format",
-                    "tsv"))
+                JsonBody.of(
+                    "dictionaries",
+                    JsonBody.list(JsonBody.dictionary("en", "de", "key1\tvalue2", "tsv"))))
             .willReturn(okJson(GLOSSARY)));
     GlossaryEntries entries = entries("key1", "value2");
     MultilingualGlossaryDictionaryEntries dictionary =
@@ -353,15 +305,9 @@ class MultilingualGlossariesTest {
     wm.stubFor(
         patch(urlEqualTo("/v3/glossaries/g1"))
             .withRequestBody(
-                FormBody.of(
-                    "dictionaries[0].source_lang",
-                    "en",
-                    "dictionaries[0].target_lang",
-                    "de",
-                    "dictionaries[0].entries",
-                    "key1,updated",
-                    "dictionaries[0].entries_format",
-                    "csv"))
+                JsonBody.of(
+                    "dictionaries",
+                    JsonBody.list(JsonBody.dictionary("en", "de", "key1,updated", "csv"))))
             .willReturn(okJson(GLOSSARY)));
     client.updateMultilingualGlossaryDictionaryFromCsv("g1", "en", "de", "key1,updated");
   }
@@ -371,8 +317,8 @@ class MultilingualGlossariesTest {
     String name = "Name with special chars: é &foo=bar \"quoted\"";
     wm.stubFor(
         patch(urlEqualTo("/v3/glossaries/g1"))
-            .withHeader("Content-Type", equalTo(FORM))
-            .withRequestBody(FormBody.of("name", name))
+            .withHeader("Content-Type", equalTo(JSON))
+            .withRequestBody(JsonBody.of("name", name))
             .willReturn(okJson(GLOSSARY)));
     client.updateMultilingualGlossaryName("g1", name);
   }
@@ -469,15 +415,9 @@ class MultilingualGlossariesTest {
     wm.stubFor(
         post("/v3/glossaries")
             .withRequestBody(
-                FormBody.of(
-                    "dictionaries[0].source_lang",
-                    "en",
-                    "dictionaries[0].target_lang",
-                    "de",
-                    "dictionaries[0].entries",
-                    "Hello\tHallo",
-                    "dictionaries[0].entries_format",
-                    "tsv",
+                JsonBody.of(
+                    "dictionaries",
+                    JsonBody.list(JsonBody.dictionary("en", "de", "Hello\tHallo", "tsv")),
                     "extra",
                     "x",
                     "name",
@@ -499,15 +439,9 @@ class MultilingualGlossariesTest {
     wm.stubFor(
         post("/v3/glossaries")
             .withRequestBody(
-                FormBody.of(
-                    "dictionaries[0].source_lang",
-                    "en",
-                    "dictionaries[0].target_lang",
-                    "de",
-                    "dictionaries[0].entries",
-                    "a,b",
-                    "dictionaries[0].entries_format",
-                    "csv",
+                JsonBody.of(
+                    "dictionaries",
+                    JsonBody.list(JsonBody.dictionary("en", "de", "a,b", "csv")),
                     "name",
                     "n",
                     "extra",
@@ -572,33 +506,21 @@ class MultilingualGlossariesTest {
     File file = Fixtures.writeFile(tempDir.resolve("entries.csv").toFile(), "a,b");
     wm.stubFor(
         patch(urlEqualTo("/v3/glossaries/g2"))
-            .withHeader("Content-Type", equalTo(FORM))
+            .withHeader("Content-Type", equalTo(JSON))
             .withRequestBody(
-                FormBody.of(
-                    "dictionaries[0].source_lang",
-                    "en",
-                    "dictionaries[0].target_lang",
-                    "de",
-                    "dictionaries[0].entries",
-                    "a\tb",
-                    "dictionaries[0].entries_format",
-                    "tsv",
+                JsonBody.of(
+                    "dictionaries",
+                    JsonBody.list(JsonBody.dictionary("en", "de", "a\tb", "tsv")),
                     "extra",
                     "x"))
             .willReturn(okJson(GLOSSARY)));
     wm.stubFor(
         patch(urlEqualTo("/v3/glossaries/g2"))
-            .withHeader("Content-Type", equalTo(FORM))
+            .withHeader("Content-Type", equalTo(JSON))
             .withRequestBody(
-                FormBody.of(
-                    "dictionaries[0].source_lang",
-                    "en",
-                    "dictionaries[0].target_lang",
-                    "de",
-                    "dictionaries[0].entries",
-                    "a,b",
-                    "dictionaries[0].entries_format",
-                    "csv",
+                JsonBody.of(
+                    "dictionaries",
+                    JsonBody.list(JsonBody.dictionary("en", "de", "a,b", "csv")),
                     "extra",
                     "x"))
             .willReturn(okJson(GLOSSARY)));
@@ -622,15 +544,8 @@ class MultilingualGlossariesTest {
     wm.stubFor(
         patch(urlEqualTo("/v3/glossaries/g2"))
             .withRequestBody(
-                FormBody.of(
-                    "dictionaries[0].source_lang",
-                    "en",
-                    "dictionaries[0].target_lang",
-                    "de",
-                    "dictionaries[0].entries",
-                    "a,b",
-                    "dictionaries[0].entries_format",
-                    "csv"))
+                JsonBody.of(
+                    "dictionaries", JsonBody.list(JsonBody.dictionary("en", "de", "a,b", "csv"))))
             .willReturn(okJson(GLOSSARY)));
     client.updateMultilingualGlossaryDictionaryFromCsv(glossaryObject(), "en", "de", "a,b");
     client.updateMultilingualGlossaryDictionaryFromCsv(glossaryObject(), "en", "de", file);
@@ -640,11 +555,11 @@ class MultilingualGlossariesTest {
   void sendsTheIdOfAGlossaryObjectAndExtraParametersWhenUpdatingTheName() throws Exception {
     wm.stubFor(
         patch(urlEqualTo("/v3/glossaries/g2"))
-            .withRequestBody(FormBody.of("name", "renamed"))
+            .withRequestBody(JsonBody.of("name", "renamed"))
             .willReturn(okJson(GLOSSARY)));
     wm.stubFor(
         patch(urlEqualTo("/v3/glossaries/g2"))
-            .withRequestBody(FormBody.of("name", "renamed", "extra", "x"))
+            .withRequestBody(JsonBody.of("name", "renamed", "extra", "x"))
             .willReturn(okJson(GLOSSARY)));
     UpdateMultilingualGlossaryOptions options =
         new UpdateMultilingualGlossaryOptions().setExtraBodyParameters(EXTRA);

@@ -62,8 +62,7 @@ public class ImportTranslationMemoryOptions extends BaseRequestOptions {
 
   /** {@inheritDoc} */
   @Override
-  public ImportTranslationMemoryOptions setExtraBodyParameters(
-      Map<String, String> extraBodyParameters) {
+  public ImportTranslationMemoryOptions setExtraBodyParameters(Map<String, ?> extraBodyParameters) {
     super.setExtraBodyParameters(extraBodyParameters);
     return this;
   }

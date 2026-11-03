@@ -229,6 +229,24 @@ class TranslateDocumentTest {
   }
 
   @Test
+  void sendsExtraBodyParametersAsStringsWithCollectionsCommaJoined() throws Exception {
+    File input = writeInput("example.txt", "a");
+    Map<String, Object> extra = new LinkedHashMap<>();
+    extra.put("enable_watermark", true);
+    extra.put("beta_ids", Arrays.asList("x", "y"));
+    extra.put("output_format", null);
+    DocumentTranslationOptions options =
+        new DocumentTranslationOptions().setOutputFormat("docx").setExtraBodyParameters(extra);
+    expectUpload(
+        "/v2/document",
+        "example.txt",
+        "a".getBytes(StandardCharsets.UTF_8),
+        fields("target_lang", "de", "enable_watermark", "true", "beta_ids", "x,y"));
+    client.translateDocumentUpload(input, null, "de", options);
+    assertPartNames("/v2/document", "file", "target_lang", "enable_watermark", "beta_ids");
+  }
+
+  @Test
   void sendsTheIdsOfAStyleRuleAndATranslationMemory() throws Exception {
     File input = writeInput("example.txt", "a");
     StyleRuleInfo rule =

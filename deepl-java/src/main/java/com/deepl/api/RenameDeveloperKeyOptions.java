@@ -12,7 +12,7 @@ import java.util.Map;
 public class RenameDeveloperKeyOptions extends BaseRequestOptions {
   /** {@inheritDoc} */
   @Override
-  public RenameDeveloperKeyOptions setExtraBodyParameters(Map<String, String> extraBodyParameters) {
+  public RenameDeveloperKeyOptions setExtraBodyParameters(Map<String, ?> extraBodyParameters) {
     super.setExtraBodyParameters(extraBodyParameters);
     return this;
   }

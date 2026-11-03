@@ -18,7 +18,7 @@ public class CorrectTextOptions extends BaseRequestOptions {
    * @return This options object for method chaining.
    */
   @Override
-  public CorrectTextOptions setExtraBodyParameters(Map<String, String> extraBodyParameters) {
+  public CorrectTextOptions setExtraBodyParameters(Map<String, ?> extraBodyParameters) {
     super.setExtraBodyParameters(extraBodyParameters);
     return this;
   }

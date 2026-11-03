@@ -13,7 +13,7 @@ public class SetDeveloperKeyUsageLimitsOptions extends BaseRequestOptions {
   /** {@inheritDoc} */
   @Override
   public SetDeveloperKeyUsageLimitsOptions setExtraBodyParameters(
-      Map<String, String> extraBodyParameters) {
+      Map<String, ?> extraBodyParameters) {
     super.setExtraBodyParameters(extraBodyParameters);
     return this;
   }

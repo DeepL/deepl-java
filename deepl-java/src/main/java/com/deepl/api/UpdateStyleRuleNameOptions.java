@@ -11,8 +11,7 @@ import java.util.Map;
 public class UpdateStyleRuleNameOptions extends BaseRequestOptions {
   /** {@inheritDoc} */
   @Override
-  public UpdateStyleRuleNameOptions setExtraBodyParameters(
-      Map<String, String> extraBodyParameters) {
+  public UpdateStyleRuleNameOptions setExtraBodyParameters(Map<String, ?> extraBodyParameters) {
     super.setExtraBodyParameters(extraBodyParameters);
     return this;
   }

@@ -608,6 +608,22 @@ class AdminClientTest {
   }
 
   @Test
+  void sendsExtraBodyParametersAsJsonValuesAndRemovesNullOnes() throws Exception {
+    wm.stubFor(
+        post("/v2/admin/developer-keys")
+            .withRequestBody(equalToJson("{\"beta\":true,\"count\":3,\"ids\":[\"a\"]}"))
+            .willReturn(okJson(DEVELOPER_KEY)));
+    Map<String, Object> extra = new HashMap<>();
+    extra.put("beta", true);
+    extra.put("count", 3);
+    extra.put("ids", Collections.singletonList("a"));
+    extra.put("label", null);
+    client.createDeveloperKey(
+        new CreateDeveloperKeyOptions().setLabel("replaced").setExtraBodyParameters(extra));
+    assertEquals(1, wm.getAllServeEvents().size());
+  }
+
+  @Test
   void sendsStringGroupByAndAggregateByAsGiven() throws Exception {
     wm.stubFor(
         get("/v2/admin/analytics?start_date=2026-10-19&end_date=2026-10-21&group_by=key_and_week")

@@ -41,7 +41,7 @@ public class UpdateSpokenTermsOptions extends BaseRequestOptions {
 
   /** {@inheritDoc} */
   @Override
-  public UpdateSpokenTermsOptions setExtraBodyParameters(Map<String, String> extraBodyParameters) {
+  public UpdateSpokenTermsOptions setExtraBodyParameters(Map<String, ?> extraBodyParameters) {
     super.setExtraBodyParameters(extraBodyParameters);
     return this;
   }

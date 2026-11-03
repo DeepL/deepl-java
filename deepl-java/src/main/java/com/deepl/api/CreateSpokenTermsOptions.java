@@ -12,7 +12,7 @@ import java.util.Map;
 public class CreateSpokenTermsOptions extends BaseRequestOptions {
   /** {@inheritDoc} */
   @Override
-  public CreateSpokenTermsOptions setExtraBodyParameters(Map<String, String> extraBodyParameters) {
+  public CreateSpokenTermsOptions setExtraBodyParameters(Map<String, ?> extraBodyParameters) {
     super.setExtraBodyParameters(extraBodyParameters);
     return this;
   }

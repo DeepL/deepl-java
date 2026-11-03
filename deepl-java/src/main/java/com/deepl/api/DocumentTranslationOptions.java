@@ -313,8 +313,7 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
 
   /** {@inheritDoc} */
   @Override
-  public DocumentTranslationOptions setExtraBodyParameters(
-      Map<String, String> extraBodyParameters) {
+  public DocumentTranslationOptions setExtraBodyParameters(Map<String, ?> extraBodyParameters) {
     super.setExtraBodyParameters(extraBodyParameters);
     return this;
   }

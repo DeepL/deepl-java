@@ -6,6 +6,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Changed
+- Text translation, rephrasing, text correction, glossary creation (v2 and
+  v3), and renaming a multilingual glossary or updating its dictionaries now
+  send JSON request bodies instead of form-encoded ones, as the API
+  specification describes. Texts, tag lists, custom instructions and glossary
+  IDs are sent as JSON arrays, booleans and numbers as JSON booleans and
+  numbers. A comma-separated tag string such as `"a,b"` is sent as the list of
+  its tags. Document upload, status and download requests are unchanged. Code
+  that inspects the outgoing requests, such as proxies or test doubles, sees
+  the new format.
+- `BaseRequestOptions.setExtraBodyParameters()` and every subclass's override
+  take a `Map<String, ?>`, and `getExtraBodyParameters()` returns a
+  `Map<String, ?>`. In JSON request bodies each value is sent as its JSON form
+  instead of always as a string, so a string given for a boolean, number or
+  array parameter, such as `"0"` for `outline_detection`, is now rejected by
+  the API: pass `false`, numbers and lists instead. In multipart document
+  uploads a collection is sent comma-separated and any other value as its
+  `toString()`. A `null` value removes the parameter. Callers passing a
+  `Map<String, String>` compile unchanged; code that assigns the result of
+  `getExtraBodyParameters()` to a `Map<String, String>` must use
+  `Map<String, ?>`.
 - `StyleRuleInfo.getConfiguredRules()` now returns the configured rules as the
   API sends them, as a `Map<String, Map<String, String>>` from category to rule
   to value in snake_case form, instead of a `ConfiguredRules` object. Categories
@@ -17,6 +37,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   only; Java 8 remains the minimum.
 
 ### Removed
+- Removed the protected static helpers `DeepLClient.createWriteHttpParams()`,
+  `createGlossaryHttpParams()` and `createGlossaryDictionariesHttpParams()`,
+  which built the form-encoded bodies that are now JSON. They were not meant
+  for callers; subclasses that used them build the request themselves.
 - Removed the `Translator` class and its constructors `Translator(String)` and
   `Translator(String, TranslatorOptions)`. `DeepLClient` no longer extends
   `Translator` and has all of its methods with the same signatures. Replace

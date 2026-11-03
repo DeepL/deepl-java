@@ -12,8 +12,7 @@ import java.util.Map;
 public class ReplaceSpokenTermsListOptions extends BaseRequestOptions {
   /** {@inheritDoc} */
   @Override
-  public ReplaceSpokenTermsListOptions setExtraBodyParameters(
-      Map<String, String> extraBodyParameters) {
+  public ReplaceSpokenTermsListOptions setExtraBodyParameters(Map<String, ?> extraBodyParameters) {
     super.setExtraBodyParameters(extraBodyParameters);
     return this;
   }

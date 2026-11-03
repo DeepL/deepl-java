@@ -82,13 +82,6 @@ class HttpClientWrapper {
     return sendRequestWithBackoff(POST, relativeUrl, content);
   }
 
-  public HttpResponse sendPutRequestWithBackoff(
-      String relativeUrl, @Nullable Iterable<KeyValuePair<String, String>> params)
-      throws InterruptedException, DeepLException {
-    HttpContent content = HttpContent.buildFormURLEncodedContent(params);
-    return sendRequestWithBackoff(PUT, relativeUrl, content);
-  }
-
   public HttpResponse sendJsonRequestWithBackoff(String relativeUrl, String jsonBody)
       throws InterruptedException, DeepLException {
     HttpContent content = HttpContent.buildJsonContent(jsonBody);
@@ -117,13 +110,6 @@ class HttpClientWrapper {
   public HttpResponse sendJsonPatchRequestWithBackoff(String relativeUrl, String jsonBody)
       throws InterruptedException, DeepLException {
     return sendPatchRequestWithBackoff(relativeUrl, HttpContent.buildJsonContent(jsonBody));
-  }
-
-  public HttpResponse sendPatchRequestWithBackoff(
-      String relativeUrl, @Nullable Iterable<KeyValuePair<String, String>> params)
-      throws InterruptedException, DeepLException {
-    HttpContent content = HttpContent.buildFormURLEncodedContent(params);
-    return sendPatchRequestWithBackoff(relativeUrl, content);
   }
 
   private HttpResponse sendPatchRequestWithBackoff(String relativeUrl, HttpContent content)

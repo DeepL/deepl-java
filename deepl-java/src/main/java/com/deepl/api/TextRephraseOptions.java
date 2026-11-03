@@ -67,7 +67,7 @@ public class TextRephraseOptions extends BaseRequestOptions {
    * @return This options object for method chaining.
    */
   @Override
-  public TextRephraseOptions setExtraBodyParameters(Map<String, String> extraBodyParameters) {
+  public TextRephraseOptions setExtraBodyParameters(Map<String, ?> extraBodyParameters) {
     super.setExtraBodyParameters(extraBodyParameters);
     return this;
   }

@@ -97,7 +97,7 @@ public class CreateStyleProfileOptions extends BaseRequestOptions {
 
   /** {@inheritDoc} */
   @Override
-  public CreateStyleProfileOptions setExtraBodyParameters(Map<String, String> extraBodyParameters) {
+  public CreateStyleProfileOptions setExtraBodyParameters(Map<String, ?> extraBodyParameters) {
     super.setExtraBodyParameters(extraBodyParameters);
     return this;
   }

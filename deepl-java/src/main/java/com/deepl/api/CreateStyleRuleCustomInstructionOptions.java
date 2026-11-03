@@ -13,7 +13,7 @@ public class CreateStyleRuleCustomInstructionOptions extends BaseRequestOptions 
   /** {@inheritDoc} */
   @Override
   public CreateStyleRuleCustomInstructionOptions setExtraBodyParameters(
-      Map<String, String> extraBodyParameters) {
+      Map<String, ?> extraBodyParameters) {
     super.setExtraBodyParameters(extraBodyParameters);
     return this;
   }

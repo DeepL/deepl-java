@@ -29,39 +29,39 @@ class RephraseTextTest {
   private void expectBody(StringValuePattern body) {
     wm.stubFor(
         post("/v2/write/rephrase")
-            .withHeader("Content-Type", equalTo("application/x-www-form-urlencoded"))
+            .withHeader("Content-Type", equalTo("application/json"))
             .withRequestBody(body)
             .willReturn(okJson(REPLY)));
   }
 
   @Test
   void sendsTextAndTargetLanguageWithOnlyTheBaseSubtagLowerCased() throws Exception {
-    expectBody(FormBody.of("target_lang", "en-gb", "text", "a b"));
+    expectBody(JsonBody.of("target_lang", "en-gb", "text", JsonBody.list("a b")));
     client.rephraseText("a b", "EN-gb", null);
   }
 
   @Test
   void sendsTheScriptSubtagOfTheTargetLanguageAsGiven() throws Exception {
-    expectBody(FormBody.of("target_lang", "zh-Hans", "text", "Hello"));
+    expectBody(JsonBody.of("target_lang", "zh-Hans", "text", JsonBody.list("Hello")));
     client.rephraseText("Hello", "ZH-Hans", null);
   }
 
   @Test
   void sendsNoTargetLanguageWhenItIsNull() throws Exception {
-    expectBody(FormBody.of("text", "Hello"));
+    expectBody(JsonBody.of("text", JsonBody.list("Hello")));
     client.rephraseText("Hello", null, null);
   }
 
   @Test
   void sendsBareEnglishTargetLanguage() throws Exception {
-    expectBody(FormBody.of("target_lang", "en", "text", "Hello"));
+    expectBody(JsonBody.of("target_lang", "en", "text", JsonBody.list("Hello")));
     client.rephraseText("Hello", "en", null);
   }
 
   @Test
   void sendsWritingStyleAndTone() throws Exception {
     expectBody(
-        FormBody.of(
+        JsonBody.of(
             "target_lang",
             "en-GB",
             "writing_style",
@@ -69,7 +69,7 @@ class RephraseTextTest {
             "tone",
             "friendly",
             "text",
-            "Hello"));
+            JsonBody.list("Hello")));
     client.rephraseText(
         "Hello",
         "en-GB",
@@ -80,7 +80,9 @@ class RephraseTextTest {
 
   @Test
   void sendsWritingStyleAndToneEnumValues() throws Exception {
-    expectBody(FormBody.of("writing_style", "prefer_simple", "tone", "diplomatic", "text", "Hi"));
+    expectBody(
+        JsonBody.of(
+            "writing_style", "prefer_simple", "tone", "diplomatic", "text", JsonBody.list("Hi")));
     client.rephraseText(
         "Hi",
         null,
@@ -92,7 +94,15 @@ class RephraseTextTest {
   @Test
   void sendsExtraBodyParametersLastReplacingSameKeyFields() throws Exception {
     expectBody(
-        FormBody.of("target_lang", "en-GB", "text", "Hi", "tone", "friendly", "beta_flag", "x y"));
+        JsonBody.of(
+            "target_lang",
+            "en-GB",
+            "text",
+            JsonBody.list("Hi"),
+            "tone",
+            "friendly",
+            "beta_flag",
+            "x y"));
     Map<String, String> extra = new LinkedHashMap<>();
     extra.put("tone", "friendly");
     extra.put("beta_flag", "x y");
@@ -125,7 +135,7 @@ class RephraseTextTest {
   void sendsEveryTextOfAList() throws Exception {
     wm.stubFor(
         post("/v2/write/rephrase")
-            .withRequestBody(FormBody.of("target_lang", "en-GB", "text", "a", "text", "b"))
+            .withRequestBody(JsonBody.of("target_lang", "en-GB", "text", JsonBody.list("a", "b")))
             .willReturn(
                 okJson(
                     "{\"improvements\":[{\"text\":\"x\",\"detected_source_language\":\"EN\","

@@ -28,26 +28,26 @@ class CorrectTextTest {
   private void expectBody(StringValuePattern body) {
     wm.stubFor(
         post("/v2/write/correct")
-            .withHeader("Content-Type", equalTo("application/x-www-form-urlencoded"))
+            .withHeader("Content-Type", equalTo("application/json"))
             .withRequestBody(body)
             .willReturn(okJson(REPLY)));
   }
 
   @Test
   void sendsTextAndTargetLanguageWithOnlyTheBaseSubtagLowerCased() throws Exception {
-    expectBody(FormBody.of("target_lang", "en-gb", "text", "a b"));
+    expectBody(JsonBody.of("target_lang", "en-gb", "text", JsonBody.list("a b")));
     client.correctText("a b", "EN-gb", null);
   }
 
   @Test
   void sendsNoTargetLanguageWhenItIsNull() throws Exception {
-    expectBody(FormBody.of("text", "Hello"));
+    expectBody(JsonBody.of("text", JsonBody.list("Hello")));
     client.correctText("Hello", null, null);
   }
 
   @Test
   void sendsExtraBodyParametersLastReplacingSameKeyFields() throws Exception {
-    expectBody(FormBody.of("text", "Hi", "target_lang", "de"));
+    expectBody(JsonBody.of("text", JsonBody.list("Hi"), "target_lang", "de"));
     client.correctText(
         "Hi",
         "en-GB",
@@ -72,7 +72,7 @@ class CorrectTextTest {
   void sendsEveryTextOfAList() throws Exception {
     wm.stubFor(
         post("/v2/write/correct")
-            .withRequestBody(FormBody.of("target_lang", "en-GB", "text", "a", "text", "b"))
+            .withRequestBody(JsonBody.of("target_lang", "en-GB", "text", JsonBody.list("a", "b")))
             .willReturn(
                 okJson(
                     "{\"improvements\":[{\"text\":\"x\",\"detected_source_language\":\"EN\","

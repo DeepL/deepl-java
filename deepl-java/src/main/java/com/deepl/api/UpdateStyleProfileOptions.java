@@ -94,7 +94,7 @@ public class UpdateStyleProfileOptions extends CreateStyleProfileOptions {
 
   /** {@inheritDoc} */
   @Override
-  public UpdateStyleProfileOptions setExtraBodyParameters(Map<String, String> extraBodyParameters) {
+  public UpdateStyleProfileOptions setExtraBodyParameters(Map<String, ?> extraBodyParameters) {
     super.setExtraBodyParameters(extraBodyParameters);
     return this;
   }

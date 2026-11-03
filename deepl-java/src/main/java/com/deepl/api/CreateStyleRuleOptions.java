@@ -12,7 +12,7 @@ import java.util.Map;
 public class CreateStyleRuleOptions extends BaseRequestOptions {
   /** {@inheritDoc} */
   @Override
-  public CreateStyleRuleOptions setExtraBodyParameters(Map<String, String> extraBodyParameters) {
+  public CreateStyleRuleOptions setExtraBodyParameters(Map<String, ?> extraBodyParameters) {
     super.setExtraBodyParameters(extraBodyParameters);
     return this;
   }

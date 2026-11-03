@@ -28,7 +28,7 @@ public class CreateDeveloperKeyOptions extends BaseRequestOptions {
 
   /** {@inheritDoc} */
   @Override
-  public CreateDeveloperKeyOptions setExtraBodyParameters(Map<String, String> extraBodyParameters) {
+  public CreateDeveloperKeyOptions setExtraBodyParameters(Map<String, ?> extraBodyParameters) {
     super.setExtraBodyParameters(extraBodyParameters);
     return this;
   }

@@ -44,14 +44,16 @@ class TranslateTextTest {
   private void expectBody(String path, StringValuePattern body) {
     wm.stubFor(
         post(path)
-            .withHeader("Content-Type", equalTo("application/x-www-form-urlencoded"))
+            .withHeader("Content-Type", equalTo("application/json"))
             .withRequestBody(body)
             .willReturn(okJson(REPLY)));
   }
 
   @Test
   void sendsTextAndTargetLanguage() throws Exception {
-    expectBody(FormBody.of("target_lang", "de", "text", "Hello", "show_billed_characters", "1"));
+    expectBody(
+        JsonBody.of(
+            "target_lang", "de", "text", JsonBody.list("Hello"), "show_billed_characters", true));
     client.translateText("Hello", null, "de");
   }
 
@@ -60,15 +62,13 @@ class TranslateTextTest {
     wm.stubFor(
         post("/v2/translate")
             .withRequestBody(
-                FormBody.of(
+                JsonBody.of(
                     "target_lang",
                     "de",
                     "text",
-                    "a b",
-                    "text",
-                    "c&d=e",
+                    JsonBody.list("a b", "c&d=e"),
                     "show_billed_characters",
-                    "1"))
+                    true))
             .willReturn(okJson(REPLY_TWO)));
     List<TextResult> results = client.translateText(Arrays.asList("a b", "c&d=e"), null, "de");
     assertEquals(2, results.size());
@@ -77,37 +77,39 @@ class TranslateTextTest {
   @Test
   void sendsLanguageCodesWithOnlyTheBaseSubtagLowerCased() throws Exception {
     expectBody(
-        FormBody.of(
+        JsonBody.of(
             "source_lang",
             "en",
             "target_lang",
             "zh-Hans",
             "text",
-            "Hello",
+            JsonBody.list("Hello"),
             "show_billed_characters",
-            "1"));
+            true));
     client.translateText("Hello", "EN", "ZH-Hans");
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"en", "pt"})
   void sendsBareEnglishAndPortugueseTargetLanguages(String target) throws Exception {
-    expectBody(FormBody.of("target_lang", target, "text", "Hallo", "show_billed_characters", "1"));
+    expectBody(
+        JsonBody.of(
+            "target_lang", target, "text", JsonBody.list("Hallo"), "show_billed_characters", true));
     client.translateText("Hallo", null, target);
   }
 
   @Test
   void sendsTheCodesOfLanguageObjects() throws Exception {
     expectBody(
-        FormBody.of(
+        JsonBody.of(
             "source_lang",
             "en",
             "target_lang",
             "de",
             "text",
-            "Hello",
+            JsonBody.list("Hello"),
             "show_billed_characters",
-            "1"));
+            true));
     client.translateText(
         "Hello", new Language("English", "en", null), new Language("German", "de", true));
   }
@@ -122,15 +124,15 @@ class TranslateTextTest {
   })
   void sendsFormality(Formality formality, String expected) throws Exception {
     expectBody(
-        FormBody.of(
+        JsonBody.of(
             "target_lang",
             "de",
             "formality",
             expected,
             "text",
-            "Hello",
+            JsonBody.list("Hello"),
             "show_billed_characters",
-            "1"));
+            true));
     client.translateText("Hello", null, "de", new TextTranslationOptions().setFormality(formality));
   }
 
@@ -138,13 +140,13 @@ class TranslateTextTest {
   @CsvSource({"Off,0", "All,1", "NoNewlines,nonewlines"})
   void sendsSentenceSplitting(SentenceSplittingMode mode, String expected) throws Exception {
     expectBody(
-        FormBody.of(
+        JsonBody.of(
             "target_lang",
             "de",
             "text",
-            "Hello",
+            JsonBody.list("Hello"),
             "show_billed_characters",
-            "1",
+            true,
             "split_sentences",
             expected));
     client.translateText(
@@ -154,15 +156,15 @@ class TranslateTextTest {
   @Test
   void sendsPreserveFormatting() throws Exception {
     expectBody(
-        FormBody.of(
+        JsonBody.of(
             "target_lang",
             "de",
             "text",
-            "Hello",
+            JsonBody.list("Hello"),
             "show_billed_characters",
-            "1",
+            true,
             "preserve_formatting",
-            "1"));
+            true));
     client.translateText(
         "Hello", null, "de", new TextTranslationOptions().setPreserveFormatting(true));
   }
@@ -170,13 +172,13 @@ class TranslateTextTest {
   @Test
   void sendsContextAndModelType() throws Exception {
     expectBody(
-        FormBody.of(
+        JsonBody.of(
             "target_lang",
             "de",
             "text",
-            "Das ist scharf!",
+            JsonBody.list("Das ist scharf!"),
             "show_billed_characters",
-            "1",
+            true,
             "context",
             "Das ist ein Messer.",
             "model_type",
@@ -193,25 +195,25 @@ class TranslateTextTest {
   @Test
   void sendsTagHandlingOptions() throws Exception {
     expectBody(
-        FormBody.of(
+        JsonBody.of(
             "target_lang",
             "de",
             "text",
-            "<p>Hi</p>",
+            JsonBody.list("<p>Hi</p>"),
             "show_billed_characters",
-            "1",
+            true,
             "tag_handling",
             "xml",
             "tag_handling_version",
             "v2",
             "outline_detection",
-            "0",
+            false,
             "splitting_tags",
-            "title,par",
+            JsonBody.list("title", "par"),
             "non_splitting_tags",
-            "span",
+            JsonBody.list("span"),
             "ignore_tags",
-            "raw,x"));
+            JsonBody.list("raw", "x")));
     client.translateText(
         "<p>Hi</p>",
         null,
@@ -228,13 +230,13 @@ class TranslateTextTest {
   @Test
   void sendsNoOutlineDetectionByDefault() throws Exception {
     expectBody(
-        FormBody.of(
+        JsonBody.of(
             "target_lang",
             "de",
             "text",
-            "<p>Hi</p>",
+            JsonBody.list("<p>Hi</p>"),
             "show_billed_characters",
-            "1",
+            true,
             "tag_handling",
             "html"));
     client.translateText(
@@ -245,21 +247,28 @@ class TranslateTextTest {
   void sendsTheIdOfAStyleRule() throws Exception {
     StyleRuleInfo rule = new StyleRuleInfo("s2", "n", new Date(), new Date(), "de", 1, null, null);
     expectBody(
-        FormBody.of(
-            "target_lang", "de", "text", "Hello", "show_billed_characters", "1", "style_id", "s2"));
+        JsonBody.of(
+            "target_lang",
+            "de",
+            "text",
+            JsonBody.list("Hello"),
+            "show_billed_characters",
+            true,
+            "style_id",
+            "s2"));
     client.translateText("Hello", null, "de", new TextTranslationOptions().setStyleRule(rule));
   }
 
   @Test
   void sendsStyleProfileIdWithoutSourceLanguage() throws Exception {
     expectBody(
-        FormBody.of(
+        JsonBody.of(
             "target_lang",
             "de",
             "text",
-            "Hello",
+            JsonBody.list("Hello"),
             "show_billed_characters",
-            "1",
+            true,
             "style_profile_id",
             "sp1"));
     client.translateText("Hello", null, "de", new TextTranslationOptions().setStyleProfile("sp1"));
@@ -270,15 +279,15 @@ class TranslateTextTest {
     StyleProfile profile =
         new StyleProfile("sp2", "n", null, null, null, null, null, false, null, null);
     expectBody(
-        FormBody.of(
+        JsonBody.of(
             "source_lang",
             "en",
             "target_lang",
             "de",
             "text",
-            "Hello",
+            JsonBody.list("Hello"),
             "show_billed_characters",
-            "1",
+            true,
             "style_id",
             "s1",
             "style_profile_id",
@@ -294,8 +303,15 @@ class TranslateTextTest {
   void omitsStyleProfileIdWhenUnset() throws Exception {
     TextTranslationOptions options = new TextTranslationOptions().setStyleRule("s1");
     expectBody(
-        FormBody.of(
-            "target_lang", "de", "text", "Hello", "show_billed_characters", "1", "style_id", "s1"));
+        JsonBody.of(
+            "target_lang",
+            "de",
+            "text",
+            JsonBody.list("Hello"),
+            "show_billed_characters",
+            true,
+            "style_id",
+            "s1"));
     client.translateText("Hello", null, "de", options);
     assertNull(options.getStyleProfileId());
   }
@@ -310,17 +326,17 @@ class TranslateTextTest {
   @Test
   void sendsTranslationMemoryAndThreshold() throws Exception {
     expectBody(
-        FormBody.of(
+        JsonBody.of(
             "target_lang",
             "de",
             "text",
-            "Hello",
+            JsonBody.list("Hello"),
             "show_billed_characters",
-            "1",
+            true,
             "translation_memory_id",
             "tm1",
             "translation_memory_threshold",
-            "80"));
+            80));
     client.translateText(
         "Hello",
         null,
@@ -333,13 +349,13 @@ class TranslateTextTest {
     TranslationMemoryInfo memory =
         new TranslationMemoryInfo("tm2", "n", "en", Collections.singletonList("de"), 1);
     expectBody(
-        FormBody.of(
+        JsonBody.of(
             "target_lang",
             "de",
             "text",
-            "Hello",
+            JsonBody.list("Hello"),
             "show_billed_characters",
-            "1",
+            true,
             "translation_memory_id",
             "tm2"));
     client.translateText(
@@ -349,17 +365,15 @@ class TranslateTextTest {
   @Test
   void sendsEachCustomInstruction() throws Exception {
     expectBody(
-        FormBody.of(
+        JsonBody.of(
             "target_lang",
             "de",
             "text",
-            "Hello",
+            JsonBody.list("Hello"),
             "show_billed_characters",
-            "1",
+            true,
             "custom_instructions",
-            "Be brief",
-            "custom_instructions",
-            "Use ALL CAPS"));
+            JsonBody.list("Be brief", "Use ALL CAPS")));
     client.translateText(
         "Hello",
         null,
@@ -371,7 +385,7 @@ class TranslateTextTest {
   @Test
   void sendsGlossaryId() throws Exception {
     expectBody(
-        FormBody.of(
+        JsonBody.of(
             "source_lang",
             "en",
             "target_lang",
@@ -379,9 +393,9 @@ class TranslateTextTest {
             "glossary_id",
             "g1",
             "text",
-            "Hello",
+            JsonBody.list("Hello"),
             "show_billed_characters",
-            "1"));
+            true));
     client.translateText("Hello", "en", "de", new TextTranslationOptions().setGlossary("g1"));
   }
 
@@ -389,7 +403,7 @@ class TranslateTextTest {
   void sendsTheIdOfAGlossary() throws Exception {
     GlossaryInfo glossary = new GlossaryInfo("g2", "n", true, "en", "de", new Date(), 1);
     expectBody(
-        FormBody.of(
+        JsonBody.of(
             "source_lang",
             "en",
             "target_lang",
@@ -397,26 +411,26 @@ class TranslateTextTest {
             "glossary_id",
             "g2",
             "text",
-            "Hello",
+            JsonBody.list("Hello"),
             "show_billed_characters",
-            "1"));
+            true));
     client.translateText("Hello", "en", "de", new TextTranslationOptions().setGlossary(glossary));
   }
 
   @Test
-  void sendsGlossaryIdsJoinedByComma() throws Exception {
+  void sendsGlossaryIdsAsAList() throws Exception {
     expectBody(
-        FormBody.of(
+        JsonBody.of(
             "source_lang",
             "en",
             "target_lang",
             "de",
             "glossary_ids",
-            "g1,g2",
+            JsonBody.list("g1", "g2"),
             "text",
-            "Hello",
+            JsonBody.list("Hello"),
             "show_billed_characters",
-            "1"));
+            true));
     client.translateText(
         "Hello", "en", "de", new TextTranslationOptions().setGlossaryIds("g1", "g2"));
   }
@@ -424,15 +438,15 @@ class TranslateTextTest {
   @Test
   void sendsFormalityStringAsGiven() throws Exception {
     expectBody(
-        FormBody.of(
+        JsonBody.of(
             "target_lang",
             "de",
             "formality",
             "prefer_less",
             "text",
-            "Hello",
+            JsonBody.list("Hello"),
             "show_billed_characters",
-            "1"));
+            true));
     client.translateText(
         "Hello", null, "de", new TextTranslationOptions().setFormality("prefer_less"));
   }
@@ -440,13 +454,13 @@ class TranslateTextTest {
   @Test
   void sendsSentenceSplittingStringAsGiven() throws Exception {
     expectBody(
-        FormBody.of(
+        JsonBody.of(
             "target_lang",
             "de",
             "text",
-            "Hello",
+            JsonBody.list("Hello"),
             "show_billed_characters",
-            "1",
+            true,
             "split_sentences",
             "nonewlines"));
     client.translateText(
@@ -456,13 +470,13 @@ class TranslateTextTest {
   @Test
   void sendsTagHandlingEnums() throws Exception {
     expectBody(
-        FormBody.of(
+        JsonBody.of(
             "target_lang",
             "de",
             "text",
-            "Hello",
+            JsonBody.list("Hello"),
             "show_billed_characters",
-            "1",
+            true,
             "tag_handling",
             "html",
             "tag_handling_version",
@@ -484,34 +498,34 @@ class TranslateTextTest {
   })
   void sendsModelTypeEnum(ModelType modelType, String expected) throws Exception {
     expectBody(
-        FormBody.of(
+        JsonBody.of(
             "target_lang",
             "de",
             "text",
-            "Hello",
+            JsonBody.list("Hello"),
             "show_billed_characters",
-            "1",
+            true,
             "model_type",
             expected));
     client.translateText("Hello", null, "de", new TextTranslationOptions().setModelType(modelType));
   }
 
   @Test
-  void sendsCommaSeparatedTagStringsAsGiven() throws Exception {
+  void sendsCommaSeparatedTagStringsAsListsOfTags() throws Exception {
     expectBody(
-        FormBody.of(
+        JsonBody.of(
             "target_lang",
             "de",
             "text",
-            "Hello",
+            JsonBody.list("Hello"),
             "show_billed_characters",
-            "1",
+            true,
             "splitting_tags",
-            "title,par",
+            JsonBody.list("title", "par"),
             "non_splitting_tags",
-            "span,b",
+            JsonBody.list("span", "b"),
             "ignore_tags",
-            "raw"));
+            JsonBody.list("raw")));
     client.translateText(
         "Hello",
         null,
@@ -525,21 +539,28 @@ class TranslateTextTest {
   @Test
   void sendsStyleRuleId() throws Exception {
     expectBody(
-        FormBody.of(
-            "target_lang", "de", "text", "Hello", "show_billed_characters", "1", "style_id", "s3"));
+        JsonBody.of(
+            "target_lang",
+            "de",
+            "text",
+            JsonBody.list("Hello"),
+            "show_billed_characters",
+            true,
+            "style_id",
+            "s3"));
     client.translateText("Hello", null, "de", new TextTranslationOptions().setStyleRule("s3"));
   }
 
   @Test
   void sendsTranslationMemoryId() throws Exception {
     expectBody(
-        FormBody.of(
+        JsonBody.of(
             "target_lang",
             "de",
             "text",
-            "Hello",
+            JsonBody.list("Hello"),
             "show_billed_characters",
-            "1",
+            true,
             "translation_memory_id",
             "tm3"));
     client.translateText(
@@ -552,24 +573,26 @@ class TranslateTextTest {
     MultilingualGlossaryInfo multilingual =
         new MultilingualGlossaryInfo("g2", "n", new Date(), Collections.emptyList());
     expectBody(
-        FormBody.of(
+        JsonBody.of(
             "source_lang",
             "en",
             "target_lang",
             "de",
             "glossary_ids",
-            "g1,g2",
+            JsonBody.list("g1", "g2"),
             "text",
-            "Hello",
+            JsonBody.list("Hello"),
             "show_billed_characters",
-            "1"));
+            true));
     client.translateText(
         "Hello", "en", "de", new TextTranslationOptions().setGlossaryIds(glossary, multilingual));
   }
 
   @Test
   void resolvesTheZeroArgumentSetGlossaryIdsToTheIdOverloadAndSendsNoGlossaries() throws Exception {
-    expectBody(FormBody.of("target_lang", "de", "text", "Hello", "show_billed_characters", "1"));
+    expectBody(
+        JsonBody.of(
+            "target_lang", "de", "text", JsonBody.list("Hello"), "show_billed_characters", true));
     client.translateText("Hello", null, "de", new TextTranslationOptions().setGlossaryIds());
   }
 
@@ -581,20 +604,49 @@ class TranslateTextTest {
     TextTranslationOptions options =
         new TextTranslationOptions().setExtraBodyParameters(extra).setFormality(Formality.Less);
     expectBody(
-        FormBody.of(
+        JsonBody.of(
             "source_lang",
             "en",
             "formality",
             "less",
             "text",
-            "Hello",
+            JsonBody.list("Hello"),
             "show_billed_characters",
-            "1",
+            true,
             "target_lang",
             "fr",
             "debug",
             "1"));
     client.translateText("Hello", "en", "de", options);
+  }
+
+  @Test
+  void sendsExtraBodyParametersAsJsonValuesAndDropsNullOnes() throws Exception {
+    Map<String, Object> extra = new LinkedHashMap<>();
+    extra.put("show_billed_characters", false);
+    extra.put("translation_memory_threshold", 75);
+    extra.put("beta_tags", Arrays.asList("a", "b"));
+    extra.put("beta_settings", Collections.singletonMap("mode", "x"));
+    extra.put("context", null);
+    expectBody(
+        JsonBody.of(
+            "target_lang",
+            "de",
+            "text",
+            JsonBody.list("Hello"),
+            "show_billed_characters",
+            false,
+            "translation_memory_threshold",
+            75,
+            "beta_tags",
+            JsonBody.list("a", "b"),
+            "beta_settings",
+            JsonBody.object("mode", "x")));
+    client.translateText(
+        "Hello",
+        null,
+        "de",
+        new TextTranslationOptions().setContext("c").setExtraBodyParameters(extra));
   }
 
   @Test
@@ -688,30 +740,30 @@ class TranslateTextTest {
   @Test
   void sendsGlossaryWithoutSourceLanguage() throws Exception {
     expectBody(
-        FormBody.of(
+        JsonBody.of(
             "target_lang",
             "de",
             "glossary_id",
             "g1",
             "text",
-            "Hello",
+            JsonBody.list("Hello"),
             "show_billed_characters",
-            "1"));
+            true));
     client.translateText("Hello", null, "de", new TextTranslationOptions().setGlossary("g1"));
   }
 
   @Test
   void sendsGlossaryIdsWithoutSourceLanguage() throws Exception {
     expectBody(
-        FormBody.of(
+        JsonBody.of(
             "target_lang",
             "de",
             "glossary_ids",
-            "g1,g2",
+            JsonBody.list("g1", "g2"),
             "text",
-            "Hello",
+            JsonBody.list("Hello"),
             "show_billed_characters",
-            "1"));
+            true));
     client.translateText(
         "Hello", null, "de", new TextTranslationOptions().setGlossaryIds("g1", "g2"));
   }

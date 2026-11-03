@@ -12,8 +12,7 @@ import java.util.Map;
 public class DeactivateDeveloperKeyOptions extends BaseRequestOptions {
   /** {@inheritDoc} */
   @Override
-  public DeactivateDeveloperKeyOptions setExtraBodyParameters(
-      Map<String, String> extraBodyParameters) {
+  public DeactivateDeveloperKeyOptions setExtraBodyParameters(Map<String, ?> extraBodyParameters) {
     super.setExtraBodyParameters(extraBodyParameters);
     return this;
   }

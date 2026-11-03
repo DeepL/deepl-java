@@ -340,8 +340,8 @@ public class TextTranslationOptions extends BaseRequestOptions {
 
   /**
    * Sets the XML tags containing content that should not be translated, as a comma-separated string
-   * that is sent as given, for example <code>
-   * "a,b"</code>. By default, this value is <code>null</code> and no tags are specified.
+   * such as <code>"a,b"</code>, which is sent as the list of its comma-separated tags. By default,
+   * this value is <code>null</code> and no tags are specified.
    */
   public TextTranslationOptions setIgnoreTags(String ignoreTags) {
     this.ignoreTags = ignoreTags != null ? Collections.singletonList(ignoreTags) : null;
@@ -359,8 +359,8 @@ public class TextTranslationOptions extends BaseRequestOptions {
 
   /**
    * Sets the XML tags that should not be used to split text into sentences, as a comma-separated
-   * string that is sent as given, for example <code>
-   * "a,b"</code>. By default, this value is <code>null</code> and no tags are specified.
+   * string such as <code>"a,b"</code>, which is sent as the list of its comma-separated tags. By
+   * default, this value is <code>null</code> and no tags are specified.
    */
   public TextTranslationOptions setNonSplittingTags(String nonSplittingTags) {
     this.nonSplittingTags =
@@ -379,8 +379,8 @@ public class TextTranslationOptions extends BaseRequestOptions {
 
   /**
    * Sets the XML tags that should be used to split text into sentences, as a comma-separated string
-   * that is sent as given, for example <code>
-   * "a,b"</code>. By default, this value is <code>null</code> and no tags are specified.
+   * such as <code>"a,b"</code>, which is sent as the list of its comma-separated tags. By default,
+   * this value is <code>null</code> and no tags are specified.
    */
   public TextTranslationOptions setSplittingTags(String splittingTags) {
     this.splittingTags = splittingTags != null ? Collections.singletonList(splittingTags) : null;
@@ -498,7 +498,7 @@ public class TextTranslationOptions extends BaseRequestOptions {
 
   /** {@inheritDoc} */
   @Override
-  public TextTranslationOptions setExtraBodyParameters(Map<String, String> extraBodyParameters) {
+  public TextTranslationOptions setExtraBodyParameters(Map<String, ?> extraBodyParameters) {
     super.setExtraBodyParameters(extraBodyParameters);
     return this;
   }

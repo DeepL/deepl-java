@@ -233,9 +233,8 @@ The following options are only used if `setTagHandling()` is set to `'xml'`:
   default is `true`.
 - `setSplittingTags()`: list of XML tags that should be used to split text into
   sentences. Tags may be specified as an `Iterable<String>`
-  (`Arrays.asList("tag1", "tag2")`), or a comma-separated string (`"tag1,tag2"`)
-  that is sent as given. The default is an empty
-  list.
+  (`Arrays.asList("tag1", "tag2")`), or a comma-separated string (`"tag1,tag2"`),
+  which is sent as the list of its tags. The default is an empty list.
 - `setNonSplittingTags()`: list of XML tags that should not be used to split
   text into sentences. Format and default are the same as for splitting tags.
 - `setIgnoreTags()`: list of XML tags that containing content that should not be
@@ -243,6 +242,10 @@ The following options are only used if `setTagHandling()` is set to `'xml'`:
 - `setExtraBodyParameters()`: a map of additional parameters added last to the
   request body, for example to access beta features. They replace built-in
   parameters with the same name. Further setters can be chained after it.
+  The map is a `Map<String, ?>`: the request body is JSON, and each value is
+  sent as its JSON form, so `true`, `5` or `Arrays.asList("a", "b")` keep their
+  types. A string stays a JSON string, so pass `false`, not `"0"`, for a boolean
+  parameter. A `null` value removes the parameter from the request.
 
 For a detailed explanation of the XML handling options, see the
 [API documentation][api-docs-xml-handling].
@@ -430,7 +433,8 @@ arguments, `translateDocument()` accepts an optional
   output; for other output formats the API ignores it. By default the option
   is not sent and no watermark is added.
 - `setExtraBodyParameters()`: a map of additional parameters added last to the
-  upload request, as for text translation.
+  upload request, as for text translation. The upload is a multipart request, so
+  a collection is sent comma-separated and any other value as its `toString()`.
 
 ### Glossaries
 

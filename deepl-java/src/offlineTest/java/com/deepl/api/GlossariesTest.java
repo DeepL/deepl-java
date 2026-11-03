@@ -41,9 +41,9 @@ class GlossariesTest {
   void sendsTsvEntriesWhenCreatingAGlossary() throws Exception {
     wm.stubFor(
         post("/v2/glossaries")
-            .withHeader("Content-Type", equalTo("application/x-www-form-urlencoded"))
+            .withHeader("Content-Type", equalTo("application/json"))
             .withRequestBody(
-                FormBody.of(
+                JsonBody.of(
                     "name",
                     "my glossary & more",
                     "source_lang",
@@ -68,7 +68,7 @@ class GlossariesTest {
     wm.stubFor(
         post("/v2/glossaries")
             .withRequestBody(
-                FormBody.of(
+                JsonBody.of(
                     "name",
                     "n",
                     "source_lang",
@@ -89,7 +89,7 @@ class GlossariesTest {
     wm.stubFor(
         post("/v2/glossaries")
             .withRequestBody(
-                FormBody.of(
+                JsonBody.of(
                     "name",
                     "n",
                     "source_lang",

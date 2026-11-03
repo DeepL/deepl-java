@@ -197,11 +197,12 @@ public class DeepLClient {
       String targetLang,
       @Nullable TextTranslationOptions options)
       throws DeepLException, InterruptedException {
-    Iterable<KeyValuePair<String, String>> params =
-        createHttpParams(texts, sourceLang, targetLang, options);
+    Map<String, Object> requestData =
+        createTextTranslationData(texts, sourceLang, targetLang, options);
     HttpResponse response =
-        httpClientWrapper.sendRequestWithBackoff(
-            String.format("/%s/translate", this.apiVersion), params);
+        httpClientWrapper.sendJsonRequestWithBackoff(
+            String.format("/%s/translate", this.apiVersion),
+            jsonBodyWithExtraParameters(requestData, options));
     checkResponse(response, false, false);
     return jsonParser.parseTextResult(response.getBody());
   }
@@ -800,17 +801,17 @@ public class DeepLClient {
   }
 
   /**
-   * Checks the specified texts, languages and options are valid, and returns an iterable of
-   * containing the parameters to include in HTTP request.
+   * Checks the specified texts, languages and options are valid, and returns the fields of the JSON
+   * request body, without the extra body parameters.
    *
    * @param texts Iterable of texts to translate.
    * @param sourceLang Language code of the input language, or <code>null</code> to use
    *     auto-detection.
    * @param targetLang Language code of the desired output language.
    * @param options Options influencing translation.
-   * @return Iterable of parameters for HTTP request.
+   * @return Fields of the JSON request body.
    */
-  private static ArrayList<KeyValuePair<String, String>> createHttpParams(
+  private static Map<String, Object> createTextTranslationData(
       List<String> texts,
       @Nullable String sourceLang,
       String targetLang,
@@ -822,7 +823,7 @@ public class DeepLClient {
               ? options.getFormalityString()
               : formalityValue(options.getFormality());
     }
-    ArrayList<KeyValuePair<String, String>> params =
+    Map<String, Object> params =
         createHttpParamsCommonWithFormalityValue(
             lowerCaseBaseSubtag(sourceLang),
             lowerCaseBaseSubtag(targetLang),
@@ -831,86 +832,75 @@ public class DeepLClient {
             options != null ? options.getGlossaryIds() : null,
             false,
             false);
-    texts.forEach(
-        (text) -> {
-          if (text.isEmpty()) throw new IllegalArgumentException("text must not be empty");
-          params.add(new KeyValuePair<>("text", text));
-        });
-    // Always send show_billed_characters=1, remove when the API default is changed to true
-    params.add(new KeyValuePair<>("show_billed_characters", "1"));
+    params.put("text", validatedTexts(texts));
+    // Always send show_billed_characters, remove when the API default is changed to true
+    params.put("show_billed_characters", true);
 
     if (options != null) {
       // Note: formality and glossaryId are added above
       if (options.getSentenceSplittingModeString() != null) {
-        params.add(new KeyValuePair<>("split_sentences", options.getSentenceSplittingModeString()));
+        params.put("split_sentences", options.getSentenceSplittingModeString());
       } else if (options.getSentenceSplittingMode() != null) {
         switch (options.getSentenceSplittingMode()) {
           case Off:
-            params.add(new KeyValuePair<>("split_sentences", "0"));
+            params.put("split_sentences", "0");
             break;
           case NoNewlines:
-            params.add(new KeyValuePair<>("split_sentences", "nonewlines"));
+            params.put("split_sentences", "nonewlines");
             break;
           case All:
-            params.add(new KeyValuePair<>("split_sentences", "1"));
+            params.put("split_sentences", "1");
             break;
           default:
             break;
         }
       }
       if (options.isPreserveFormatting()) {
-        params.add(new KeyValuePair<>("preserve_formatting", "1"));
+        params.put("preserve_formatting", true);
       }
       if (options.getContext() != null) {
-        params.add(new KeyValuePair<>("context", options.getContext()));
+        params.put("context", options.getContext());
       }
       if (options.getModelType() != null) {
-        params.add(new KeyValuePair<>("model_type", options.getModelType()));
+        params.put("model_type", options.getModelType());
       }
       if (options.getTagHandling() != null) {
-        params.add(new KeyValuePair<>("tag_handling", options.getTagHandling()));
+        params.put("tag_handling", options.getTagHandling());
       }
       if (options.getTagHandlingVersion() != null) {
-        params.add(new KeyValuePair<>("tag_handling_version", options.getTagHandlingVersion()));
+        params.put("tag_handling_version", options.getTagHandlingVersion());
       }
       if (!options.isOutlineDetection()) {
-        params.add(new KeyValuePair<>("outline_detection", "0"));
+        params.put("outline_detection", false);
       }
       if (options.getSplittingTags() != null) {
-        params.add(new KeyValuePair<>("splitting_tags", joinTags(options.getSplittingTags())));
+        params.put("splitting_tags", splitTags(options.getSplittingTags()));
       }
       if (options.getNonSplittingTags() != null) {
-        params.add(
-            new KeyValuePair<>("non_splitting_tags", joinTags(options.getNonSplittingTags())));
+        params.put("non_splitting_tags", splitTags(options.getNonSplittingTags()));
       }
       if (options.getIgnoreTags() != null) {
-        params.add(new KeyValuePair<>("ignore_tags", joinTags(options.getIgnoreTags())));
+        params.put("ignore_tags", splitTags(options.getIgnoreTags()));
       }
       if (options.getStyleId() != null) {
-        params.add(new KeyValuePair<>("style_id", options.getStyleId()));
+        params.put("style_id", options.getStyleId());
       }
       if (options.getStyleProfileId() != null) {
-        params.add(new KeyValuePair<>("style_profile_id", options.getStyleProfileId()));
+        params.put("style_profile_id", options.getStyleProfileId());
       }
       if (options.getTranslationMemoryId() != null) {
-        params.add(new KeyValuePair<>("translation_memory_id", options.getTranslationMemoryId()));
+        params.put("translation_memory_id", options.getTranslationMemoryId());
       }
       if (options.getTranslationMemoryThreshold() != null) {
         if (options.getTranslationMemoryId() == null) {
           throw new IllegalArgumentException(
               "translationMemoryThreshold requires translationMemoryId");
         }
-        params.add(
-            new KeyValuePair<>(
-                "translation_memory_threshold",
-                options.getTranslationMemoryThreshold().toString()));
+        params.put("translation_memory_threshold", options.getTranslationMemoryThreshold());
       }
       if (options.getCustomInstructions() != null) {
-        for (String instruction : options.getCustomInstructions()) {
-          params.add(new KeyValuePair<>("custom_instructions", instruction));
-        }
+        params.put("custom_instructions", toList(options.getCustomInstructions()));
       }
-      addExtraBodyParameters(params, options.getExtraBodyParameters());
     }
     return params;
   }
@@ -934,7 +924,7 @@ public class DeepLClient {
               ? options.getFormalityString()
               : formalityValue(options.getFormality());
     }
-    ArrayList<KeyValuePair<String, String>> params =
+    Map<String, Object> params =
         createHttpParamsCommonWithFormalityValue(
             lowerCaseBaseSubtag(sourceLang),
             lowerCaseBaseSubtag(targetLang),
@@ -947,36 +937,37 @@ public class DeepLClient {
 
     if (options != null) {
       if (options.getStyleId() != null) {
-        params.add(new KeyValuePair<>("style_id", options.getStyleId()));
+        params.put("style_id", options.getStyleId());
       }
       if (options.getStyleProfileId() != null) {
-        params.add(new KeyValuePair<>("style_profile_id", options.getStyleProfileId()));
+        params.put("style_profile_id", options.getStyleProfileId());
       }
       if (options.getTranslationMemoryId() != null) {
-        params.add(new KeyValuePair<>("translation_memory_id", options.getTranslationMemoryId()));
+        params.put("translation_memory_id", options.getTranslationMemoryId());
       }
       if (options.getTranslationMemoryThreshold() != null) {
         if (options.getTranslationMemoryId() == null) {
           throw new IllegalArgumentException(
               "translationMemoryThreshold requires translationMemoryId");
         }
-        params.add(
-            new KeyValuePair<>(
-                "translation_memory_threshold",
-                options.getTranslationMemoryThreshold().toString()));
+        params.put("translation_memory_threshold", options.getTranslationMemoryThreshold());
       }
       if (options.getOutputFormat() != null) {
-        params.add(new KeyValuePair<>("output_format", options.getOutputFormat()));
+        params.put("output_format", options.getOutputFormat());
       }
       if (options.getEnableWatermark() != null) {
         // The API ignores "1" here; only "true" enables the watermark.
-        params.add(new KeyValuePair<>("enable_watermark", options.getEnableWatermark().toString()));
+        params.put("enable_watermark", options.getEnableWatermark());
       }
     }
 
-    addExtraBodyParameters(params, options != null ? options.getExtraBodyParameters() : null);
-
-    return params;
+    if (options != null && options.getExtraBodyParameters() != null) {
+      for (Map.Entry<String, ?> entry : options.getExtraBodyParameters().entrySet()) {
+        params.remove(entry.getKey());
+        params.put(entry.getKey(), entry.getValue());
+      }
+    }
+    return toFormParams(params);
   }
 
   /**
@@ -997,11 +988,22 @@ public class DeepLClient {
       @Nullable Formality formality,
       @Nullable String glossaryId,
       @Nullable List<String> glossaryIds) {
-    return createHttpParamsCommonWithFormalityValue(
-        sourceLang, targetLang, formalityValue(formality), glossaryId, glossaryIds, true, true);
+    return toFormParams(
+        createHttpParamsCommonWithFormalityValue(
+            sourceLang,
+            targetLang,
+            formalityValue(formality),
+            glossaryId,
+            glossaryIds,
+            true,
+            true));
   }
 
-  private static ArrayList<KeyValuePair<String, String>> createHttpParamsCommonWithFormalityValue(
+  /**
+   * The common translation parameters as request fields; <code>glossary_ids</code> is a list. Form
+   * and multipart bodies go through {@link #toFormParams(Map)}.
+   */
+  private static Map<String, Object> createHttpParamsCommonWithFormalityValue(
       @Nullable String sourceLang,
       String targetLang,
       @Nullable String formality,
@@ -1015,21 +1017,21 @@ public class DeepLClient {
     }
     checkValidLanguages(sourceLang, targetLang);
 
-    ArrayList<KeyValuePair<String, String>> params = new ArrayList<>();
+    Map<String, Object> params = new LinkedHashMap<>();
     if (sourceLang != null) {
-      params.add(new KeyValuePair<>("source_lang", sourceLang));
+      params.put("source_lang", sourceLang);
     }
-    params.add(new KeyValuePair<>("target_lang", targetLang));
+    params.put("target_lang", targetLang);
 
     if (formality != null) {
-      params.add(new KeyValuePair<>("formality", formality));
+      params.put("formality", formality);
     }
 
     if (glossaryId != null) {
       if (sourceLang == null && requireSourceLangForGlossary) {
         throw new IllegalArgumentException("sourceLang is required if using a glossary");
       }
-      params.add(new KeyValuePair<>("glossary_id", glossaryId));
+      params.put("glossary_id", glossaryId);
     }
 
     if (glossaryIds != null && !glossaryIds.isEmpty()) {
@@ -1043,7 +1045,7 @@ public class DeepLClient {
       if (glossaryIds.size() > 5) {
         throw new IllegalArgumentException("glossaryIds cannot contain more than 5 glossary IDs");
       }
-      params.add(new KeyValuePair<>("glossary_ids", String.join(",", glossaryIds)));
+      params.put("glossary_ids", new ArrayList<>(glossaryIds));
     }
 
     return params;
@@ -1083,26 +1085,48 @@ public class DeepLClient {
     }
   }
 
-  /** Combine XML tags with comma-delimiter to be included in HTTP request parameters. */
-  private static String joinTags(Iterable<String> tags) {
-    return String.join(",", tags);
+  private static List<String> toList(Iterable<String> values) {
+    List<String> list = new ArrayList<>();
+    values.forEach(list::add);
+    return list;
+  }
+
+  /** The tags of the given entries, each split at its commas, as JSON bodies need a list. */
+  private static List<String> splitTags(Iterable<String> tags) {
+    List<String> list = new ArrayList<>();
+    for (String entry : tags) {
+      list.addAll(Arrays.asList(entry.split(",")));
+    }
+    return list;
+  }
+
+  /** Copies the texts to send, rejecting empty ones. */
+  private static List<String> validatedTexts(List<String> texts) {
+    for (String text : texts) {
+      if (text.isEmpty()) throw new IllegalArgumentException("text must not be empty");
+    }
+    return new ArrayList<>(texts);
   }
 
   /**
-   * Adds extra body parameters to the HTTP request parameters. Extra parameters can override
-   * existing parameters.
-   *
-   * @param params List of HTTP parameters to add to.
-   * @param extraBodyParameters Map of extra parameters to add (can be null).
+   * Converts request fields to form or multipart parameters: a collection is comma-joined, any
+   * other value sent as its <code>toString()</code>, and a <code>null</code> value left out.
    */
-  static void addExtraBodyParameters(
-      ArrayList<KeyValuePair<String, String>> params, Map<String, String> extraBodyParameters) {
-    if (extraBodyParameters != null) {
-      params.removeIf(pair -> extraBodyParameters.containsKey(pair.getKey()));
-      for (Map.Entry<String, String> entry : extraBodyParameters.entrySet()) {
-        params.add(new KeyValuePair<>(entry.getKey(), entry.getValue()));
+  private static ArrayList<KeyValuePair<String, String>> toFormParams(Map<String, ?> fields) {
+    ArrayList<KeyValuePair<String, String>> params = new ArrayList<>();
+    for (Map.Entry<String, ?> entry : fields.entrySet()) {
+      Object value = entry.getValue();
+      if (value instanceof Collection) {
+        List<String> items = new ArrayList<>();
+        for (Object item : (Collection<?>) value) {
+          items.add(String.valueOf(item));
+        }
+        params.add(new KeyValuePair<>(entry.getKey(), String.join(",", items)));
+      } else if (value != null) {
+        params.add(new KeyValuePair<>(entry.getKey(), value.toString()));
       }
     }
+    return params;
   }
 
   /**
@@ -1127,15 +1151,15 @@ public class DeepLClient {
   private GlossaryInfo createGlossaryInternal(
       String name, String sourceLang, String targetLang, String entriesFormat, String entries)
       throws DeepLException, InterruptedException {
-    ArrayList<KeyValuePair<String, String>> params = new ArrayList<>();
-    params.add(new KeyValuePair<>("name", name));
-    params.add(new KeyValuePair<>("source_lang", sourceLang));
-    params.add(new KeyValuePair<>("target_lang", targetLang));
-    params.add(new KeyValuePair<>("entries_format", entriesFormat));
-    params.add(new KeyValuePair<>("entries", entries));
+    Map<String, Object> requestData = new LinkedHashMap<>();
+    requestData.put("name", name);
+    requestData.put("source_lang", sourceLang);
+    requestData.put("target_lang", targetLang);
+    requestData.put("entries_format", entriesFormat);
+    requestData.put("entries", entries);
     HttpResponse response =
-        httpClientWrapper.sendRequestWithBackoff(
-            String.format("/%s/glossaries", apiVersion), params);
+        httpClientWrapper.sendJsonRequestWithBackoff(
+            String.format("/%s/glossaries", apiVersion), jsonParser.getGson().toJson(requestData));
     checkResponse(response, false, false);
     return jsonParser.parseGlossaryInfo(response.getBody());
   }
@@ -1221,12 +1245,9 @@ public class DeepLClient {
   public List<WriteResult> rephraseText(
       List<String> texts, @Nullable String targetLang, @Nullable TextRephraseOptions options)
       throws InterruptedException, DeepLException {
-    ArrayList<KeyValuePair<String, String>> params =
-        createWriteHttpParams(texts, targetLang, options);
-    if (options != null) {
-      addExtraBodyParameters(params, options.getExtraBodyParameters());
-    }
-    return sendWriteRequest("rephrase", params, texts.size());
+    Map<String, Object> requestData = createWriteRequestData(texts, targetLang, options);
+    return sendWriteRequest(
+        "rephrase", jsonBodyWithExtraParameters(requestData, options), texts.size());
   }
 
   /**
@@ -1260,19 +1281,16 @@ public class DeepLClient {
   public List<WriteResult> correctText(
       List<String> texts, @Nullable String targetLang, @Nullable CorrectTextOptions options)
       throws InterruptedException, DeepLException {
-    ArrayList<KeyValuePair<String, String>> params = createWriteHttpParams(texts, targetLang, null);
-    if (options != null) {
-      addExtraBodyParameters(params, options.getExtraBodyParameters());
-    }
-    return sendWriteRequest("correct", params, texts.size());
+    Map<String, Object> requestData = createWriteRequestData(texts, targetLang, null);
+    return sendWriteRequest(
+        "correct", jsonBodyWithExtraParameters(requestData, options), texts.size());
   }
 
-  private List<WriteResult> sendWriteRequest(
-      String operation, Iterable<KeyValuePair<String, String>> params, int textCount)
+  private List<WriteResult> sendWriteRequest(String operation, String jsonBody, int textCount)
       throws InterruptedException, DeepLException {
     HttpResponse response =
-        httpClientWrapper.sendRequestWithBackoff(
-            String.format("/%s/write/%s", apiVersion, operation), params);
+        httpClientWrapper.sendJsonRequestWithBackoff(
+            String.format("/%s/write/%s", apiVersion, operation), jsonBody);
     checkResponse(response, false, false);
     List<WriteResult> results = jsonParser.parseWriteResult(response.getBody());
     if (results.size() != textCount || results.contains(null)) {
@@ -1329,10 +1347,18 @@ public class DeepLClient {
     if (glossaryDicts.isEmpty()) {
       throw new IllegalArgumentException("Parameter dictionaries must not be empty");
     }
-    ArrayList<KeyValuePair<String, String>> bodyParams =
-        createGlossaryHttpParams(name, glossaryDicts);
-    addExtraBodyParameters(bodyParams, options != null ? options.getExtraBodyParameters() : null);
-    HttpResponse response = httpClientWrapper.sendRequestWithBackoff("/v3/glossaries", bodyParams);
+    List<Map<String, Object>> dictionaries = new ArrayList<>();
+    for (MultilingualGlossaryDictionaryEntries dictionary : glossaryDicts) {
+      dictionaries.add(
+          createGlossaryDictionaryData(
+              dictionary.getSourceLanguageCode(),
+              dictionary.getTargetLanguageCode(),
+              dictionary.getEntries().toTsv(),
+              "tsv"));
+    }
+    HttpResponse response =
+        httpClientWrapper.sendJsonRequestWithBackoff(
+            "/v3/glossaries", createGlossaryBody(name, dictionaries, options));
     checkResponse(response, false, true);
     return jsonParser.parseMultilingualGlossaryInfo(response.getBody());
   }
@@ -2160,13 +2186,13 @@ public class DeepLClient {
   public MultilingualGlossaryInfo updateMultilingualGlossaryName(
       String glossaryId, String name, @Nullable BaseRequestOptions options)
       throws DeepLException, IllegalArgumentException {
-    ArrayList<KeyValuePair<String, String>> bodyParams = new ArrayList<>();
-    bodyParams.add(new KeyValuePair<>("name", name));
-    addExtraBodyParameters(bodyParams, options != null ? options.getExtraBodyParameters() : null);
+    Map<String, Object> requestData = new LinkedHashMap<>();
+    requestData.put("name", name);
+    String jsonBody = jsonBodyWithExtraParameters(requestData, options);
     String relativeUrl = multilingualGlossaryPath(glossaryId);
     try {
       HttpResponse response =
-          httpClientWrapper.sendPatchRequestWithBackoff(relativeUrl, bodyParams);
+          httpClientWrapper.sendJsonPatchRequestWithBackoff(relativeUrl, jsonBody);
       checkResponse(response, false, true);
       return jsonParser.parseMultilingualGlossaryInfo(response.getBody());
     } catch (InterruptedException e) {
@@ -4910,12 +4936,12 @@ public class DeepLClient {
       String entries,
       @Nullable CreateMultilingualGlossaryOptions options)
       throws DeepLException, InterruptedException {
-    ArrayList<KeyValuePair<String, String>> params =
-        createGlossaryDictionariesHttpParams(
-            sourceLanguageCode, targetLanguageCode, entries, "csv");
-    params.add(new KeyValuePair<>("name", name));
-    addExtraBodyParameters(params, options != null ? options.getExtraBodyParameters() : null);
-    HttpResponse response = httpClientWrapper.sendRequestWithBackoff("/v3/glossaries", params);
+    List<Map<String, Object>> dictionaries = new ArrayList<>();
+    dictionaries.add(
+        createGlossaryDictionaryData(sourceLanguageCode, targetLanguageCode, entries, "csv"));
+    HttpResponse response =
+        httpClientWrapper.sendJsonRequestWithBackoff(
+            "/v3/glossaries", createGlossaryBody(name, dictionaries, options));
     checkResponse(response, false, true);
     return jsonParser.parseMultilingualGlossaryInfo(response.getBody());
   }
@@ -4965,12 +4991,16 @@ public class DeepLClient {
     validateParameter("targetLanguageCode", targetLanguageCode);
     validateParameter("entries", entries);
 
-    ArrayList<KeyValuePair<String, String>> bodyParams =
-        createGlossaryDictionariesHttpParams(
-            sourceLanguageCode, targetLanguageCode, entries, entriesFormat);
-    addExtraBodyParameters(bodyParams, options != null ? options.getExtraBodyParameters() : null);
+    List<Map<String, Object>> dictionaries = new ArrayList<>();
+    dictionaries.add(
+        createGlossaryDictionaryData(
+            sourceLanguageCode, targetLanguageCode, entries, entriesFormat));
+    Map<String, Object> requestData = new LinkedHashMap<>();
+    requestData.put("dictionaries", dictionaries);
+    String jsonBody = jsonBodyWithExtraParameters(requestData, options);
     String relativeUrl = multilingualGlossaryPath(glossaryId);
-    HttpResponse response = httpClientWrapper.sendPatchRequestWithBackoff(relativeUrl, bodyParams);
+    HttpResponse response =
+        httpClientWrapper.sendJsonPatchRequestWithBackoff(relativeUrl, jsonBody);
     checkResponse(response, false, true);
     return jsonParser.parseMultilingualGlossaryInfo(response.getBody());
   }
@@ -5014,64 +5044,31 @@ public class DeepLClient {
     }
   }
 
-  protected static ArrayList<KeyValuePair<String, String>> createWriteHttpParams(
+  private static Map<String, Object> createWriteRequestData(
       List<String> texts, @Nullable String targetLang, @Nullable TextRephraseOptions options) {
     if (targetLang != null) {
       targetLang = lowerCaseBaseSubtag(targetLang);
       checkValidLanguages(null, targetLang);
     }
 
-    ArrayList<KeyValuePair<String, String>> params = new ArrayList<>();
-    if (targetLang != null) {
-      params.add(new KeyValuePair<>("target_lang", targetLang));
+    Map<String, Object> requestData = new LinkedHashMap<>();
+    putIfNotNull(requestData, "target_lang", targetLang);
+    if (options != null) {
+      putIfNotNull(requestData, "writing_style", options.getWritingStyle());
+      putIfNotNull(requestData, "tone", options.getTone());
     }
-    if (options != null && options.getWritingStyle() != null) {
-      params.add(new KeyValuePair<>("writing_style", options.getWritingStyle()));
-    }
-    if (options != null && options.getTone() != null) {
-      params.add(new KeyValuePair<>("tone", options.getTone()));
-    }
-
-    texts.forEach(
-        (text) -> {
-          if (text.isEmpty()) throw new IllegalArgumentException("text must not be empty");
-          params.add(new KeyValuePair<>("text", text));
-        });
-
-    return params;
+    requestData.put("text", validatedTexts(texts));
+    return requestData;
   }
 
-  protected static ArrayList<KeyValuePair<String, String>> createGlossaryHttpParams(
-      String name, List<MultilingualGlossaryDictionaryEntries> glossaryDicts) {
-    ArrayList<KeyValuePair<String, String>> bodyParams = new ArrayList<>();
-    bodyParams.add(new KeyValuePair<>("name", name));
-    for (int i = 0; i < glossaryDicts.size(); i++) {
-      bodyParams.add(
-          new KeyValuePair<>(
-              String.format("dictionaries[%d].source_lang", i),
-              glossaryDicts.get(i).getSourceLanguageCode()));
-      bodyParams.add(
-          new KeyValuePair<>(
-              String.format("dictionaries[%d].target_lang", i),
-              glossaryDicts.get(i).getTargetLanguageCode()));
-      bodyParams.add(
-          new KeyValuePair<>(
-              String.format("dictionaries[%d].entries", i),
-              glossaryDicts.get(i).getEntries().toTsv()));
-      bodyParams.add(
-          new KeyValuePair<>(String.format("dictionaries[%d].entries_format", i), "tsv"));
-    }
-    return bodyParams;
-  }
-
-  protected static ArrayList<KeyValuePair<String, String>> createGlossaryDictionariesHttpParams(
-      String sourceLanguageCode, String targetLanguageCode, String entries, String entriesFormat) {
-    ArrayList<KeyValuePair<String, String>> bodyParams = new ArrayList<>();
-    bodyParams.add(new KeyValuePair<>("dictionaries[0].source_lang", sourceLanguageCode));
-    bodyParams.add(new KeyValuePair<>("dictionaries[0].target_lang", targetLanguageCode));
-    bodyParams.add(new KeyValuePair<>("dictionaries[0].entries", entries));
-    bodyParams.add(new KeyValuePair<>("dictionaries[0].entries_format", entriesFormat));
-
-    return bodyParams;
+  /** Builds the JSON body of a glossary creation, adding the extra body parameters last. */
+  private String createGlossaryBody(
+      String name,
+      List<Map<String, Object>> dictionaries,
+      @Nullable CreateMultilingualGlossaryOptions options) {
+    Map<String, Object> requestData = new LinkedHashMap<>();
+    requestData.put("name", name);
+    requestData.put("dictionaries", dictionaries);
+    return jsonBodyWithExtraParameters(requestData, options);
   }
 }

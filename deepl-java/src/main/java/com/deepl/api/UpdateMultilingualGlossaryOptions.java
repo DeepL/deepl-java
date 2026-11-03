@@ -45,7 +45,7 @@ public class UpdateMultilingualGlossaryOptions extends BaseRequestOptions {
   /** {@inheritDoc} */
   @Override
   public UpdateMultilingualGlossaryOptions setExtraBodyParameters(
-      Map<String, String> extraBodyParameters) {
+      Map<String, ?> extraBodyParameters) {
     super.setExtraBodyParameters(extraBodyParameters);
     return this;
   }

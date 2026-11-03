@@ -610,12 +610,19 @@ public class DeepLAdminClient {
     return key != null ? key.getKeyId() : null;
   }
 
-  /** Adds the extra body parameters last, replacing fields with the same key. */
-  private static void addExtraBodyParameters(
+  /**
+   * Adds the extra body parameters last as JSON values, replacing fields with the same key; a
+   * <code>null</code> value removes the field.
+   */
+  private void addExtraBodyParameters(
       JsonObject requestData, @Nullable BaseRequestOptions options) {
     if (options != null && options.getExtraBodyParameters() != null) {
-      for (Map.Entry<String, String> entry : options.getExtraBodyParameters().entrySet()) {
-        requestData.addProperty(entry.getKey(), entry.getValue());
+      for (Map.Entry<String, ?> entry : options.getExtraBodyParameters().entrySet()) {
+        if (entry.getValue() == null) {
+          requestData.remove(entry.getKey());
+        } else {
+          requestData.add(entry.getKey(), jsonParser.getGson().toJsonTree(entry.getValue()));
+        }
       }
     }
   }
