@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 class LanguagesTest {
   @Test
   void sendsGetV3LanguagesAndParsesTheSourceLanguages() throws Exception {
-    List<Language> languages = RealApiClient.createTranslator().getSourceLanguages();
+    List<Language> languages = RealApiClient.createClient().getSourceLanguages();
 
     assertEquals(1, languages.stream().filter(l -> l.getCode().equals("en")).count());
     for (Language language : languages) {

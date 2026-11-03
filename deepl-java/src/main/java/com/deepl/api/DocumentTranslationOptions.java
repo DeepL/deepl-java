@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Options to control document translation behaviour. These options may be provided to {@link
- * Translator#translateDocument} overloads.
+ * DeepLClient#translateDocument} overloads.
  *
  * <p>All properties have corresponding setters in fluent-style, so the following is possible:
  * <code>
@@ -237,7 +237,7 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
   }
 
   /**
-   * Sets the maximum time {@link Translator#translateDocument} waits for the translation to finish
+   * Sets the maximum time {@link DeepLClient#translateDocument} waits for the translation to finish
    * after the upload. When it expires, <code>translateDocument</code> throws a {@link
    * DocumentTranslationException} that carries the document handle, so the document can still be
    * retrieved. This is a client-side limit and is not sent to the API. By default, this value is
@@ -304,7 +304,9 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
     return filename;
   }
 
-  /** Gets the wait limit of {@link Translator#translateDocument}, or <code>null</code> if unset. */
+  /**
+   * Gets the wait limit of {@link DeepLClient#translateDocument}, or <code>null</code> if unset.
+   */
   public @Nullable Duration getTimeout() {
     return timeout;
   }

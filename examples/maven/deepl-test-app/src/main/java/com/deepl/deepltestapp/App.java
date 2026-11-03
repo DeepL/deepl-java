@@ -15,9 +15,9 @@ public class App {
      */
     public static void main( String[] args ) throws InterruptedException, DeepLException {
         String authKey = "f63c02c5-f056-...";  // Replace with your key
-        Translator translator = new Translator(authKey);
+        DeepLClient client = new DeepLClient(authKey);
         TextResult result =
-                translator.translateText("Hello, world!", null, "fr");
+                client.translateText("Hello, world!", null, "fr");
         System.out.println(result.getText()); // "Bonjour, le monde !"
     }
 
@@ -37,10 +37,10 @@ public class App {
     }
 
      public static String translateHelloWorld() throws InterruptedException, DeepLException {
-        Translator translator = new Translator(getAuthKeyFromEnvironmentVariables(), 
-            (new TranslatorOptions()).setServerUrl(getServerUrlFromEnvironmentVariables()));
+        DeepLClient client = new DeepLClient(getAuthKeyFromEnvironmentVariables(),
+            (new DeepLClientOptions()).setServerUrl(getServerUrlFromEnvironmentVariables()));
         TextResult result =
-                translator.translateText("Hello, world!", null, "fr");
+                client.translateText("Hello, world!", null, "fr");
         String translatedText = result.getText();
         return translatedText;
     }

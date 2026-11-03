@@ -16,7 +16,7 @@ class GlossariesTest {
   @Test
   @Timeout(value = 120, unit = TimeUnit.SECONDS)
   void sendsTheV2GlossaryRequestsCreateGetListEntriesAndDelete() throws Exception {
-    Translator translator = RealApiClient.createTranslator();
+    DeepLClient translator = RealApiClient.createClient();
     String name = RealApiNames.getUniqueName("glossary");
     GlossaryEntries entries = new GlossaryEntries(Collections.singletonMap("Apple", "Apfel"));
 

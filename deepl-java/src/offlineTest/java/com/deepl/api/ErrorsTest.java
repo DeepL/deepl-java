@@ -20,8 +20,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 class ErrorsTest {
   @RegisterExtension static OfflineServer wm = new OfflineServer();
 
-  private final Translator translator =
-      OfflineClient.createTranslator(wm, new TranslatorOptions().setMaxRetries(0));
+  private final DeepLClient translator =
+      OfflineClient.createClient(wm, new DeepLClientOptions().setMaxRetries(0));
 
   private void respond(int status, String body) {
     wm.stubFor(get("/v2/usage").willReturn(aResponse().withStatus(status).withBody(body)));

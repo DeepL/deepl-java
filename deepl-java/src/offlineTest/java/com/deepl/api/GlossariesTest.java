@@ -35,7 +35,7 @@ class GlossariesTest {
 
   @TempDir Path tempDir;
 
-  private final Translator translator = OfflineClient.createTranslator(wm);
+  private final DeepLClient translator = OfflineClient.createClient(wm);
 
   @Test
   void sendsTsvEntriesWhenCreatingAGlossary() throws Exception {

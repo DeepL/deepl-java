@@ -9,14 +9,8 @@ import java.util.Map;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Options to control translator behaviour. These options may be provided to the {@link Translator}
- * constructor.
- *
- * <p>All properties have corresponding setters in fluent-style, so the following is possible:
- * <code>
- *      TranslatorOptions options = new TranslatorOptions()
- *          .setTimeout(Duration.ofSeconds(1)).setMaxRetries(2);
- * </code>
+ * Options to control client behaviour, shared by {@link DeepLClientOptions}. Create a {@link
+ * DeepLClientOptions} and pass it to the {@link DeepLClient} constructor.
  */
 public class TranslatorOptions {
   private int maxRetries = 5;
@@ -28,15 +22,13 @@ public class TranslatorOptions {
   @Nullable private AppInfo appInfo = null;
   @Nullable protected DeepLApiVersion apiVersion = null;
 
-  /** @deprecated Use {@link DeepLClient} instead. */
-  @Deprecated
-  public TranslatorOptions() {
+  protected TranslatorOptions() {
     apiVersion = DeepLApiVersion.VERSION_2;
   }
 
   /**
-   * Set the maximum number of failed attempts that {@link Translator} will retry, per request. By
-   * default, 5 retries are made. Note: only errors due to transient conditions are retried.
+   * Set the maximum number of failed attempts that the client will retry, per request. By default,
+   * 5 retries are made. Note: only errors due to transient conditions are retried.
    */
   public TranslatorOptions setMaxRetries(int maxRetries) {
     this.maxRetries = maxRetries;
@@ -102,8 +94,8 @@ public class TranslatorOptions {
 
   /**
    * Set an identifier and a version for the program/plugin that uses this Client Library. Example:
-   * `Translator t = new Translator(myAuthKey, new TranslatorOptions()
-   * .setAppInfo('deepl-hadoop-plugin', '1.2.0'))
+   * `DeepLClient client = new DeepLClient(myAuthKey, new DeepLClientOptions()
+   * .setAppInfo("deepl-hadoop-plugin", "1.2.0"))`
    */
   public TranslatorOptions setAppInfo(String appName, String appVersion) {
     this.appInfo = new AppInfo(appName, appVersion);

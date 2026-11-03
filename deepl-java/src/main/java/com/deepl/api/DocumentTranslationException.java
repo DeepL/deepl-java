@@ -6,7 +6,7 @@ package com.deepl.api;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Exception thrown when an error occurs during {@link Translator#translateDocument}. If the error
+ * Exception thrown when an error occurs during {@link DeepLClient#translateDocument}. If the error
  * occurs after the document was successfully uploaded, the {@link DocumentHandle} for the
  * associated document is included, to allow later retrieval of the document.
  */

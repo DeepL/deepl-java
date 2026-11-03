@@ -10,6 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   only; Java 8 remains the minimum.
 
 ### Removed
+- Removed the `Translator` class and its constructors `Translator(String)` and
+  `Translator(String, TranslatorOptions)`. `DeepLClient` no longer extends
+  `Translator` and has all of its methods with the same signatures. Replace
+  `new Translator(...)` with `new DeepLClient(...)`, `new TranslatorOptions()`
+  with `new DeepLClientOptions()`, and variables of type `Translator` with
+  `DeepLClient`.
+- The `TranslatorOptions()` constructor is no longer public; `TranslatorOptions`
+  remains as the base class of `DeepLClientOptions`. Create a
+  `DeepLClientOptions` instead.
 - Removed `Translator.getLanguages(LanguageType)` and the `LanguageType` enum,
   deprecated in 1.18.0. Call `getSourceLanguages()` or `getTargetLanguages()`
   instead.

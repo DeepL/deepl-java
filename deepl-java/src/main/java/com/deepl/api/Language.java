@@ -6,11 +6,11 @@ package com.deepl.api;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * A language supported by DeepL translation. The {@link Translator} class provides functions to
+ * A language supported by DeepL translation. The {@link DeepLClient} class provides functions to
  * retrieve the available source and target languages.
  *
- * @see Translator#getSourceLanguages()
- * @see Translator#getTargetLanguages()
+ * @see DeepLClient#getSourceLanguages()
+ * @see DeepLClient#getTargetLanguages()
  */
 public class Language {
   private final String name;

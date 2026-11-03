@@ -445,7 +445,7 @@ editing functionality plus support for multilingual glossaries. New methods and
 objects have been created to support interacting with these new glossaries.
 Due to this new functionality, users are recommended to utilize these
 multilingual glossary methods. However, to continue using the `v2` glossary API
-endpoints, please continue to use the existing endpoints in the `translator.java`
+endpoints, please continue to use the existing `DeepLClient` methods
 (e.g. `createGlossary()`, `getGlossary()`, etc).
 
 To migrate to use the new multilingual glossary methods from the current

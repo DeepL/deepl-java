@@ -7,8 +7,8 @@ import java.util.*;
 
 /**
  * Helpers for language code strings. To retrieve the languages currently supported by DeepL
- * translation, use {@link Translator#getSourceLanguages()} and {@link
- * Translator#getTargetLanguages()}.
+ * translation, use {@link DeepLClient#getSourceLanguages()} and {@link
+ * DeepLClient#getTargetLanguages()}.
  */
 public class LanguageCode {
   /**

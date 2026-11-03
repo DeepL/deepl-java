@@ -26,7 +26,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-@SuppressWarnings("deprecation")
 class TranslatorOptionsTest {
   @RegisterExtension static OfflineServer wm = new OfflineServer();
 
@@ -40,7 +39,7 @@ class TranslatorOptionsTest {
   @Test
   void sendsTheAuthKeyWithoutSurroundingWhitespaceInTheAuthorizationHeader() throws Exception {
     expectUsage("Authorization", equalTo("DeepL-Auth-Key abc-123"));
-    new Translator(" abc-123 \n", new TranslatorOptions().setServerUrl(wm.baseUrl())).getUsage();
+    new DeepLClient(" abc-123 \n", new DeepLClientOptions().setServerUrl(wm.baseUrl())).getUsage();
   }
 
   @ParameterizedTest
@@ -109,41 +108,42 @@ class TranslatorOptionsTest {
   @Test
   void sendsCustomHeaders() throws Exception {
     expectUsage("X-Custom", equalTo("value"));
-    OfflineClient.createTranslator(
-            wm, new TranslatorOptions().setHeaders(Collections.singletonMap("X-Custom", "value")))
+    OfflineClient.createClient(
+            wm, new DeepLClientOptions().setHeaders(Collections.singletonMap("X-Custom", "value")))
         .getUsage();
   }
 
   @Test
   void sendsToTheServerUrlIncludingItsPath() throws Exception {
     wm.stubFor(get("/prefix/v2/usage").willReturn(okJson(USAGE)));
-    new Translator("k", new TranslatorOptions().setServerUrl(wm.baseUrl() + "/prefix")).getUsage();
+    new DeepLClient("k", new DeepLClientOptions().setServerUrl(wm.baseUrl() + "/prefix"))
+        .getUsage();
   }
 
   @ParameterizedTest
   @MethodSource("userAgents")
-  void sendsTheUserAgent(TranslatorOptions options, String expectedPattern) throws Exception {
+  void sendsTheUserAgent(DeepLClientOptions options, String expectedPattern) throws Exception {
     expectUsage("User-Agent", matching(expectedPattern));
-    OfflineClient.createTranslator(wm, options).getUsage();
+    OfflineClient.createClient(wm, options).getUsage();
   }
 
   private static Stream<Arguments> userAgents() {
     Map<String, String> custom = Collections.singletonMap("User-Agent", "my custom user agent");
     String platform = "deepl-java/[0-9.]+ \\(.+\\) java/\\S+";
     return Stream.of(
-        Arguments.of(new TranslatorOptions(), platform),
-        Arguments.of(new TranslatorOptions().setSendPlatformInfo(false), "deepl-java/[0-9.]+"),
-        Arguments.of(new TranslatorOptions().setHeaders(custom), "my custom user agent"),
+        Arguments.of(new DeepLClientOptions(), platform),
+        Arguments.of(new DeepLClientOptions().setSendPlatformInfo(false), "deepl-java/[0-9.]+"),
+        Arguments.of(new DeepLClientOptions().setHeaders(custom), "my custom user agent"),
         Arguments.of(
-            new TranslatorOptions().setAppInfo("my-java-translation-plugin", "1.2.3"),
+            new DeepLClientOptions().setAppInfo("my-java-translation-plugin", "1.2.3"),
             platform + " " + APP),
         Arguments.of(
-            new TranslatorOptions()
+            new DeepLClientOptions()
                 .setSendPlatformInfo(false)
                 .setAppInfo("my-java-translation-plugin", "1.2.3"),
             "deepl-java/[0-9.]+ " + APP),
         Arguments.of(
-            new TranslatorOptions()
+            new DeepLClientOptions()
                 .setHeaders(custom)
                 .setAppInfo("my-java-translation-plugin", "1.2.3"),
             "my custom user agent"));
@@ -162,24 +162,23 @@ class TranslatorOptionsTest {
 
   @Test
   void throwsIllegalArgumentWhenTheAuthKeyIsEmptyOrNull() {
-    assertThrows(IllegalArgumentException.class, () -> new Translator(""));
-    assertThrows(IllegalArgumentException.class, () -> new Translator(null));
+    assertThrows(IllegalArgumentException.class, () -> new DeepLClient(null));
     assertThrows(IllegalArgumentException.class, () -> new DeepLClient(""));
     assertThrows(IllegalArgumentException.class, () -> new DeepLClient(" \n"));
   }
 
   @Test
   void throwsConnectionExceptionWhenTheServerUrlIsInvalid() {
-    Translator translator =
-        new Translator(
-            "k", new TranslatorOptions().setServerUrl("http:/api.deepl.com").setMaxRetries(0));
+    DeepLClient translator =
+        new DeepLClient(
+            "k", new DeepLClientOptions().setServerUrl("http:/api.deepl.com").setMaxRetries(0));
     assertThrows(ConnectionException.class, translator::getUsage);
   }
 
   @Test
   void recognizesAuthKeysOfFreeAccounts() {
-    assertTrue(Translator.isFreeAccountAuthKey("b493b8ef-0176-215d-82fe-e28f182c9544:fx"));
-    assertFalse(Translator.isFreeAccountAuthKey("b493b8ef-0176-215d-82fe-e28f182c9544"));
-    assertFalse(Translator.isFreeAccountAuthKey(null));
+    assertTrue(DeepLClient.isFreeAccountAuthKey("b493b8ef-0176-215d-82fe-e28f182c9544:fx"));
+    assertFalse(DeepLClient.isFreeAccountAuthKey("b493b8ef-0176-215d-82fe-e28f182c9544"));
+    assertFalse(DeepLClient.isFreeAccountAuthKey(null));
   }
 }

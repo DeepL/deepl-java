@@ -30,7 +30,7 @@ final class RealApiClient {
     if (url != null && !url.isEmpty()) {
       return url;
     }
-    return Translator.isFreeAccountAuthKey(authKey())
+    return DeepLClient.isFreeAccountAuthKey(authKey())
         ? "https://api-free.deepl.com"
         : "https://api.deepl.com";
   }
@@ -51,10 +51,6 @@ final class RealApiClient {
       options.setServerUrl(url);
     }
     return new DeepLAdminClient(requireEnv("DEEPL_ADMIN_KEY"), options);
-  }
-
-  static Translator createTranslator() {
-    return createClient();
   }
 
   /** Calls {@code call}, retrying while a just-created glossary is not yet visible. */

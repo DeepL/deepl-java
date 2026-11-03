@@ -8,7 +8,6 @@ import java.time.Duration;
 import java.util.Map;
 
 /** {@inheritDoc} */
-@SuppressWarnings("deprecation")
 public class DeepLClientOptions extends TranslatorOptions {
   /** {@inheritDoc} */
   @Override

@@ -66,7 +66,7 @@ final class ApiClientHelper {
       headers.put("Authorization", "DeepL-Auth-Key " + sanitizedAuthKey);
     }
     if (!hasCustomUserAgent) {
-      headers.put("User-Agent", Translator.constructUserAgentString(sendPlatformInfo, appInfo));
+      headers.put("User-Agent", DeepLClient.constructUserAgentString(sendPlatformInfo, appInfo));
     }
 
     return new HttpClientWrapper(serverUrl, headers, timeout, proxy, maxRetries);

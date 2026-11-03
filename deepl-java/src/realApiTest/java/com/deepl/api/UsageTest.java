@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 class UsageTest {
   @Test
   void sendsGetV2UsageAndParsesTheUsage() throws Exception {
-    Usage usage = RealApiClient.createTranslator().getUsage();
+    Usage usage = RealApiClient.createClient().getUsage();
 
     assertTrue(usage.toString().contains("Usage this billing period"));
   }

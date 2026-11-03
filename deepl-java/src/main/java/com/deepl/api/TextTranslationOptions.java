@@ -11,7 +11,7 @@ import java.util.Map;
 
 /**
  * Options to control text translation behaviour. These options may be provided to {@link
- * Translator#translateText} overloads.
+ * DeepLClient#translateText} overloads.
  *
  * <p>All properties have corresponding setters in fluent-style, so the following is possible:
  * <code>

@@ -8,7 +8,7 @@ import com.google.gson.annotations.*;
 /**
  * Information about a language pair supported for glossaries.
  *
- * @see Translator#getGlossaryLanguages()
+ * @see DeepLClient#getGlossaryLanguages()
  */
 public class GlossaryLanguagePair {
   @SerializedName("source_lang")

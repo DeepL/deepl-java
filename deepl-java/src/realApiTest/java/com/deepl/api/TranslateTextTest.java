@@ -12,7 +12,7 @@ class TranslateTextTest {
   @Test
   void sendsPostV2TranslateAndParsesTheResult() throws Exception {
     TextResult result =
-        RealApiClient.createTranslator().translateText(Fixtures.EXAMPLE_TEXT, null, "de");
+        RealApiClient.createClient().translateText(Fixtures.EXAMPLE_TEXT, null, "de");
 
     assertFalse(result.getText().isEmpty());
     assertFalse(result.getDetectedSourceLanguage().isEmpty());

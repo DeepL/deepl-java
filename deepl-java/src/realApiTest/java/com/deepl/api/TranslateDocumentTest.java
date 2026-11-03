@@ -22,7 +22,7 @@ class TranslateDocumentTest {
     File output = tempDir.resolve("output.txt").toFile();
 
     DocumentStatus status =
-        RealApiClient.createTranslator().translateDocument(input, output, null, "de");
+        RealApiClient.createClient().translateDocument(input, output, null, "de");
 
     assertTrue(status.ok() && status.done());
     assertTrue(status.getBilledCharacters() > 0);
