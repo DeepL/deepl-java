@@ -346,7 +346,7 @@ class TranslationMemoriesTest {
     TranslationMemoryJob job = client.getTranslationMemoryJob("j1");
     assertEquals("bad tmx", job.getResult().getErrorMessage());
     assertEquals(4, job.getResult().getSkippedSegmentCount());
-    assertTrue(job.done());
+    assertFalse(job.done());
     assertFalse(job.ok());
   }
 
@@ -582,30 +582,36 @@ class TranslationMemoriesTest {
   }
 
   @Test
-  void throwsIOExceptionWhenTheImportFileCannotBeRead() {
+  void wrapsTheIOExceptionWhenTheImportFileCannotBeRead() {
     File directory = tempDir.toFile();
-    assertThrows(IOException.class, () -> client.importTranslationMemoryFromFilepath(directory));
+    DeepLException thrown =
+        assertThrows(
+            DeepLException.class, () -> client.importTranslationMemoryFromFilepath(directory));
+    assertTrue(thrown.getCause() instanceof IOException);
     wm.verify(0, postRequestedFor(urlPathMatching("/v3/translation_memories/.*")));
   }
 
   @Test
   void checksTheExportOutputPathBeforeCreatingTheExportJob() throws Exception {
     File occupied = Fixtures.writeFile(tempDir.resolve("export.tmx").toFile(), "mine");
-    IOException thrown =
+    DeepLException thrown =
         assertThrows(
-            IOException.class, () -> client.exportTranslationMemoryToFilepath("tm1", occupied));
+            DeepLException.class, () -> client.exportTranslationMemoryToFilepath("tm1", occupied));
+    assertTrue(thrown.getCause() instanceof IOException);
     assertTrue(thrown.getMessage().contains("already exists"));
     assertEquals("mine", Fixtures.readFile(occupied));
 
     File noDirectory = tempDir.resolve("missing").resolve("export.tmx").toFile();
-    assertThrows(
-        FileNotFoundException.class,
-        () -> client.exportTranslationMemoryToFilepath("tm1", noDirectory));
+    thrown =
+        assertThrows(
+            DeepLException.class,
+            () -> client.exportTranslationMemoryToFilepath("tm1", noDirectory));
+    assertTrue(thrown.getCause() instanceof FileNotFoundException);
     wm.verify(0, postRequestedFor(urlPathMatching("/v3/translation_memories/.*")));
   }
 
   @Test
-  void throwsTheIOExceptionWhenWritingTheExportFails() {
+  void wrapsTheIOExceptionWhenWritingTheExportFails() {
     wm.stubFor(
         post("/v3/translation_memories/tm1/export")
             .willReturn(
@@ -627,10 +633,10 @@ class TranslationMemoriesTest {
             throw diskFull;
           }
         };
-    IOException thrown =
+    DeepLException thrown =
         assertThrows(
-            IOException.class, () -> client.exportTranslationMemoryToFilepath("tm1", failing));
-    assertSame(diskFull, thrown);
+            DeepLException.class, () -> client.exportTranslationMemoryToFilepath("tm1", failing));
+    assertSame(diskFull, thrown.getCause());
   }
 
   @Test

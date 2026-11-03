@@ -29,9 +29,6 @@ public class TranslationMemoryJobResult {
     /** The job completed successfully. */
     @SerializedName("completed")
     Completed,
-    /** The exported file of a completed export job has been downloaded. */
-    @SerializedName("downloaded")
-    Downloaded,
     /** An error occurred while processing the job. */
     @SerializedName("failed")
     Failed,
@@ -131,14 +128,11 @@ public class TranslationMemoryJobResult {
   }
 
   /**
-   * @return <code>true</code> if the job has finished, successfully or not, otherwise <code>false
-   *     </code>.
+   * @return <code>true</code> if the job completed successfully, otherwise <code>false</code>. Use
+   *     {@link #ok()} to check whether the job failed or expired.
    */
   public boolean done() {
-    return status == Status.Completed
-        || status == Status.Downloaded
-        || status == Status.Failed
-        || status == Status.Expired;
+    return status == Status.Completed;
   }
 
   /** @return <code>false</code> if the job failed or expired, otherwise <code>true</code>. */

@@ -113,8 +113,8 @@ public class TranslationMemoryJob {
   }
 
   /**
-   * @return <code>true</code> if the job has finished, successfully or not, otherwise <code>false
-   *     </code>.
+   * @return <code>true</code> if the job completed successfully, otherwise <code>false</code>. Use
+   *     {@link #ok()} to check whether the job failed or expired.
    */
   public boolean done() {
     TranslationMemoryJobResult result = getResult();

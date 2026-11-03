@@ -361,12 +361,15 @@ class Example {  // Continuing class Example from above
 }
 ```
 
-If a file already exists at the output path, `translateDocument()` throws an
-`IOException` and leaves that file unchanged. A missing or unreadable input file,
-or an output file that cannot be created, throws a `FileNotFoundException`. No
-request is sent in these cases. Later failures are thrown as a
-`DocumentTranslationException`; `getHttpStatusCode()` and `getShouldRetry()`
-report those of the underlying `DeepLException`, if any.
+A missing input file throws an `IllegalArgumentException`, from both
+`translateDocument()` and `translateDocumentUpload()`. Every other failure of
+`translateDocument()` is thrown as a `DocumentTranslationException`, including
+local file failures, which carry the `IOException` as their cause: if a file
+already exists at the output path, that file is left unchanged, and if the input
+file cannot be read or the output file cannot be created, no request is sent.
+`getHttpStatusCode()` and `getShouldRetry()` report those of the underlying
+`DeepLException`, if any. If the thread is interrupted, `translateDocument()`
+throws the `InterruptedException` itself, not wrapped.
 
 `translateDocument()` is a convenience function that wraps multiple API calls:
 uploading, polling status until the translation is complete, and downloading. If
@@ -1336,7 +1339,8 @@ it to wait indefinitely. The job status is polled every 5 seconds, and the last
 wait is cut short at the timeout.
 
 A missing input file throws `IllegalArgumentException` and an unreadable file
-throws `IOException`, both before any request is sent.
+throws `DeepLException` with the `IOException` as its cause, both before any
+request is sent.
 
 `ImportTranslationMemoryOptions` groups the import options: `setDisplayName()`,
 `setContentType()` (declared when the job is created and sent with the upload;
@@ -1394,8 +1398,11 @@ object.
 
 `TranslationMemoryJob.getStatus()` returns a `TranslationMemoryJobResult.Status`,
 or `null` for a status the library does not know yet; `getStatusString()` returns
-the status as the API sent it. Both are also available on
-`TranslationMemoryJobResult`.
+the status as the API sent it. `done()` is `true` once the job has completed
+successfully, and `ok()` is `false` if it failed or expired. All four are also
+available on `TranslationMemoryJobResult`. `waitUntilTranslationMemoryJobDone()`
+returns the completed job and throws `DeepLException` with the API's error
+message if the job fails or expires.
 
 Note that an import job keeps reporting `AwaitingInput` for a while after its
 file has been uploaded, because the API detects the upload asynchronously.
@@ -1420,9 +1427,10 @@ class Example {  // Continuing class Example from above
 ```
 
 As with import, the timeout is optional; omit it to wait indefinitely. The output
-path is checked before the export job is created: if a file already exists there,
-`IOException` is thrown, and if its directory does not exist,
-`FileNotFoundException`. A failure while writing the file throws `IOException`.
+path is checked before the export job is created: if a file already exists there
+or its directory does not exist, `DeepLException` is thrown. A failure while
+writing the file also throws `DeepLException`. These local file failures carry the
+`IOException` as their cause.
 Instead of a `File`, you can pass an `OutputStream`, which is not closed:
 
 ```java

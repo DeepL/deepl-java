@@ -6,6 +6,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Changed
+- `TranslationMemoryJob.done()` and `TranslationMemoryJobResult.done()` now
+  return `true` only when the job completed successfully, like
+  `DocumentStatus.done()`; they returned `true` for a failed or expired job too.
+  Check `ok()` for failure. `waitUntilTranslationMemoryJobDone()` still returns
+  the completed job and throws `DeepLException` on failure or expiry.
+- `importTranslationMemoryFromFilepath()` and
+  `exportTranslationMemoryToFilepath()` throw `DeepLException`, with the
+  `IOException` as its cause, for local file failures: an unreadable input file,
+  an occupied output path, a missing output directory, or a failed write. They
+  no longer declare `IOException`; catch `DeepLException` instead and inspect
+  `getCause()`.
+- `translateDocument(File, File, ...)` and `translateDocumentUpload(File, ...)`
+  throw `IllegalArgumentException` for a missing input file, before any
+  request, instead of `FileNotFoundException`.
+- `translateDocument(File, File, ...)` throws `DocumentTranslationException`,
+  with the `IOException` as its cause, for an occupied output path, an
+  unreadable input file or an output file that cannot be created, and no longer
+  declares `IOException`. Catch `DocumentTranslationException` instead.
+- `translateDocument()` throws `InterruptedException` unwrapped when the
+  thread is interrupted, instead of a `DocumentTranslationException`, and
+  declares it. Callers that do not already handle `InterruptedException`
+  must catch or declare it.
 - Text translation, rephrasing, text correction, glossary creation (v2 and
   v3), and renaming a multilingual glossary or updating its dictionaries now
   send JSON request bodies instead of form-encoded ones, as the API
@@ -37,6 +59,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   only; Java 8 remains the minimum.
 
 ### Removed
+- Removed `TranslationMemoryJobResult.Status.Downloaded`: the API does not
+  report a `downloaded` job status. Code that compared against it can drop the
+  comparison; `Completed` is the status of a finished export.
 - Removed the protected static helpers `DeepLClient.createWriteHttpParams()`,
   `createGlossaryHttpParams()` and `createGlossaryDictionariesHttpParams()`,
   which built the form-encoded bodies that are now JSON. They were not meant
