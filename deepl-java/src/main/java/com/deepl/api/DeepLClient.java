@@ -2157,12 +2157,13 @@ public class DeepLClient {
    * @param name The new name of the glossary
    * @return {@link MultilingualGlossaryInfo} object with details about the glossary with the newly
    *     updated glossary dictionary.
+   * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
    *     DeepLException} or a derived class will be thrown.
    */
   public MultilingualGlossaryInfo updateMultilingualGlossaryName(String glossaryId, String name)
-      throws DeepLException, IllegalArgumentException {
+      throws DeepLException, IllegalArgumentException, InterruptedException {
     return updateMultilingualGlossaryName(glossaryId, name, null);
   }
 
@@ -2173,13 +2174,14 @@ public class DeepLClient {
    * @param glossary The glossary to rename.
    * @param name The new name of the glossary.
    * @return {@link MultilingualGlossaryInfo} object with details about the renamed glossary.
+   * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
    *     DeepLException} or a derived class will be thrown.
    */
   public MultilingualGlossaryInfo updateMultilingualGlossaryName(
       MultilingualGlossaryInfo glossary, String name)
-      throws DeepLException, IllegalArgumentException {
+      throws DeepLException, IllegalArgumentException, InterruptedException {
     return updateMultilingualGlossaryName(glossary.getGlossaryId(), name, null);
   }
 
@@ -2192,26 +2194,22 @@ public class DeepLClient {
    * @param options Options for the request, or <code>null</code>; only its extra body parameters
    *     are read.
    * @return {@link MultilingualGlossaryInfo} object with details about the renamed glossary.
+   * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
    *     DeepLException} or a derived class will be thrown.
    */
   public MultilingualGlossaryInfo updateMultilingualGlossaryName(
       String glossaryId, String name, @Nullable BaseRequestOptions options)
-      throws DeepLException, IllegalArgumentException {
+      throws DeepLException, IllegalArgumentException, InterruptedException {
     Map<String, Object> requestData = new LinkedHashMap<>();
     requestData.put("name", name);
     String jsonBody = jsonBodyWithExtraParameters(requestData, options);
     String relativeUrl = multilingualGlossaryPath(glossaryId);
-    try {
-      HttpResponse response =
-          httpClientWrapper.sendJsonPatchRequestWithBackoff(relativeUrl, jsonBody);
-      checkResponse(response, false, true);
-      return jsonParser.parseMultilingualGlossaryInfo(response.getBody());
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new DeepLException("Request was interrupted", e);
-    }
+    HttpResponse response =
+        httpClientWrapper.sendJsonPatchRequestWithBackoff(relativeUrl, jsonBody);
+    checkResponse(response, false, true);
+    return jsonParser.parseMultilingualGlossaryInfo(response.getBody());
   }
 
   /**
@@ -2223,13 +2221,14 @@ public class DeepLClient {
    * @param options Options for the request, or <code>null</code>; only its extra body parameters
    *     are read.
    * @return {@link MultilingualGlossaryInfo} object with details about the renamed glossary.
+   * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
    *     DeepLException} or a derived class will be thrown.
    */
   public MultilingualGlossaryInfo updateMultilingualGlossaryName(
       MultilingualGlossaryInfo glossary, String name, @Nullable BaseRequestOptions options)
-      throws DeepLException, IllegalArgumentException {
+      throws DeepLException, IllegalArgumentException, InterruptedException {
     return updateMultilingualGlossaryName(glossary.getGlossaryId(), name, options);
   }
 

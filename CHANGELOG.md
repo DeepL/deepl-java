@@ -6,6 +6,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Changed
+- `updateMultilingualGlossaryName()` (all overloads) throws `InterruptedException`
+  unwrapped when the thread is interrupted, like the other `DeepLClient`
+  methods, instead of a `DeepLException`, and declares it. Callers must catch or
+  declare `InterruptedException`.
+- `TextResult.getBilledCharacters()` returns `long` instead of `int`, and the
+  `TextResult` constructors take a `long`. Assign the result to a `long`, or
+  cast it explicitly.
+- `TranslationMemoryJobResult.getSkippedSegmentCount()` returns `Long` instead
+  of `Integer`, and the `TranslationMemoryJobResult` constructors take a `Long`.
+  Use `Long` (or `long` after a null check) for the count.
+- `Usage.anyLimitReached()` also checks the per-key character limit
+  (`getApiKeyCharacter()`), so it returns `true` when an API key has used its
+  own character limit. The speech limits are still not considered. Callers that
+  want the previous result check `getCharacter()`, `getDocument()` and
+  `getTeamDocument()` directly.
 - `TranslationMemoryJob.done()` and `TranslationMemoryJobResult.done()` now
   return `true` only when the job completed successfully, like
   `DocumentStatus.done()`; they returned `true` for a failed or expired job too.

@@ -16,11 +16,11 @@ class TextResultDeserializer implements JsonDeserializer<TextResult> {
   public TextResult deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
       throws JsonParseException {
     JsonObject jsonObject = json.getAsJsonObject();
-    Integer billedCharacters = Parser.getAsIntOrNull(jsonObject, "billed_characters");
+    Long billedCharacters = Parser.getAsLongOrNull(jsonObject, "billed_characters");
     return new TextResult(
         jsonObject.get("text").getAsString(),
         jsonObject.get("detected_source_language").getAsString(),
-        billedCharacters != null ? billedCharacters : 0,
+        billedCharacters != null ? billedCharacters : 0L,
         Parser.getAsStringOrNull(jsonObject, "model_type_used"),
         stringOrNull(jsonObject.get("tag_handling_version")));
   }

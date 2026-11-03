@@ -57,7 +57,7 @@ class TranslationMemoryJobDeserializer implements JsonDeserializer<TranslationMe
         deserializeDate(jsonObject, "expires_at", context),
         error == null ? null : Parser.getAsStringOrNull(error, "message"),
         Parser.getAsStringOrNull(jsonObject, "translation_memory_id"),
-        Parser.getAsIntOrNull(jsonObject, "skipped_segment_count"));
+        Parser.getAsLongOrNull(jsonObject, "skipped_segment_count"));
   }
 
   private static Date deserializeDate(

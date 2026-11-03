@@ -659,6 +659,17 @@ class TranslateTextTest {
   }
 
   @Test
+  void parsesBilledCharactersBeyondTheIntRange() throws Exception {
+    wm.stubFor(
+        post("/v2/translate")
+            .willReturn(
+                okJson(
+                    "{\"translations\":[{\"detected_source_language\":\"EN\",\"text\":\"x\","
+                        + "\"billed_characters\":3000000000}]}")));
+    assertEquals(3000000000L, client.translateText("Hello", null, "de").getBilledCharacters());
+  }
+
+  @Test
   void parsesAMissingModelTypeAsNull() throws Exception {
     wm.stubFor(post("/v2/translate").willReturn(okJson(REPLY_TWO)));
     List<TextResult> results = client.translateText(Arrays.asList("a", "b"), null, "de");

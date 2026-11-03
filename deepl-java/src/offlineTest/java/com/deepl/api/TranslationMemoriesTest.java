@@ -334,6 +334,17 @@ class TranslationMemoriesTest {
   }
 
   @Test
+  void parsesASkippedSegmentCountBeyondTheIntRange() throws Exception {
+    wm.stubFor(
+        get("/v3/translation_memories/jobs/j1")
+            .willReturn(
+                okJson(job("import", "completed", ",\"skipped_segment_count\":3000000000"))));
+    assertEquals(
+        Long.valueOf(3000000000L),
+        client.getTranslationMemoryJob("j1").getResult().getSkippedSegmentCount());
+  }
+
+  @Test
   void parsesAFailedJobWithItsErrorMessage() throws Exception {
     wm.stubFor(
         get("/v3/translation_memories/jobs/j1")

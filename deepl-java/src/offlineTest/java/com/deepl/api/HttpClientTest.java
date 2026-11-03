@@ -291,6 +291,19 @@ class HttpClientTest {
   }
 
   @Test
+  void rethrowsTheInterruptionUnwrappedWhenUpdatingAGlossaryName() {
+    wm.stubFor(patch(urlEqualTo("/v3/glossaries/g1")).willReturn(aResponse().withStatus(503)));
+    Thread.currentThread().interrupt();
+    try {
+      assertThrows(
+          InterruptedException.class, () -> client(1).updateMultilingualGlossaryName("g1", "n"));
+    } finally {
+      Thread.interrupted();
+    }
+    wm.verify(1, patchRequestedFor(urlEqualTo("/v3/glossaries/g1")));
+  }
+
+  @Test
   void stopsRetryingPatchRequestsAfterMaxRetries() {
     wm.stubFor(patch(urlEqualTo("/v3/glossaries/g1")).willReturn(aResponse().withStatus(503)));
     DeepLException thrown =

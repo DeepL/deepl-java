@@ -65,6 +65,19 @@ class UsageTest {
   }
 
   @Test
+  void reportsAnyLimitReachedWhenOnlyTheApiKeyCharacterLimitIsReached() throws Exception {
+    wm.stubFor(
+        get("/v2/usage")
+            .willReturn(
+                okJson(
+                    "{\"character_count\":10,\"character_limit\":1000,"
+                        + "\"api_key_character_count\":100,\"api_key_character_limit\":100}")));
+    Usage usage = client.getUsage();
+    assertFalse(usage.getCharacter().limitReached());
+    assertTrue(usage.anyLimitReached());
+  }
+
+  @Test
   void parsesAnExplicitNullLimitAsAbsent() throws Exception {
     wm.stubFor(
         get("/v2/usage")

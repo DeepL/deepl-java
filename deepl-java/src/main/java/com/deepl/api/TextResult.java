@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 public class TextResult {
   private final String text;
   private final String detectedSourceLanguage;
-  private final int billedCharacters;
+  private final long billedCharacters;
   private final @Nullable String modelTypeUsed;
   private final @Nullable String tagHandlingVersion;
 
@@ -17,7 +17,7 @@ public class TextResult {
   public TextResult(
       String text,
       String detectedSourceLanguage,
-      int billedCharacters,
+      long billedCharacters,
       @Nullable String modelTypeUsed) {
     this(text, detectedSourceLanguage, billedCharacters, modelTypeUsed, null);
   }
@@ -26,7 +26,7 @@ public class TextResult {
   public TextResult(
       String text,
       String detectedSourceLanguage,
-      int billedCharacters,
+      long billedCharacters,
       @Nullable String modelTypeUsed,
       @Nullable String tagHandlingVersion) {
     this.text = text;
@@ -47,7 +47,7 @@ public class TextResult {
   }
 
   /** Number of characters billed for this text, 0 if the response does not contain it. */
-  public int getBilledCharacters() {
+  public long getBilledCharacters() {
     return billedCharacters;
   }
 

@@ -16,7 +16,7 @@ public class TranslationMemoryJobResult {
   private final @Nullable Date expiresAt;
   private final @Nullable String errorMessage;
   private final @Nullable String translationMemoryId;
-  private final @Nullable Integer skippedSegmentCount;
+  private final @Nullable Long skippedSegmentCount;
 
   /** Status of a translation memory import or export job. */
   public enum Status {
@@ -55,7 +55,7 @@ public class TranslationMemoryJobResult {
       @Nullable Date expiresAt,
       @Nullable String errorMessage,
       @Nullable String translationMemoryId,
-      @Nullable Integer skippedSegmentCount) {
+      @Nullable Long skippedSegmentCount) {
     this(
         status,
         statusString(status),
@@ -89,7 +89,7 @@ public class TranslationMemoryJobResult {
       @Nullable Date expiresAt,
       @Nullable String errorMessage,
       @Nullable String translationMemoryId,
-      @Nullable Integer skippedSegmentCount) {
+      @Nullable Long skippedSegmentCount) {
     this.status = status;
     this.statusString = statusString;
     this.requiredAction = requiredAction;
@@ -180,7 +180,7 @@ public class TranslationMemoryJobResult {
   /**
    * @return Number of segments an import skipped, or <code>null</code> if not provided by the API.
    */
-  public @Nullable Integer getSkippedSegmentCount() {
+  public @Nullable Long getSkippedSegmentCount() {
     return skippedSegmentCount;
   }
 }

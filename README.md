@@ -109,7 +109,7 @@ corresponding to your input text(s). `TextResult` has the following accessors:
 - `getText()` returns the translated text,
 - `getDetectedSourceLanguage()` returns the detected source language code,
 - `getBilledCharacters()` returns the number of characters billed for the text
-  (0 if the response does not contain it),
+  as a `long` (0 if the response does not contain it),
 - `getModelTypeUsed()` returns the model type used for the translation, as a
   string such as `"quality_optimized"` (see `ModelType`), or `null`, and
 - `getTagHandlingVersion()` returns the tag handling version used, as a string
@@ -1517,9 +1517,10 @@ subtypes may be `null`. For API accounts:
 Each usage subtype (if valid) has `count` and `limit` properties giving the
 amount used and maximum amount respectively, and the `limitReached()` method
 that checks if the usage has reached the limit. The top level `Usage` object has
-the `anyLimitReached()` method to check the character, document and team
-document subtypes. It does not consider the API Pro subtypes described below;
-call `limitReached()` on those directly, e.g. `getApiKeyCharacter().limitReached()`.
+the `anyLimitReached()` method to check the character, document, team
+document and API key character subtypes. It does not consider the speech
+subtypes described below; call `limitReached()` on those directly, e.g.
+`getSpeechToTextMinutes().limitReached()`.
 
 API Pro accounts get further usage information; for other accounts these
 properties are `null`:

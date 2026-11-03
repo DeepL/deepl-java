@@ -206,15 +206,16 @@ public class Usage {
   }
 
   /**
-   * @return <code>true</code> if the character, document or team document limit has been reached,
-   *     otherwise <code>false</code>. The API Pro usage types ({@link #getApiKeyCharacter()},
-   *     {@link #getSpeechToTextMinutes()}, {@link #getSpeechToSpeechMinutes()}) are not considered;
-   *     call {@link Detail#limitReached()} on them directly.
+   * @return <code>true</code> if the character, document, team document or API key character limit
+   *     has been reached, otherwise <code>false</code>. The speech usage types ({@link
+   *     #getSpeechToTextMinutes()}, {@link #getSpeechToSpeechMinutes()}) are not considered; call
+   *     {@link Detail#limitReached()} on them directly.
    */
   public boolean anyLimitReached() {
     return (getCharacter() != null && getCharacter().limitReached())
         || (getDocument() != null && getDocument().limitReached())
-        || (getTeamDocument() != null && getTeamDocument().limitReached());
+        || (getTeamDocument() != null && getTeamDocument().limitReached())
+        || (getApiKeyCharacter() != null && getApiKeyCharacter().limitReached());
   }
 
   /**
