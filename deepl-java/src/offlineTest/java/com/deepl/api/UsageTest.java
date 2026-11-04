@@ -8,7 +8,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -32,40 +31,35 @@ class UsageTest {
   }
 
   @Test
-  void parsesCharacterAndDocumentUsage() throws Exception {
+  void parsesAResponseThatStillContainsDocumentUsage() throws Exception {
     wm.stubFor(
         get("/v2/usage")
             .willReturn(
                 okJson(
                     "{\"character_count\":180118,\"character_limit\":1250000,"
-                        + "\"document_count\":3,\"document_limit\":10}")));
+                        + "\"document_count\":10,\"document_limit\":10}")));
     Usage usage = client.getUsage();
     assertEquals(180118, usage.getCharacter().getCount());
     assertEquals(1250000, usage.getCharacter().getLimit());
-    assertEquals(3, usage.getDocument().getCount());
-    assertEquals(10, usage.getDocument().getLimit());
-    assertNull(usage.getTeamDocument());
-    assertFalse(usage.anyLimitReached());
-    assertTrue(usage.toString().contains("Characters: 180118 of 1250000"));
-    assertTrue(usage.toString().contains("Documents: 3 of 10"));
+    assertFalse(usage.anyCharacterLimitReached());
+    assertEquals("Usage this billing period:\nCharacters: 180118 of 1250000", usage.toString());
   }
 
   @Test
-  void parsesTeamDocumentUsageWithoutOtherDetails() throws Exception {
+  void reportsAnyCharacterLimitReachedWhenOnlyTheAccountCharacterLimitIsReached() throws Exception {
     wm.stubFor(
         get("/v2/usage")
-            .willReturn(okJson("{\"team_document_count\":1,\"team_document_limit\":1}")));
+            .willReturn(
+                okJson(
+                    "{\"character_count\":1000,\"character_limit\":1000,"
+                        + "\"api_key_character_count\":10,\"api_key_character_limit\":100}")));
     Usage usage = client.getUsage();
-    assertNull(usage.getCharacter());
-    assertNull(usage.getDocument());
-    assertNotNull(usage.getTeamDocument());
-    assertTrue(usage.getTeamDocument().limitReached());
-    assertTrue(usage.anyLimitReached());
-    assertTrue(usage.toString().contains("Team documents: 1 of 1"));
+    assertFalse(usage.getApiKeyCharacter().limitReached());
+    assertTrue(usage.anyCharacterLimitReached());
   }
 
   @Test
-  void reportsAnyLimitReachedWhenOnlyTheApiKeyCharacterLimitIsReached() throws Exception {
+  void reportsAnyCharacterLimitReachedWhenOnlyTheApiKeyCharacterLimitIsReached() throws Exception {
     wm.stubFor(
         get("/v2/usage")
             .willReturn(
@@ -74,7 +68,25 @@ class UsageTest {
                         + "\"api_key_character_count\":100,\"api_key_character_limit\":100}")));
     Usage usage = client.getUsage();
     assertFalse(usage.getCharacter().limitReached());
-    assertTrue(usage.anyLimitReached());
+    assertTrue(usage.anyCharacterLimitReached());
+  }
+
+  @Test
+  void doesNotReportAnyCharacterLimitReachedWhenOnlyASpeechLimitIsReached() throws Exception {
+    wm.stubFor(
+        get("/v2/usage")
+            .willReturn(
+                okJson(
+                    "{\"character_count\":10,\"character_limit\":1000,"
+                        + "\"api_key_character_count\":10,\"api_key_character_limit\":100,"
+                        + "\"speech_to_text_minutes_count\":600,"
+                        + "\"speech_to_text_minutes_limit\":600,"
+                        + "\"speech_to_speech_minutes_count\":600,"
+                        + "\"speech_to_speech_minutes_limit\":600}")));
+    Usage usage = client.getUsage();
+    assertTrue(usage.getSpeechToTextMinutes().limitReached());
+    assertTrue(usage.getSpeechToSpeechMinutes().limitReached());
+    assertFalse(usage.anyCharacterLimitReached());
   }
 
   @Test
@@ -84,10 +96,11 @@ class UsageTest {
             .willReturn(
                 okJson(
                     "{\"character_count\":1,\"character_limit\":null,"
-                        + "\"document_count\":2,\"document_limit\":3}")));
+                        + "\"api_key_character_count\":2,\"api_key_character_limit\":3}")));
     Usage usage = client.getUsage();
     assertNull(usage.getCharacter());
-    assertEquals(2, usage.getDocument().getCount());
+    assertEquals(2, usage.getApiKeyCharacter().getCount());
+    assertFalse(usage.anyCharacterLimitReached());
   }
 
   @Test
@@ -136,7 +149,7 @@ class UsageTest {
     assertEquals(3, products.get(1).getApiKeyUnitCount());
     assertEquals(30, products.get(1).getAccountUnitCount());
 
-    assertFalse(usage.anyLimitReached());
+    assertFalse(usage.anyCharacterLimitReached());
     assertEquals("Usage this billing period:\nCharacters: 180118 of 1250000", usage.toString());
   }
 
@@ -148,8 +161,6 @@ class UsageTest {
     Usage usage = client.getUsage();
     assertEquals(180118, usage.getCharacter().getCount());
     assertEquals(500000, usage.getCharacter().getLimit());
-    assertNull(usage.getDocument());
-    assertNull(usage.getTeamDocument());
     assertNull(usage.getApiKeyCharacter());
     assertNull(usage.getSpeechToTextMinutes());
     assertNull(usage.getSpeechToSpeechMinutes());
@@ -174,8 +185,8 @@ class UsageTest {
   }
 
   @Test
-  void keepsTheThreeArgumentConstructor() {
-    Usage usage = new Usage(new Usage.Detail(1, 2), null, null);
+  void keepsTheCharacterOnlyConstructor() {
+    Usage usage = new Usage(new Usage.Detail(1, 2));
     assertEquals(1, usage.getCharacter().getCount());
     assertNull(usage.getApiKeyCharacter());
     assertNull(usage.getProducts());

@@ -1507,19 +1507,17 @@ class Example {  // Continuing class Example from above
 
 To check account usage, use the `getUsage()` function.
 
-The returned `Usage` object contains three usage subtypes: `character`,
-`document` and `teamDocument`. Depending on your account type, some usage
-subtypes may be `null`. For API accounts:
-
-- `usage.character` is non-`null`,
-- `usage.document` and `usage.teamDocument` are `null`.
+The returned `Usage` object contains the account's character usage,
+`getCharacter()`, which is non-`null` for API accounts. Depending on your
+account type, the other usage subtypes described below may be `null`.
 
 Each usage subtype (if valid) has `count` and `limit` properties giving the
 amount used and maximum amount respectively, and the `limitReached()` method
 that checks if the usage has reached the limit. The top level `Usage` object has
-the `anyLimitReached()` method to check the character, document, team
-document and API key character subtypes. It does not consider the speech
-subtypes described below; call `limitReached()` on those directly, e.g.
+the `anyCharacterLimitReached()` method, which returns `true` if the account's
+character limit or this API key's character limit is reached; a `null` subtype
+counts as not reached. The speech minutes have their own subtypes, described
+below; call `limitReached()` on those directly, e.g.
 `getSpeechToTextMinutes().limitReached()`.
 
 API Pro accounts get further usage information; for other accounts these
@@ -1540,7 +1538,7 @@ properties are `null`:
 class Example {  // Continuing class Example from above
     public void getUsageExample() throws Exception {
         Usage usage = client.getUsage();
-        if (usage.anyLimitReached()) {
+        if (usage.anyCharacterLimitReached()) {
             System.out.println("Translation limit reached.");
         }
         if (usage.getCharacter() != null) {
@@ -1552,11 +1550,6 @@ class Example {  // Continuing class Example from above
             System.out.printf("Character usage (this API key): %d of %d%n",
                               usage.getApiKeyCharacter().getCount(),
                               usage.getApiKeyCharacter().getLimit());
-        }
-        if (usage.getDocument() != null) {
-            System.out.printf("Document usage: %d of %d%n",
-                              usage.getDocument().getCount(),
-                              usage.getDocument().getLimit());
         }
         if (usage.getStartTime() != null && usage.getEndTime() != null) {
             System.out.printf("Billing period: %s to %s%n",

@@ -16,11 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `TranslationMemoryJobResult.getSkippedSegmentCount()` returns `Long` instead
   of `Integer`, and the `TranslationMemoryJobResult` constructors take a `Long`.
   Use `Long` (or `long` after a null check) for the count.
-- `Usage.anyLimitReached()` also checks the per-key character limit
-  (`getApiKeyCharacter()`), so it returns `true` when an API key has used its
-  own character limit. The speech limits are still not considered. Callers that
-  want the previous result check `getCharacter()`, `getDocument()` and
-  `getTeamDocument()` directly.
+- `Usage.anyLimitReached()` is replaced by `Usage.anyCharacterLimitReached()`,
+  which returns `true` if the account's character limit (`getCharacter()`) or
+  this API key's character limit (`getApiKeyCharacter()`) is reached. The
+  speech limits are not considered; call `limitReached()` on their details.
 - `TranslationMemoryJob.done()` and `TranslationMemoryJobResult.done()` now
   return `true` only when the job completed successfully, like
   `DocumentStatus.done()`; they returned `true` for a failed or expired job too.
@@ -74,6 +73,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   only; Java 8 remains the minimum.
 
 ### Removed
+- Removed `Usage.getDocument()`, `Usage.getTeamDocument()` and the matching
+  `document` and `teamDocument` parameters of the `Usage` constructors: the API
+  no longer returns document usage. `toString()` no longer prints "Documents"
+  or "Team documents" lines. Responses that still contain these fields parse;
+  the fields are ignored.
 - Removed `TranslationMemoryJobResult.Status.Downloaded`: the API does not
   report a `downloaded` job status. Code that compared against it can drop the
   comparison; `Completed` is the status of a finished export.

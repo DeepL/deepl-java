@@ -21,8 +21,6 @@ class UsageDeserializer implements JsonDeserializer<Usage> {
 
     return new Usage(
         createDetail(jsonObject, "character_"),
-        createDetail(jsonObject, "document_"),
-        createDetail(jsonObject, "team_document_"),
         createDetail(jsonObject, "api_key_character_"),
         createDetail(jsonObject, "speech_to_text_minutes_"),
         createDetail(jsonObject, "speech_to_speech_minutes_"),

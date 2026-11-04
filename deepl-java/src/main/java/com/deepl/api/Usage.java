@@ -12,13 +12,12 @@ import org.jetbrains.annotations.Nullable;
  * Information about DeepL account usage for the current billing period, for example the number of
  * characters translated.
  *
- * <p>Depending on the account type, some usage types will be omitted. See the <a
+ * <p>Depending on the account type, some usage types will be omitted. Use {@link
+ * #anyCharacterLimitReached()} to check the account and API key character limits. See the <a
  * href="https://www.deepl.com/docs-api/">API documentation</a> for more information.
  */
 public class Usage {
   private final @Nullable Detail character;
-  private final @Nullable Detail document;
-  private final @Nullable Detail teamDocument;
   private final @Nullable Detail apiKeyCharacter;
   private final @Nullable Detail speechToTextMinutes;
   private final @Nullable Detail speechToSpeechMinutes;
@@ -29,16 +28,6 @@ public class Usage {
   /** The character usage if included for the account type, or <code>null</code>. */
   public @Nullable Detail getCharacter() {
     return character;
-  }
-
-  /** The document usage if included for the account type, or <code>null</code>. */
-  public @Nullable Detail getDocument() {
-    return document;
-  }
-
-  /** The team document usage if included for the account type, or <code>null</code>. */
-  public @Nullable Detail getTeamDocument() {
-    return teamDocument;
   }
 
   /**
@@ -179,15 +168,12 @@ public class Usage {
     }
   }
 
-  public Usage(
-      @Nullable Detail character, @Nullable Detail document, @Nullable Detail teamDocument) {
-    this(character, document, teamDocument, null, null, null, null, null, null);
+  public Usage(@Nullable Detail character) {
+    this(character, null, null, null, null, null, null);
   }
 
   public Usage(
       @Nullable Detail character,
-      @Nullable Detail document,
-      @Nullable Detail teamDocument,
       @Nullable Detail apiKeyCharacter,
       @Nullable Detail speechToTextMinutes,
       @Nullable Detail speechToSpeechMinutes,
@@ -195,8 +181,6 @@ public class Usage {
       @Nullable Date startTime,
       @Nullable Date endTime) {
     this.character = character;
-    this.document = document;
-    this.teamDocument = teamDocument;
     this.apiKeyCharacter = apiKeyCharacter;
     this.speechToTextMinutes = speechToTextMinutes;
     this.speechToSpeechMinutes = speechToSpeechMinutes;
@@ -206,15 +190,12 @@ public class Usage {
   }
 
   /**
-   * @return <code>true</code> if the character, document, team document or API key character limit
-   *     has been reached, otherwise <code>false</code>. The speech usage types ({@link
-   *     #getSpeechToTextMinutes()}, {@link #getSpeechToSpeechMinutes()}) are not considered; call
-   *     {@link Detail#limitReached()} on them directly.
+   * @return <code>true</code> if the account's character limit or this API key's character limit is
+   *     reached; the speech minutes have their own details ({@link #getSpeechToTextMinutes()},
+   *     {@link #getSpeechToSpeechMinutes()}). A <code>null</code> detail counts as not reached.
    */
-  public boolean anyLimitReached() {
+  public boolean anyCharacterLimitReached() {
     return (getCharacter() != null && getCharacter().limitReached())
-        || (getDocument() != null && getDocument().limitReached())
-        || (getTeamDocument() != null && getTeamDocument().limitReached())
         || (getApiKeyCharacter() != null && getApiKeyCharacter().limitReached());
   }
 
@@ -236,8 +217,6 @@ public class Usage {
         };
 
     addLabelledDetail.accept("Characters", getCharacter());
-    addLabelledDetail.accept("Documents", getDocument());
-    addLabelledDetail.accept("Team documents", getTeamDocument());
     return sb.toString();
   }
 }
