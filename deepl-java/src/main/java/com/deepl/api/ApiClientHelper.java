@@ -78,26 +78,20 @@ final class ApiClientHelper {
    * @param jsonParser Parser used to extract the error message from the response body.
    * @param response Response received from DeepL API.
    * @param inDocumentDownload True if document download function is used, otherwise false.
-   * @param usingGlossary True if a glossary function is used, otherwise false.
    * @throws DeepLException Throws {@link DeepLException} or a derived exception depending on the
    *     type of error.
    */
-  static void checkResponse(
-      Parser jsonParser, HttpResponse response, boolean inDocumentDownload, boolean usingGlossary)
+  static void checkResponse(Parser jsonParser, HttpResponse response, boolean inDocumentDownload)
       throws DeepLException {
-    checkResponse(jsonParser, response, inDocumentDownload, usingGlossary, "auth_key");
+    checkResponse(jsonParser, response, inDocumentDownload, "auth_key");
   }
 
   /**
-   * Same as {@link #checkResponse(Parser, HttpResponse, boolean, boolean)}, naming the key to check
-   * in the authorization failure message.
+   * Same as {@link #checkResponse(Parser, HttpResponse, boolean)}, naming the key to check in the
+   * authorization failure message.
    */
   static void checkResponse(
-      Parser jsonParser,
-      HttpResponse response,
-      boolean inDocumentDownload,
-      boolean usingGlossary,
-      String keyName)
+      Parser jsonParser, HttpResponse response, boolean inDocumentDownload, String keyName)
       throws DeepLException {
     if (response.getCode() >= 200 && response.getCode() < 300) {
       return;
@@ -116,8 +110,7 @@ final class ApiClientHelper {
     }
 
     DeepLException exception =
-        createException(
-                response.getCode(), messageSuffix, inDocumentDownload, usingGlossary, keyName)
+        createException(response.getCode(), messageSuffix, inDocumentDownload, keyName)
             .setHttpStatusCode(response.getCode());
     if (response.isRetriedOnlyIfUnsent()) {
       // The server may have processed the request, so repeating it could duplicate the resource.
@@ -126,13 +119,8 @@ final class ApiClientHelper {
     throw exception;
   }
 
-  @SuppressWarnings("deprecation")
   private static DeepLException createException(
-      int code,
-      String messageSuffix,
-      boolean inDocumentDownload,
-      boolean usingGlossary,
-      String keyName) {
+      int code, String messageSuffix, boolean inDocumentDownload, String keyName) {
     switch (code) {
       case HttpURLConnection.HTTP_BAD_REQUEST:
         return new DeepLException("Bad request" + messageSuffix);
@@ -141,11 +129,7 @@ final class ApiClientHelper {
         return new AuthorizationException(
             "Authorization failure, check " + keyName + messageSuffix);
       case HttpURLConnection.HTTP_NOT_FOUND:
-        if (usingGlossary) {
-          return new GlossaryNotFoundException("Glossary not found" + messageSuffix);
-        } else {
-          return new NotFoundException("Not found" + messageSuffix);
-        }
+        return new NotFoundException("Not found" + messageSuffix);
       case 429:
         return new TooManyRequestsException(
             "Too many requests, DeepL servers are currently experiencing high load"

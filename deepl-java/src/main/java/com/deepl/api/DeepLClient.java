@@ -203,7 +203,7 @@ public class DeepLClient {
         httpClientWrapper.sendJsonRequestWithBackoff(
             String.format("/%s/translate", this.apiVersion),
             jsonBodyWithExtraParameters(requestData, options));
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseTextResult(response.getBody());
   }
 
@@ -260,7 +260,7 @@ public class DeepLClient {
   public Usage getUsage() throws DeepLException, InterruptedException {
     HttpResponse response =
         httpClientWrapper.sendGetRequestWithBackoff(String.format("/%s/usage", apiVersion));
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseUsage(response.getBody());
   }
 
@@ -291,7 +291,7 @@ public class DeepLClient {
   private List<Language> getLanguages(boolean target) throws DeepLException, InterruptedException {
     HttpResponse response =
         httpClientWrapper.sendGetRequestWithBackoff("/v3/languages?resource=translate_text");
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseV3Languages(response.getBody(), target);
   }
 
@@ -308,7 +308,7 @@ public class DeepLClient {
       throws DeepLException, InterruptedException {
     HttpResponse response =
         httpClientWrapper.sendGetRequestWithBackoff("/v3/languages?resource=glossary");
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseV3GlossaryLanguagePairs(response.getBody());
   }
 
@@ -472,7 +472,7 @@ public class DeepLClient {
               params,
               uploadFileName(inputFile.getName(), options),
               inputStream);
-      checkResponse(response, false, false);
+      checkResponse(response, false);
       return jsonParser.parseDocumentHandle(response.getBody());
     }
   }
@@ -523,7 +523,7 @@ public class DeepLClient {
             params,
             uploadFileName(fileName, options),
             inputStream);
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseDocumentHandle(response.getBody());
   }
 
@@ -555,7 +555,7 @@ public class DeepLClient {
     String relativeUrl =
         String.format("/%s/document/%s", apiVersion, encodePathSegment(handle.getDocumentId()));
     HttpResponse response = httpClientWrapper.sendRequestWithBackoff(relativeUrl, params);
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseDocumentStatus(response.getBody());
   }
 
@@ -758,7 +758,7 @@ public class DeepLClient {
   public GlossaryInfo getGlossary(String glossaryId) throws DeepLException, InterruptedException {
     String relativeUrl = String.format("/%s/glossaries/%s", apiVersion, glossaryId);
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
-    checkResponse(response, false, true);
+    checkResponse(response, false);
     return jsonParser.parseGlossaryInfo(response.getBody());
   }
 
@@ -774,7 +774,7 @@ public class DeepLClient {
   public List<GlossaryInfo> listGlossaries() throws DeepLException, InterruptedException {
     HttpResponse response =
         httpClientWrapper.sendGetRequestWithBackoff(String.format("/%s/glossaries", apiVersion));
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseGlossaryInfoList(response.getBody());
   }
 
@@ -806,7 +806,7 @@ public class DeepLClient {
       throws DeepLException, InterruptedException {
     String relativeUrl = String.format("/%s/glossaries/%s/entries", apiVersion, glossaryId);
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
-    checkResponse(response, false, true);
+    checkResponse(response, false);
     return GlossaryEntries.fromTsv(response.getBody());
   }
 
@@ -831,7 +831,7 @@ public class DeepLClient {
   public void deleteGlossary(String glossaryId) throws DeepLException, InterruptedException {
     String relativeUrl = String.format("/%s/glossaries/%s", apiVersion, glossaryId);
     HttpResponse response = httpClientWrapper.sendDeleteRequestWithBackoff(relativeUrl);
-    checkResponse(response, false, true);
+    checkResponse(response, false);
   }
 
   /**
@@ -1194,16 +1194,16 @@ public class DeepLClient {
     HttpResponse response =
         httpClientWrapper.sendJsonRequestRetryingOnlyUnprocessed(
             String.format("/%s/glossaries", apiVersion), jsonParser.getGson().toJson(requestData));
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseGlossaryInfo(response.getBody());
   }
 
   /**
-   * Functions the same as {@link DeepLClient#checkResponse(HttpResponse, boolean, boolean)} but
-   * accepts response stream for document downloads. If the HTTP status code represents failure, the
+   * Functions the same as {@link DeepLClient#checkResponse(HttpResponse, boolean)} but accepts
+   * response stream for document downloads. If the HTTP status code represents failure, the
    * response stream is converted to a String response to throw the appropriate exception.
    *
-   * @see DeepLClient#checkResponse(HttpResponse, boolean, boolean)
+   * @see DeepLClient#checkResponse(HttpResponse, boolean)
    */
   private void checkResponse(HttpResponseStream response) throws DeepLException {
     if (response.getCode() >= HttpURLConnection.HTTP_OK
@@ -1211,7 +1211,7 @@ public class DeepLClient {
       return;
     }
     // A response without body is mapped by its status like one with an empty body.
-    checkResponse(response.toStringResponse(), true, false);
+    checkResponse(response.toStringResponse(), true);
   }
 
   /**
@@ -1219,14 +1219,12 @@ public class DeepLClient {
    *
    * @param response Response received from DeepL API.
    * @param inDocumentDownload True if document download function is used, otherwise false.
-   * @param usingGlossary True if a glossary function is used, otherwise false.
    * @throws DeepLException Throws {@link DeepLException} or a derived exception depending on the
    *     type of error.
    */
-  protected void checkResponse(
-      HttpResponse response, boolean inDocumentDownload, boolean usingGlossary)
+  protected void checkResponse(HttpResponse response, boolean inDocumentDownload)
       throws DeepLException {
-    ApiClientHelper.checkResponse(jsonParser, response, inDocumentDownload, usingGlossary);
+    ApiClientHelper.checkResponse(jsonParser, response, inDocumentDownload);
   }
 
   /** The file name of an upload: the filename option if set, else the given name. */
@@ -1325,7 +1323,7 @@ public class DeepLClient {
     HttpResponse response =
         httpClientWrapper.sendJsonRequestWithBackoff(
             String.format("/%s/write/%s", apiVersion, operation), jsonBody);
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     List<WriteResult> results = jsonParser.parseWriteResult(response.getBody());
     if (results.size() != textCount || results.contains(null)) {
       throw new DeepLException(
@@ -1396,7 +1394,7 @@ public class DeepLClient {
     HttpResponse response =
         httpClientWrapper.sendJsonRequestRetryingOnlyUnprocessed(
             "/v3/glossaries", createGlossaryBody(name, dictionaries, options));
-    checkResponse(response, false, true);
+    checkResponse(response, false);
     return jsonParser.parseMultilingualGlossaryInfo(response.getBody());
   }
 
@@ -1530,7 +1528,7 @@ public class DeepLClient {
       throws DeepLException, InterruptedException {
     String relativeUrl = multilingualGlossaryPath(glossaryId);
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
-    checkResponse(response, false, true);
+    checkResponse(response, false);
     return jsonParser.parseMultilingualGlossaryInfo(response.getBody());
   }
 
@@ -1561,7 +1559,7 @@ public class DeepLClient {
   public List<MultilingualGlossaryInfo> listMultilingualGlossaries()
       throws DeepLException, InterruptedException {
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff("/v3/glossaries");
-    checkResponse(response, false, true);
+    checkResponse(response, false);
     return jsonParser.parseMultilingualGlossaryInfoList(response.getBody());
   }
 
@@ -1586,7 +1584,7 @@ public class DeepLClient {
     String queryString = createLanguageQueryParams(sourceLanguageCode, targetLanguageCode);
     String relativeUrl = multilingualGlossaryPath(glossaryId) + "/entries" + queryString;
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
-    checkResponse(response, false, true);
+    checkResponse(response, false);
     return jsonParser.parseMultilingualGlossaryDictionaryEntries(response.getBody());
   }
 
@@ -2238,7 +2236,7 @@ public class DeepLClient {
     String relativeUrl = multilingualGlossaryPath(glossaryId);
     HttpResponse response =
         httpClientWrapper.sendJsonPatchRequestWithBackoff(relativeUrl, jsonBody);
-    checkResponse(response, false, true);
+    checkResponse(response, false);
     return jsonParser.parseMultilingualGlossaryInfo(response.getBody());
   }
 
@@ -2298,7 +2296,7 @@ public class DeepLClient {
     String jsonBody = jsonBodyWithExtraParameters(requestData, options);
     HttpResponse response =
         httpClientWrapper.sendJsonPatchRequestWithBackoff(relativeUrl, jsonBody);
-    checkResponse(response, false, true);
+    checkResponse(response, false);
     return jsonParser.parseMultilingualGlossaryInfo(response.getBody());
   }
 
@@ -2552,7 +2550,7 @@ public class DeepLClient {
       throws DeepLException, InterruptedException {
     String relativeUrl = multilingualGlossaryPath(glossaryId);
     HttpResponse response = httpClientWrapper.sendDeleteRequestWithBackoff(relativeUrl);
-    this.checkResponse(response, false, true);
+    this.checkResponse(response, false);
   }
 
   /**
@@ -2585,7 +2583,7 @@ public class DeepLClient {
     String queryString = createLanguageQueryParams(sourceLanguageCode, targetLanguageCode);
     String relativeUrl = multilingualGlossaryPath(glossaryId) + "/dictionaries" + queryString;
     HttpResponse response = httpClientWrapper.sendDeleteRequestWithBackoff(relativeUrl);
-    this.checkResponse(response, false, true);
+    this.checkResponse(response, false);
   }
 
   /**
@@ -2664,7 +2662,7 @@ public class DeepLClient {
     String jsonBody = jsonBodyWithExtraParameters(requestData, options);
     HttpResponse response =
         httpClientWrapper.sendJsonRequestRetryingOnlyUnprocessed("/v3/spoken-terms", jsonBody);
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseSpokenTerms(response.getBody());
   }
 
@@ -2690,7 +2688,7 @@ public class DeepLClient {
    */
   public List<SpokenTerms> listSpokenTerms() throws DeepLException, InterruptedException {
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff("/v3/spoken-terms");
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseSpokenTermsList(response.getBody());
   }
 
@@ -2709,7 +2707,7 @@ public class DeepLClient {
       throws DeepLException, InterruptedException {
     HttpResponse response =
         httpClientWrapper.sendGetRequestWithBackoff(spokenTermsPath(spokenTermsId));
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseSpokenTerms(response.getBody());
   }
 
@@ -2753,7 +2751,7 @@ public class DeepLClient {
     String jsonBody = jsonBodyWithExtraParameters(requestData, options);
     HttpResponse response =
         httpClientWrapper.sendJsonPatchRequestWithBackoff(relativeUrl, jsonBody);
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseSpokenTerms(response.getBody());
   }
 
@@ -2783,7 +2781,7 @@ public class DeepLClient {
       throws DeepLException, InterruptedException {
     String relativeUrl = spokenTermsPath(spokenTermsId) + "/entries" + langQueryString(lang);
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseSpokenTermsEntries(response.getBody());
   }
 
@@ -2821,7 +2819,7 @@ public class DeepLClient {
     String jsonBody = jsonBodyWithExtraParameters(createSpokenTermsListData(entries), options);
     HttpResponse response =
         httpClientWrapper.sendJsonRequestWithBackoff("PUT", relativeUrl, jsonBody);
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseSpokenTermsTermList(response.getBody());
   }
 
@@ -2874,7 +2872,7 @@ public class DeepLClient {
   public void deleteSpokenTerms(String spokenTermsId) throws DeepLException, InterruptedException {
     HttpResponse response =
         httpClientWrapper.sendDeleteRequestWithBackoff(spokenTermsPath(spokenTermsId));
-    checkResponse(response, false, false);
+    checkResponse(response, false);
   }
 
   /**
@@ -2901,7 +2899,7 @@ public class DeepLClient {
       throws DeepLException, InterruptedException {
     String relativeUrl = spokenTermsPath(spokenTermsId) + "/term-lists" + langQueryString(lang);
     HttpResponse response = httpClientWrapper.sendDeleteRequestWithBackoff(relativeUrl);
-    checkResponse(response, false, false);
+    checkResponse(response, false);
   }
 
   /**
@@ -2944,7 +2942,7 @@ public class DeepLClient {
 
     String relativeUrl = "/v3/style_rules" + ApiClientHelper.createQueryString(queryParams);
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseStyleRuleInfoList(response.getBody());
   }
 
@@ -2980,7 +2978,7 @@ public class DeepLClient {
     }
     String relativeUrl = "/v3/style_profiles" + ApiClientHelper.createQueryString(queryParams);
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseStyleProfileList(response.getBody());
   }
 
@@ -3013,7 +3011,7 @@ public class DeepLClient {
     HttpResponse response =
         httpClientWrapper.sendJsonRequestRetryingOnlyUnprocessed(
             "/v3/style_profiles", createStyleProfileBody(name, options));
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseStyleProfile(response.getBody());
   }
 
@@ -3041,7 +3039,7 @@ public class DeepLClient {
       throws DeepLException, InterruptedException {
     HttpResponse response =
         httpClientWrapper.sendGetRequestWithBackoff(styleProfilePath(styleProfileId));
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseStyleProfile(response.getBody());
   }
 
@@ -3078,7 +3076,7 @@ public class DeepLClient {
         httpClientWrapper.sendJsonPatchRequestWithBackoff(
             relativeUrl,
             createStyleProfileBody(options != null ? options.getName() : null, options));
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseStyleProfile(response.getBody());
   }
 
@@ -3129,7 +3127,7 @@ public class DeepLClient {
       throws DeepLException, InterruptedException {
     HttpResponse response =
         httpClientWrapper.sendDeleteRequestWithBackoff(styleProfilePath(styleProfileId));
-    checkResponse(response, false, false);
+    checkResponse(response, false);
   }
 
   /**
@@ -3169,7 +3167,7 @@ public class DeepLClient {
     }
     String relativeUrl = "/v3/languages" + ApiClientHelper.createQueryString(queryParams);
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseLanguageSupportList(response.getBody());
   }
 
@@ -3218,7 +3216,7 @@ public class DeepLClient {
    */
   public List<LanguageResource> getLanguageResources() throws DeepLException, InterruptedException {
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff("/v3/languages/resources");
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseLanguageResourceList(response.getBody());
   }
 
@@ -3247,7 +3245,7 @@ public class DeepLClient {
     String relativeUrl =
         "/v3/translation_memories" + ApiClientHelper.createQueryString(queryParams);
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseTranslationMemoryInfoList(response.getBody());
   }
 
@@ -3277,7 +3275,7 @@ public class DeepLClient {
     validateParameter("translationMemoryId", translationMemoryId);
     String relativeUrl = translationMemoryPath(translationMemoryId);
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseTranslationMemoryInfo(response.getBody());
   }
 
@@ -3333,7 +3331,7 @@ public class DeepLClient {
             + "/segments"
             + ApiClientHelper.createQueryString(queryParams);
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseTranslationMemorySegments(response.getBody());
   }
 
@@ -3386,7 +3384,7 @@ public class DeepLClient {
     validateParameter("translationMemoryId", translationMemoryId);
     String relativeUrl = translationMemoryPath(translationMemoryId);
     HttpResponse response = httpClientWrapper.sendDeleteRequestWithBackoff(relativeUrl);
-    checkResponse(response, false, false);
+    checkResponse(response, false);
   }
 
   /**
@@ -3446,7 +3444,7 @@ public class DeepLClient {
     HttpResponse response =
         httpClientWrapper.sendJsonRequestRetryingOnlyUnprocessed(
             "/v3/translation_memories/import", jsonBody);
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseTranslationMemoryImport(response.getBody());
   }
 
@@ -3583,7 +3581,7 @@ public class DeepLClient {
     validateParameter("translationMemoryId", translationMemoryId);
     String relativeUrl = translationMemoryPath(translationMemoryId) + "/export";
     HttpResponse response = httpClientWrapper.sendRequestRetryingOnlyUnprocessed(relativeUrl);
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     // 200 means the API reused a previously completed export, 202 that it started a new one.
     return jsonParser.parseTranslationMemoryExport(response.getBody(), response.getCode() == 200);
   }
@@ -3614,7 +3612,7 @@ public class DeepLClient {
     validateParameter("jobId", jobId);
     String relativeUrl = translationMemoryJobPath(jobId);
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseTranslationMemoryJob(response.getBody());
   }
 
@@ -4305,7 +4303,7 @@ public class DeepLClient {
     String jsonBody = jsonBodyWithExtraParameters(requestData, options);
     HttpResponse response =
         httpClientWrapper.sendJsonRequestRetryingOnlyUnprocessed("/v3/style_rules", jsonBody);
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseStyleRuleInfo(response.getBody());
   }
 
@@ -4322,7 +4320,7 @@ public class DeepLClient {
   public StyleRuleInfo getStyleRule(String styleId)
       throws DeepLException, InterruptedException, NotFoundException {
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(styleRulePath(styleId));
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseStyleRuleInfo(response.getBody());
   }
 
@@ -4379,7 +4377,7 @@ public class DeepLClient {
     String jsonBody = jsonBodyWithExtraParameters(requestData, options);
     HttpResponse response =
         httpClientWrapper.sendJsonPatchRequestWithBackoff(relativeUrl, jsonBody);
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseStyleRuleInfo(response.getBody());
   }
 
@@ -4428,7 +4426,7 @@ public class DeepLClient {
   public void deleteStyleRule(String styleId)
       throws DeepLException, InterruptedException, NotFoundException {
     HttpResponse response = httpClientWrapper.sendDeleteRequestWithBackoff(styleRulePath(styleId));
-    checkResponse(response, false, false);
+    checkResponse(response, false);
   }
 
   /**
@@ -4497,7 +4495,7 @@ public class DeepLClient {
     HttpResponse response =
         httpClientWrapper.sendJsonRequestWithBackoff(
             "PUT", styleRulePath + "/configured_rules", jsonBody);
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseStyleRuleInfo(response.getBody());
   }
 
@@ -4549,7 +4547,7 @@ public class DeepLClient {
     String jsonBody = customInstructionBody(label, prompt, sourceLanguage, options);
     HttpResponse response =
         httpClientWrapper.sendJsonRequestRetryingOnlyUnprocessed(relativeUrl, jsonBody);
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseCustomInstruction(response.getBody());
   }
 
@@ -4614,7 +4612,7 @@ public class DeepLClient {
       throws DeepLException, InterruptedException, NotFoundException {
     HttpResponse response =
         httpClientWrapper.sendGetRequestWithBackoff(customInstructionPath(styleId, instructionId));
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseCustomInstruction(response.getBody());
   }
 
@@ -4722,7 +4720,7 @@ public class DeepLClient {
     String jsonBody = customInstructionBody(label, prompt, sourceLanguage, options);
     HttpResponse response =
         httpClientWrapper.sendJsonRequestWithBackoff("PUT", relativeUrl, jsonBody);
-    checkResponse(response, false, false);
+    checkResponse(response, false);
     return jsonParser.parseCustomInstruction(response.getBody());
   }
 
@@ -4910,7 +4908,7 @@ public class DeepLClient {
     HttpResponse response =
         httpClientWrapper.sendDeleteRequestWithBackoff(
             customInstructionPath(styleId, instructionId));
-    checkResponse(response, false, false);
+    checkResponse(response, false);
   }
 
   /**
@@ -5030,7 +5028,7 @@ public class DeepLClient {
     HttpResponse response =
         httpClientWrapper.sendJsonRequestRetryingOnlyUnprocessed(
             "/v3/glossaries", createGlossaryBody(name, dictionaries, options));
-    checkResponse(response, false, true);
+    checkResponse(response, false);
     return jsonParser.parseMultilingualGlossaryInfo(response.getBody());
   }
 
@@ -5058,7 +5056,7 @@ public class DeepLClient {
     String relativeUrl = multilingualGlossaryPath(glossaryId) + "/dictionaries";
     HttpResponse response =
         httpClientWrapper.sendJsonRequestWithBackoff("PUT", relativeUrl, jsonBody);
-    checkResponse(response, false, true);
+    checkResponse(response, false);
     return jsonParser.parseMultilingualGlossaryDictionaryInfo(response.getBody());
   }
 
@@ -5089,7 +5087,7 @@ public class DeepLClient {
     String relativeUrl = multilingualGlossaryPath(glossaryId);
     HttpResponse response =
         httpClientWrapper.sendJsonPatchRequestWithBackoff(relativeUrl, jsonBody);
-    checkResponse(response, false, true);
+    checkResponse(response, false);
     return jsonParser.parseMultilingualGlossaryInfo(response.getBody());
   }
 

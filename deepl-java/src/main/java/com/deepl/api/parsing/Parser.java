@@ -156,10 +156,9 @@ public class Parser {
   /**
    * Parses the response of the get-entries endpoint and unwraps its one-element dictionaries list.
    *
-   * @throws NotFoundException If the list is empty (thrown as {@link GlossaryNotFoundException}).
+   * @throws NotFoundException If the list is empty.
    * @throws DeepLException If the list is absent or the response is malformed.
    */
-  @SuppressWarnings("deprecation")
   public MultilingualGlossaryDictionaryEntries parseMultilingualGlossaryDictionaryEntries(
       String json) throws DeepLException {
     List<MultilingualGlossaryDictionaryEntriesResponse> dictionaries =
@@ -169,8 +168,7 @@ public class Parser {
           "Failed to parse the response of the DeepL API: missing dictionaries");
     }
     if (dictionaries.isEmpty()) {
-      throw new GlossaryNotFoundException(
-          "Glossary dictionary not found for the given language pair");
+      throw new NotFoundException("Glossary dictionary not found for the given language pair");
     }
     return parse(() -> dictionaries.get(0).getDictionaryEntries());
   }

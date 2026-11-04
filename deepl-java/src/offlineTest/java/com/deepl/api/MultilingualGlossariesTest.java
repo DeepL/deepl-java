@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.api.io.TempDir;
 
 class MultilingualGlossariesTest {
@@ -357,7 +358,7 @@ class MultilingualGlossariesTest {
   }
 
   @Test
-  void throwsGlossaryNotFoundWhenTheGlossaryIsUnknown() {
+  void throwsNotFoundWhenTheGlossaryIsUnknown() {
     wm.stubFor(get("/v3/glossaries/g1").willReturn(aResponse().withStatus(404)));
     wm.stubFor(delete("/v3/glossaries/g1").willReturn(aResponse().withStatus(404)));
     wm.stubFor(
@@ -365,16 +366,12 @@ class MultilingualGlossariesTest {
             .willReturn(aResponse().withStatus(404)));
     wm.stubFor(put("/v3/glossaries/g1/dictionaries").willReturn(aResponse().withStatus(404)));
     wm.stubFor(patch(urlEqualTo("/v3/glossaries/g1")).willReturn(aResponse().withStatus(404)));
-    assertThrows(GlossaryNotFoundException.class, () -> client.getMultilingualGlossary("g1"));
-    assertThrows(GlossaryNotFoundException.class, () -> client.deleteMultilingualGlossary("g1"));
-    assertThrows(
-        GlossaryNotFoundException.class,
-        () -> client.getMultilingualGlossaryDictionaryEntries("g1", "en", "de"));
-    assertThrows(
-        GlossaryNotFoundException.class,
+    assertExactlyNotFound(() -> client.getMultilingualGlossary("g1"));
+    assertExactlyNotFound(() -> client.deleteMultilingualGlossary("g1"));
+    assertExactlyNotFound(() -> client.getMultilingualGlossaryDictionaryEntries("g1", "en", "de"));
+    assertExactlyNotFound(
         () -> client.replaceMultilingualGlossaryDictionary("g1", "en", "de", entries("a", "b")));
-    assertThrows(
-        GlossaryNotFoundException.class, () -> client.updateMultilingualGlossaryName("g1", "name"));
+    assertExactlyNotFound(() -> client.updateMultilingualGlossaryName("g1", "name"));
   }
 
   @Test
@@ -579,9 +576,11 @@ class MultilingualGlossariesTest {
     wm.stubFor(
         get(urlEqualTo("/v3/glossaries/g1/entries?source_lang=en&target_lang=de"))
             .willReturn(okJson("{\"dictionaries\":[]}")));
-    assertThrows(
-        NotFoundException.class,
-        () -> client.getMultilingualGlossaryDictionaryEntries("g1", "en", "de"));
+    assertExactlyNotFound(() -> client.getMultilingualGlossaryDictionaryEntries("g1", "en", "de"));
+  }
+
+  private static void assertExactlyNotFound(Executable call) {
+    assertEquals(NotFoundException.class, assertThrows(NotFoundException.class, call).getClass());
   }
 
   @Test
@@ -605,20 +604,17 @@ class MultilingualGlossariesTest {
   }
 
   @Test
-  void throwsGlossaryNotFoundWhenCreatingOrListingReturns404() {
+  void throwsNotFoundWhenCreatingOrListingReturns404() {
     wm.stubFor(post("/v3/glossaries").willReturn(aResponse().withStatus(404)));
     wm.stubFor(get("/v3/glossaries").willReturn(aResponse().withStatus(404)));
-    assertThrows(
-        GlossaryNotFoundException.class,
+    assertExactlyNotFound(
         () ->
             client.createMultilingualGlossary(
                 "n",
                 Collections.singletonList(
                     new MultilingualGlossaryDictionaryEntries("en", "de", entries("a", "b")))));
-    assertThrows(
-        GlossaryNotFoundException.class,
-        () -> client.createMultilingualGlossaryFromCsv("n", "en", "de", "a,b"));
-    assertThrows(GlossaryNotFoundException.class, () -> client.listMultilingualGlossaries());
+    assertExactlyNotFound(() -> client.createMultilingualGlossaryFromCsv("n", "en", "de", "a,b"));
+    assertExactlyNotFound(() -> client.listMultilingualGlossaries());
   }
 
   @Test

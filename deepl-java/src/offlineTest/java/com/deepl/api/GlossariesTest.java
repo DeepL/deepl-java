@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.api.io.TempDir;
 
 @SuppressWarnings("deprecation")
@@ -174,20 +175,23 @@ class GlossariesTest {
   }
 
   @Test
-  void throwsGlossaryNotFoundWhenTheGlossaryIsUnknown() {
+  void throwsNotFoundWhenTheGlossaryIsUnknown() {
     wm.stubFor(get("/v2/glossaries/g1").willReturn(aResponse().withStatus(404)));
     wm.stubFor(get("/v2/glossaries/g1/entries").willReturn(aResponse().withStatus(404)));
     wm.stubFor(delete("/v2/glossaries/g1").willReturn(aResponse().withStatus(404)));
-    assertThrows(GlossaryNotFoundException.class, () -> translator.getGlossary("g1"));
-    assertThrows(GlossaryNotFoundException.class, () -> translator.getGlossaryEntries("g1"));
-    assertThrows(GlossaryNotFoundException.class, () -> translator.deleteGlossary("g1"));
+    assertExactlyNotFound(() -> translator.getGlossary("g1"));
+    assertExactlyNotFound(() -> translator.getGlossaryEntries("g1"));
+    assertExactlyNotFound(() -> translator.deleteGlossary("g1"));
   }
 
   @Test
   void throwsNotFoundWhenTheGlossaryListIsUnknown() {
     wm.stubFor(get("/v2/glossaries").willReturn(aResponse().withStatus(404)));
-    NotFoundException thrown = assertThrows(NotFoundException.class, translator::listGlossaries);
-    assertFalse(thrown instanceof GlossaryNotFoundException);
+    assertExactlyNotFound(translator::listGlossaries);
+  }
+
+  private static void assertExactlyNotFound(Executable call) {
+    assertEquals(NotFoundException.class, assertThrows(NotFoundException.class, call).getClass());
   }
 
   @Test

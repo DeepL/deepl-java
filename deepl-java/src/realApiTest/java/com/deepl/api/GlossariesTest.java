@@ -28,8 +28,7 @@ class GlossariesTest {
       assertEquals(1, glossary.getEntryCount());
 
       GlossaryInfo fetched =
-          RealApiClient.retryWhileGlossaryNotFound(
-              () -> translator.getGlossary(glossary.getGlossaryId()));
+          RealApiClient.retryWhileNotFound(() -> translator.getGlossary(glossary.getGlossaryId()));
       assertEquals(glossary.getGlossaryId(), fetched.getGlossaryId());
       assertEquals(name, fetched.getName());
       assertEquals(glossary.getCreationTime(), fetched.getCreationTime());
@@ -42,7 +41,7 @@ class GlossariesTest {
     } finally {
       try {
         translator.deleteGlossary(glossary.getGlossaryId());
-      } catch (GlossaryNotFoundException ignored) {
+      } catch (NotFoundException ignored) {
         // Already gone
       }
     }

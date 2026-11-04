@@ -112,8 +112,11 @@ class ErrorsTest {
   }
 
   @Test
-  void throwsGlossaryNotFoundOnlyForGlossaryRequests() {
+  void throwsNotFoundForGlossaryRequests() {
     wm.stubFor(get("/v2/glossaries/g1").willReturn(aResponse().withStatus(404)));
-    assertThrows(GlossaryNotFoundException.class, () -> translator.getGlossary("g1"));
+    NotFoundException thrown =
+        assertThrows(NotFoundException.class, () -> translator.getGlossary("g1"));
+    assertEquals(NotFoundException.class, thrown.getClass());
+    assertEquals("Not found", thrown.getMessage());
   }
 }

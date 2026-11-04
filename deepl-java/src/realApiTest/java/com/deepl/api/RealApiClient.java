@@ -53,20 +53,6 @@ final class RealApiClient {
     return new DeepLAdminClient(requireEnv("DEEPL_ADMIN_KEY"), options);
   }
 
-  /** Calls {@code call}, retrying while a just-created glossary is not yet visible. */
-  static <T> T retryWhileGlossaryNotFound(Callable<T> call) throws Exception {
-    for (int attempt = 0; ; attempt++) {
-      try {
-        return call.call();
-      } catch (GlossaryNotFoundException e) {
-        if (attempt >= 9) {
-          throw e;
-        }
-        Thread.sleep(1000);
-      }
-    }
-  }
-
   /** Calls {@code call}, retrying while a just-created resource is not yet visible. */
   static <T> T retryWhileNotFound(Callable<T> call) throws Exception {
     for (int attempt = 0; ; attempt++) {

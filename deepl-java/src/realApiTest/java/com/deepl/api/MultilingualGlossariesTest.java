@@ -33,7 +33,7 @@ class MultilingualGlossariesTest {
       assertEquals(2, glossary.getDictionaries().size());
 
       MultilingualGlossaryInfo fetched =
-          RealApiClient.retryWhileGlossaryNotFound(
+          RealApiClient.retryWhileNotFound(
               () -> client.getMultilingualGlossary(glossary.getGlossaryId()));
       assertEquals(glossary.getGlossaryId(), fetched.getGlossaryId());
       assertEquals(name, fetched.getName());
@@ -64,7 +64,7 @@ class MultilingualGlossariesTest {
     } finally {
       try {
         client.deleteMultilingualGlossary(glossary.getGlossaryId());
-      } catch (GlossaryNotFoundException ignored) {
+      } catch (NotFoundException ignored) {
         // Already gone
       }
     }

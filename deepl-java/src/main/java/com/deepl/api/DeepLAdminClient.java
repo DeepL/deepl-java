@@ -594,7 +594,7 @@ public class DeepLAdminClient {
   }
 
   private void checkResponse(HttpResponse response) throws DeepLException {
-    ApiClientHelper.checkResponse(jsonParser, response, false, false, "adminKey");
+    ApiClientHelper.checkResponse(jsonParser, response, false, "adminKey");
   }
 
   private static JsonObject createKeyRequest(String keyId) {

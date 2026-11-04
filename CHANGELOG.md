@@ -95,6 +95,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   only; Java 8 remains the minimum.
 
 ### Removed
+- **Breaking:** removed the deprecated `GlossaryNotFoundException`. Every
+  glossary function now throws `NotFoundException` itself for HTTP 404, and
+  `getMultilingualGlossaryDictionaryEntries()` throws `NotFoundException` when
+  the glossary has no dictionary for the language pair. Catch
+  `NotFoundException` instead. The `usingGlossary` parameter of the protected
+  `DeepLClient.checkResponse()` is removed.
 - Removed `Usage.getDocument()`, `Usage.getTeamDocument()` and the matching
   `document` and `teamDocument` parameters of the `Usage` constructors: the API
   no longer returns document usage. `toString()` no longer prints "Documents"

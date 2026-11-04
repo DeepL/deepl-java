@@ -542,18 +542,18 @@ Functions to get, list, and delete stored glossaries are also provided:
 
 - `getMultilingualGlossary()` takes a glossary ID or `MultilingualGlossaryInfo`
   object and returns a `MultilingualGlossaryInfo` object for a stored glossary,
-  or raises an exception if no such glossary is found.
+  or throws a `NotFoundException` if no such glossary is found.
 - `listMultilingualGlossaries()` returns a list of `MultilingualGlossaryInfo`
   objects corresponding to all of your stored glossaries.
 - `deleteMultilingualGlossary()` takes a glossary ID or
   `MultilingualGlossaryInfo` object and deletes the stored glossary from the
-  server, or raises an exception if no such glossary is found.
+  server, or throws a `NotFoundException` if no such glossary is found.
 - `deleteMultilingualGlossaryDictionary()` takes a glossary ID or
   `MultilingualGlossaryInfo` object to identify the glossary. Additionally
   takes in a source and target language or a
   `MultilingualGlossaryDictionaryInfo` object and deletes the stored dictionary
-  from the server, or raises an exception if no such glossary dictionary is
-  found.
+  from the server, or throws a `NotFoundException` if no such glossary
+  dictionary is found.
 
 ```java
 class Example {  // Continuing class Example from above
@@ -1839,9 +1839,9 @@ invalid arguments are provided, they may raise the standard exceptions
 
 - `AuthorizationException`: the key is invalid or not authorized (HTTP 401 or
   403).
-- `NotFoundException`: the resource does not exist (HTTP 404). The glossary
-  functions throw its subclass `GlossaryNotFoundException`, which is
-  deprecated: catch `NotFoundException` instead.
+- `NotFoundException`: the resource does not exist (HTTP 404), including a
+  glossary, or a multilingual glossary dictionary missing for the requested
+  language pair.
 - `TooManyRequestsException`: HTTP 429 after all retries.
 - `QuotaExceededException`: the quota is exceeded (HTTP 456).
 - `ConnectionException`: no HTTP response was received, for example after a
