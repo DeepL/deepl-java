@@ -586,6 +586,58 @@ class TranslationMemoriesTest {
   }
 
   @Test
+  void wrapsAFailedImportJobWithItsId() throws Exception {
+    File tmx = Fixtures.writeFile(tempDir.resolve("example.tmx").toFile(), Fixtures.EXAMPLE_TMX);
+    wm.stubFor(
+        post("/v3/translation_memories/import")
+            .willReturn(okJson("{\"job_id\":\"j1\",\"upload_url\":\"" + storageUrl() + "\"}")));
+    wm.stubFor(put("/storage").willReturn(aResponse().withStatus(200)));
+    wm.stubFor(
+        get("/v3/translation_memories/jobs/j1")
+            .willReturn(okJson(job("import", "failed", ",\"error\":{\"message\":\"bad tmx\"}"))));
+    TranslationMemoryJobException thrown =
+        assertThrows(
+            TranslationMemoryJobException.class,
+            () -> client.importTranslationMemoryFromFilepath(tmx, "TM"));
+    assertEquals("j1", thrown.getJobId());
+    assertEquals("bad tmx", thrown.getMessage());
+    assertEquals(DeepLException.class, thrown.getCause().getClass());
+  }
+
+  @Test
+  void wrapsAFailedImportCreateWithoutJobIdAndCopiesItsStatus() throws Exception {
+    File tmx = Fixtures.writeFile(tempDir.resolve("example.tmx").toFile(), Fixtures.EXAMPLE_TMX);
+    wm.stubFor(post("/v3/translation_memories/import").willReturn(aResponse().withStatus(403)));
+    TranslationMemoryJobException thrown =
+        assertThrows(
+            TranslationMemoryJobException.class,
+            () -> client.importTranslationMemoryFromFilepath(tmx, "TM"));
+    assertNull(thrown.getJobId());
+    assertTrue(thrown.getCause() instanceof AuthorizationException);
+    assertEquals(403, thrown.getHttpStatusCode());
+    assertFalse(thrown.getShouldRetry());
+  }
+
+  @Test
+  void wrapsAFailedExportJobWithItsId() {
+    wm.stubFor(
+        post("/v3/translation_memories/tm1/export")
+            .willReturn(
+                okJson("{\"job_id\":\"j1\",\"parameters\":{\"translation_memory_id\":\"tm1\"}}")));
+    wm.stubFor(
+        get("/v3/translation_memories/jobs/j1")
+            .willReturn(okJson(job("export", "failed", ",\"error\":{\"message\":\"gone\"}"))));
+    File output = tempDir.resolve("export.tmx").toFile();
+    TranslationMemoryJobException thrown =
+        assertThrows(
+            TranslationMemoryJobException.class,
+            () -> client.exportTranslationMemoryToFilepath("tm1", output));
+    assertEquals("j1", thrown.getJobId());
+    assertEquals("gone", thrown.getMessage());
+    assertFalse(output.exists());
+  }
+
+  @Test
   void throwsIllegalArgumentWhenTheImportFileDoesNotExist() {
     assertThrows(
         IllegalArgumentException.class,
@@ -599,6 +651,7 @@ class TranslationMemoriesTest {
         assertThrows(
             DeepLException.class, () -> client.importTranslationMemoryFromFilepath(directory));
     assertTrue(thrown.getCause() instanceof IOException);
+    assertNull(((TranslationMemoryJobException) thrown).getJobId());
     wm.verify(0, postRequestedFor(urlPathMatching("/v3/translation_memories/.*")));
   }
 
@@ -609,6 +662,7 @@ class TranslationMemoriesTest {
         assertThrows(
             DeepLException.class, () -> client.exportTranslationMemoryToFilepath("tm1", occupied));
     assertTrue(thrown.getCause() instanceof IOException);
+    assertNull(((TranslationMemoryJobException) thrown).getJobId());
     assertTrue(thrown.getMessage().contains("already exists"));
     assertEquals("mine", Fixtures.readFile(occupied));
 
@@ -648,6 +702,7 @@ class TranslationMemoriesTest {
         assertThrows(
             DeepLException.class, () -> client.exportTranslationMemoryToFilepath("tm1", failing));
     assertSame(diskFull, thrown.getCause());
+    assertEquals("j1", ((TranslationMemoryJobException) thrown).getJobId());
   }
 
   @Test

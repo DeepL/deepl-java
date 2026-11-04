@@ -1342,9 +1342,12 @@ The optional timeout is the maximum time to wait for the import to finish; omit
 it to wait indefinitely. The job status is polled every 5 seconds, and the last
 wait is cut short at the timeout.
 
-A missing input file throws `IllegalArgumentException` and an unreadable file
-throws `DeepLException` with the `IOException` as its cause, both before any
-request is sent.
+A missing input file throws `IllegalArgumentException` before any request is
+sent. Every other failure, including an unreadable file, an API error, a failed
+job or an exceeded timeout, throws a `TranslationMemoryJobException` with the
+underlying error as its cause. Once the import job was created, its
+`getJobId()` returns the job ID, so you can inspect the job or wait for it
+again; it returns `null` for a failure before that, such as an unreadable file.
 
 `ImportTranslationMemoryOptions` groups the import options: `setDisplayName()`,
 `setContentType()` (declared when the job is created and sent with the upload;
@@ -1432,9 +1435,11 @@ class Example {  // Continuing class Example from above
 
 As with import, the timeout is optional; omit it to wait indefinitely. The output
 path is checked before the export job is created: if a file already exists there
-or its directory does not exist, `DeepLException` is thrown. A failure while
-writing the file also throws `DeepLException`. These local file failures carry the
-`IOException` as their cause.
+or its directory does not exist, a `TranslationMemoryJobException` without job
+ID is thrown. Every later failure, including an API error, a failed job, an
+exceeded timeout, the download or writing the file, throws a
+`TranslationMemoryJobException` carrying the job ID. The underlying error, such
+as the `IOException` of a local file failure, is its cause.
 Instead of a `File`, you can pass an `OutputStream`, which is not closed:
 
 ```java
@@ -1853,6 +1858,13 @@ invalid arguments are provided, they may raise the standard exceptions
   failed while a downloaded document or translation memory export was being
   read.
 - A malformed API response raises a `DeepLException`.
+- `DocumentTranslationException`: any failure in `translateDocument()`, with
+  the document handle once the document was uploaded.
+- `TranslationMemoryJobException`: any failure in
+  `importTranslationMemoryFromFilepath()` or
+  `exportTranslationMemoryToFilepath()` except a missing input file, with the
+  job ID once the job was created. Like `DocumentTranslationException`, it
+  reports the HTTP status code and retry hint of its cause.
 
 The exception message includes the error message of the response body, or the
 raw body if it carries no message.

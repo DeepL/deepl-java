@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Changed
+- **Breaking:** `importTranslationMemoryFromFilepath()` and
+  `exportTranslationMemoryToFilepath()` wrap every failure in the new
+  `TranslationMemoryJobException` (a `DeepLException`), whose `getJobId()`
+  returns the import or export job ID once the job was created. Before, API
+  errors, a failed job and an exceeded timeout were thrown unwrapped and local
+  file errors as a plain `DeepLException`. The underlying error is the cause;
+  `getHttpStatusCode()` and `getShouldRetry()` are taken from it. A missing
+  input file still throws `IllegalArgumentException`. Code that catches
+  `DeepLException` keeps working; code that catches a subclass such as
+  `AuthorizationException` must inspect `getCause()`.
 - **Breaking:** `createGlossary()`, `createGlossaryFromCsv()`,
   `createMultilingualGlossaryFromCsv()` and `updateMultilingualGlossaryName()`
   throw `IllegalArgumentException` for an empty name before sending a request;
