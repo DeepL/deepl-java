@@ -175,6 +175,19 @@ class GlossariesTest {
   }
 
   @Test
+  void throwsIllegalArgumentBeforeSendingAnEmptyNameOrEmptyEntries() {
+    GlossaryEntries entries = new GlossaryEntries(Collections.singletonMap("a", "b"));
+    assertThrows(
+        IllegalArgumentException.class, () -> translator.createGlossary("", "en", "de", entries));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> translator.createGlossaryFromCsv("", "en", "de", "a,b"));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> translator.createGlossary("n", "en", "de", new GlossaryEntries()));
+  }
+
+  @Test
   void throwsNotFoundWhenTheGlossaryIsUnknown() {
     wm.stubFor(get("/v2/glossaries/g1").willReturn(aResponse().withStatus(404)));
     wm.stubFor(get("/v2/glossaries/g1/entries").willReturn(aResponse().withStatus(404)));

@@ -661,6 +661,22 @@ class MultilingualGlossariesTest {
   }
 
   @Test
+  void throwsIllegalArgumentBeforeSendingAnEmptyNameOrEmptyEntries() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> client.createMultilingualGlossaryFromCsv("", "en", "de", "a,b"));
+    assertThrows(
+        IllegalArgumentException.class, () -> client.updateMultilingualGlossaryName("g1", ""));
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            client.createMultilingualGlossary(
+                "n",
+                Collections.singletonList(
+                    new MultilingualGlossaryDictionaryEntries("en", "de", new GlossaryEntries()))));
+  }
+
+  @Test
   void throwsIllegalArgumentWhenIdsOrLanguagesAreEmpty() {
     GlossaryEntries entries = entries("a", "b");
     assertThrows(

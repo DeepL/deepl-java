@@ -684,14 +684,19 @@ public class DeepLClient {
    * @param name User-defined name to assign to the glossary; must not be empty.
    * @param sourceLang Language code of the source terms language.
    * @param targetLang Language code of the target terms language.
-   * @param entries Glossary entries to add to the glossary.
+   * @param entries Glossary entries to add to the glossary; must not be empty.
    * @return {@link GlossaryInfo} object with details about the newly created glossary.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
+   * @throws IllegalArgumentException If name or entries is empty.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
   public GlossaryInfo createGlossary(
       String name, String sourceLang, String targetLang, GlossaryEntries entries)
       throws DeepLException, InterruptedException {
+    validateParameter("name", name);
+    if (entries.isEmpty()) {
+      throw new IllegalArgumentException("Parameter entries must not be empty");
+    }
     return createGlossaryInternal(name, sourceLang, targetLang, "tsv", entries.toTsv());
   }
 
@@ -710,6 +715,7 @@ public class DeepLClient {
    * @param csvFile File containing CSV content for glossary.
    * @return {@link GlossaryInfo} object with details about the newly created glossary.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
+   * @throws IllegalArgumentException If name is empty.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    * @throws IOException If an I/O error occurs.
    */
@@ -737,6 +743,7 @@ public class DeepLClient {
    * @param csvContent String containing CSV content.
    * @return {@link GlossaryInfo} object with details about the newly created glossary.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
+   * @throws IllegalArgumentException If name is empty.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
   public GlossaryInfo createGlossaryFromCsv(
@@ -1185,6 +1192,7 @@ public class DeepLClient {
   private GlossaryInfo createGlossaryInternal(
       String name, String sourceLang, String targetLang, String entriesFormat, String entries)
       throws DeepLException, InterruptedException {
+    validateParameter("name", name);
     Map<String, Object> requestData = new LinkedHashMap<>();
     requestData.put("name", name);
     requestData.put("source_lang", sourceLang);
@@ -1384,6 +1392,9 @@ public class DeepLClient {
     }
     List<Map<String, Object>> dictionaries = new ArrayList<>();
     for (MultilingualGlossaryDictionaryEntries dictionary : glossaryDicts) {
+      if (dictionary.getEntries().isEmpty()) {
+        throw new IllegalArgumentException("Parameter entries must not be empty");
+      }
       dictionaries.add(
           createGlossaryDictionaryData(
               dictionary.getSourceLanguageCode(),
@@ -2230,6 +2241,7 @@ public class DeepLClient {
   public MultilingualGlossaryInfo updateMultilingualGlossaryName(
       String glossaryId, String name, @Nullable BaseRequestOptions options)
       throws DeepLException, IllegalArgumentException, InterruptedException {
+    validateParameter("name", name);
     Map<String, Object> requestData = new LinkedHashMap<>();
     requestData.put("name", name);
     String jsonBody = jsonBodyWithExtraParameters(requestData, options);
@@ -5022,6 +5034,7 @@ public class DeepLClient {
       String entries,
       @Nullable CreateMultilingualGlossaryOptions options)
       throws DeepLException, InterruptedException {
+    validateParameter("name", name);
     List<Map<String, Object>> dictionaries = new ArrayList<>();
     dictionaries.add(
         createGlossaryDictionaryData(sourceLanguageCode, targetLanguageCode, entries, "csv"));

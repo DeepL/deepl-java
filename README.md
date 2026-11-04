@@ -515,6 +515,10 @@ checked: a term that is empty or contains a control character throws an
 also be changed with `replaceAll()` or `Map.Entry.setValue()`, which check the
 new terms the same way.
 
+The create functions and `updateMultilingualGlossaryName()` throw an
+`IllegalArgumentException` for an empty glossary name, and the create functions
+for a dictionary with no entries, before any request is sent.
+
 You can also create a glossary using a glossary downloaded from the DeepL
 website by using `createMultilingualGlossaryFromCsv()` with either a CSV file,
 or a string containing the CSV data:
