@@ -10,6 +10,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -232,5 +234,16 @@ class GlossariesTest {
     Map.Entry<String, String> entry = entries.entrySet().iterator().next();
     assertThrows(IllegalArgumentException.class, () -> entry.setValue("x\ty"));
     assertEquals("b", entries.get("a"));
+  }
+
+  @Test
+  void doesNotRetryGlossaryCreationAfterAServerError() {
+    wm.stubFor(post("/v2/glossaries").willReturn(aResponse().withStatus(503)));
+    assertThrows(
+        DeepLException.class,
+        () ->
+            translator.createGlossary(
+                "n", "en", "de", new GlossaryEntries(Collections.singletonMap("a", "b"))));
+    wm.verify(1, postRequestedFor(urlEqualTo("/v2/glossaries")));
   }
 }

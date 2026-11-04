@@ -6,6 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Changed
+- **Breaking:** requests that create a resource are retried only when the
+  request was not sent: after HTTP 429, a DNS resolution failure, a refused
+  connection or a connect timeout. A server error (HTTP 5xx), a timeout while
+  reading the response or a connection reset after sending raises the error
+  without a retry, so that a lost response cannot create the resource twice.
+  This applies to `createGlossary()`, `createGlossaryFromCsv()`,
+  `createMultilingualGlossary()`, `createMultilingualGlossaryFromCsv()`,
+  `createSpokenTerms()`, `createStyleProfile()`, `createStyleRule()`,
+  `createStyleRuleCustomInstruction()`, `createTranslationMemoryImport()`
+  (and so `importTranslationMemoryFromFilepath()`),
+  `createTranslationMemoryExport()` and the document upload of
+  `translateDocumentUpload()` and `translateDocument()`. These requests are
+  sent in streaming mode, so they do not follow HTTP redirects. Retry such
+  errors yourself only after checking that the resource was not created.
 - `updateMultilingualGlossaryName()` (all overloads) throws `InterruptedException`
   unwrapped when the thread is interrupted, like the other `DeepLClient`
   methods, instead of a `DeepLException`, and declares it. Callers must catch or

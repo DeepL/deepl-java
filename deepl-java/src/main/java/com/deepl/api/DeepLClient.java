@@ -316,6 +316,9 @@ public class DeepLClient {
    * Translate specified document content from source language to target language and store the
    * translated document content to specified stream.
    *
+   * <p>The upload is retried only when the request was not sent: after HTTP 429, a DNS resolution
+   * failure, a refused connection or a connect timeout.
+   *
    * @param inputFile File to upload to be translated.
    * @param outputFile File to download translated document to.
    * @param sourceLang Language code of the input language, or <code>null</code> to use
@@ -375,6 +378,9 @@ public class DeepLClient {
    * Translate specified document content from source language to target language and store the
    * translated document content to specified stream. On return, input stream will be at end of
    * stream and neither stream will be closed.
+   *
+   * <p>The upload is retried only when the request was not sent: after HTTP 429, a DNS resolution
+   * failure, a refused connection or a connect timeout.
    *
    * @param inputStream Stream containing file to upload to be translated.
    * @param fileName Name of the input file. The file extension is used to determine file type.
@@ -436,6 +442,9 @@ public class DeepLClient {
    * language. See the <a href= "https://www.deepl.com/docs-api/translating-documents/">DeepL API
    * documentation</a> for the currently supported document types.
    *
+   * <p>The upload is retried only when the request was not sent: after HTTP 429, a DNS resolution
+   * failure, a refused connection or a connect timeout.
+   *
    * @param inputFile File containing document to be translated.
    * @param sourceLang Language code of the input language, or <code>null</code> to use
    *     auto-detection.
@@ -484,6 +493,9 @@ public class DeepLClient {
    * Upload document at specified input path for translation from source language to target
    * language. See the <a href= "https://www.deepl.com/docs-api/translating-documents/">DeepL API
    * documentation</a> for the currently supported document types.
+   *
+   * <p>The upload is retried only when the request was not sent: after HTTP 429, a DNS resolution
+   * failure, a refused connection or a connect timeout.
    *
    * @param inputStream Stream containing document to be translated. On return, input stream will be
    *     at end of stream and will not be closed.
@@ -666,6 +678,9 @@ public class DeepLClient {
    * translations to override translations for specific terms (words). The glossary source and
    * target languages must match the languages of translations for which it will be used.
    *
+   * <p>The create request is retried only when the request was not sent: after HTTP 429, a DNS
+   * resolution failure, a refused connection or a connect timeout.
+   *
    * @param name User-defined name to assign to the glossary; must not be empty.
    * @param sourceLang Language code of the source terms language.
    * @param targetLang Language code of the target terms language.
@@ -685,6 +700,9 @@ public class DeepLClient {
    * GlossaryInfo} object with details about the newly created glossary. The glossary can be used in
    * translations to override translations for specific terms (words). The glossary source and
    * target languages must match the languages of translations for which it will be used.
+   *
+   * <p>The create request is retried only when the request was not sent: after HTTP 429, a DNS
+   * resolution failure, a refused connection or a connect timeout.
    *
    * @param name User-defined name to assign to the glossary; must not be empty.
    * @param sourceLang Language code of the source terms language.
@@ -709,6 +727,9 @@ public class DeepLClient {
    * GlossaryInfo} object with details about the newly created glossary. The glossary can be used in
    * translations to override translations for specific terms (words). The glossary source and
    * target languages must match the languages of translations for which it will be used.
+   *
+   * <p>The create request is retried only when the request was not sent: after HTTP 429, a DNS
+   * resolution failure, a refused connection or a connect timeout.
    *
    * @param name User-defined name to assign to the glossary; must not be empty.
    * @param sourceLang Language code of the source terms language.
@@ -1171,7 +1192,7 @@ public class DeepLClient {
     requestData.put("entries_format", entriesFormat);
     requestData.put("entries", entries);
     HttpResponse response =
-        httpClientWrapper.sendJsonRequestWithBackoff(
+        httpClientWrapper.sendJsonRequestRetryingOnlyUnprocessed(
             String.format("/%s/glossaries", apiVersion), jsonParser.getGson().toJson(requestData));
     checkResponse(response, false, false);
     return jsonParser.parseGlossaryInfo(response.getBody());
@@ -1323,6 +1344,9 @@ public class DeepLClient {
    * to override translations for specific terms (words). The glossary must contain a glossary
    * dictionary that matches the languages of translations for which it will be used.
    *
+   * <p>The create request is retried only when the request was not sent: after HTTP 429, a DNS
+   * resolution failure, a refused connection or a connect timeout.
+   *
    * @param name User-defined name to assign to the glossary; must not be empty.
    * @param glossaryDicts {@link MultilingualGlossaryDictionaryInfo} The dictionaries of the
    *     glossary
@@ -1370,7 +1394,7 @@ public class DeepLClient {
               "tsv"));
     }
     HttpResponse response =
-        httpClientWrapper.sendJsonRequestWithBackoff(
+        httpClientWrapper.sendJsonRequestRetryingOnlyUnprocessed(
             "/v3/glossaries", createGlossaryBody(name, dictionaries, options));
     checkResponse(response, false, true);
     return jsonParser.parseMultilingualGlossaryInfo(response.getBody());
@@ -1383,6 +1407,9 @@ public class DeepLClient {
    * entries created from the <paramref name="csvFile" />. The glossary can be used in translations
    * to override translations for specific terms (words). The glossary must contain a glossary
    * dictionary that matches the languages of translations for which it will be used.
+   *
+   * <p>The create request is retried only when the request was not sent: after HTTP 429, a DNS
+   * resolution failure, a refused connection or a connect timeout.
    *
    * @param name User-defined name to assign to the glossary; must not be empty.
    * @param sourceLanguageCode Language code of the source terms language.
@@ -1435,6 +1462,9 @@ public class DeepLClient {
    * entries created from the <paramref name="csvFile" />. The glossary can be used in translations
    * to override translations for specific terms (words). The glossary must contain a glossary
    * dictionary that matches the languages of translations for which it will be used.
+   *
+   * <p>The create request is retried only when the request was not sent: after HTTP 429, a DNS
+   * resolution failure, a refused connection or a connect timeout.
    *
    * @param name User-defined name to assign to the glossary; must not be empty.
    * @param sourceLanguageCode Language code of the source terms language.
@@ -2613,6 +2643,9 @@ public class DeepLClient {
    * Creates a Spoken Terms collection with the given term lists and returns a {@link SpokenTerms}
    * object with details about the new collection.
    *
+   * <p>The create request is retried only when the request was not sent: after HTTP 429, a DNS
+   * resolution failure, a refused connection or a connect timeout.
+   *
    * @param name User-defined name of the collection.
    * @param termLists Term lists of the collection, one {@link SpokenTermsEntries} per language.
    * @param options Additional options, or <code>null</code>; see {@link CreateSpokenTermsOptions}.
@@ -2630,7 +2663,7 @@ public class DeepLClient {
     requestData.put("term_lists", createSpokenTermsListsData(termLists));
     String jsonBody = jsonBodyWithExtraParameters(requestData, options);
     HttpResponse response =
-        httpClientWrapper.sendJsonRequestWithBackoff("/v3/spoken-terms", jsonBody);
+        httpClientWrapper.sendJsonRequestRetryingOnlyUnprocessed("/v3/spoken-terms", jsonBody);
     checkResponse(response, false, false);
     return jsonParser.parseSpokenTerms(response.getBody());
   }
@@ -2965,6 +2998,9 @@ public class DeepLClient {
    * Creates a style profile and returns a {@link StyleProfile} object with details about it. If any
    * of the given component IDs cannot be used, the request fails and no style profile is created.
    *
+   * <p>The create request is retried only when the request was not sent: after HTTP 429, a DNS
+   * resolution failure, a refused connection or a connect timeout.
+   *
    * @param name Name of the style profile.
    * @param options Optional description, industry and linked components, or <code>null</code>.
    *     Fields left <code>null</code> are not sent.
@@ -2975,7 +3011,7 @@ public class DeepLClient {
   public StyleProfile createStyleProfile(String name, @Nullable CreateStyleProfileOptions options)
       throws DeepLException, InterruptedException {
     HttpResponse response =
-        httpClientWrapper.sendJsonRequestWithBackoff(
+        httpClientWrapper.sendJsonRequestRetryingOnlyUnprocessed(
             "/v3/style_profiles", createStyleProfileBody(name, options));
     checkResponse(response, false, false);
     return jsonParser.parseStyleProfile(response.getBody());
@@ -3373,6 +3409,9 @@ public class DeepLClient {
    * DeepLClient#importTranslationMemoryFromFilepath(File, ImportTranslationMemoryOptions)} to do
    * all three steps at once.
    *
+   * <p>The create request is retried only when the request was not sent: after HTTP 429, a DNS
+   * resolution failure, a refused connection or a connect timeout.
+   *
    * @param fileName Name of the TMX file to import, for example "legal.tmx".
    * @param contentLength Size of the TMX file in bytes.
    * @param options Options for the import job (content type, display name, extra body parameters),
@@ -3405,7 +3444,8 @@ public class DeepLClient {
 
     String jsonBody = jsonBodyWithExtraParameters(requestData, options);
     HttpResponse response =
-        httpClientWrapper.sendJsonRequestWithBackoff("/v3/translation_memories/import", jsonBody);
+        httpClientWrapper.sendJsonRequestRetryingOnlyUnprocessed(
+            "/v3/translation_memories/import", jsonBody);
     checkResponse(response, false, false);
     return jsonParser.parseTranslationMemoryImport(response.getBody());
   }
@@ -3528,6 +3568,9 @@ public class DeepLClient {
    * exported TMX file. Use {@link DeepLClient#exportTranslationMemoryToFilepath(String, File)} to
    * do both steps and write the file at once.
    *
+   * <p>The create request is retried only when the request was not sent: after HTTP 429, a DNS
+   * resolution failure, a refused connection or a connect timeout.
+   *
    * @param translationMemoryId ID of the translation memory to export.
    * @return {@link TranslationMemoryExport} object with the job ID, and whether the API reused a
    *     previously completed export.
@@ -3539,7 +3582,7 @@ public class DeepLClient {
       throws DeepLException, InterruptedException, NotFoundException {
     validateParameter("translationMemoryId", translationMemoryId);
     String relativeUrl = translationMemoryPath(translationMemoryId) + "/export";
-    HttpResponse response = httpClientWrapper.sendRequestWithBackoff(relativeUrl);
+    HttpResponse response = httpClientWrapper.sendRequestRetryingOnlyUnprocessed(relativeUrl);
     checkResponse(response, false, false);
     // 200 means the API reused a previously completed export, 202 that it started a new one.
     return jsonParser.parseTranslationMemoryExport(response.getBody(), response.getCode() == 200);
@@ -3758,6 +3801,9 @@ public class DeepLClient {
    * Imports a TMX file as a new translation memory: creates the import job, uploads the file, and
    * waits for processing to finish.
    *
+   * <p>The create request is retried only when the request was not sent: after HTTP 429, a DNS
+   * resolution failure, a refused connection or a connect timeout.
+   *
    * @param inputFile TMX file to import.
    * @param displayName Optional name for the resulting translation memory, defaults to the file
    *     name.
@@ -3804,6 +3850,9 @@ public class DeepLClient {
   /**
    * Imports a TMX file as a new translation memory: creates the import job, uploads the file, and
    * waits for processing to finish.
+   *
+   * <p>The create request is retried only when the request was not sent: after HTTP 429, a DNS
+   * resolution failure, a refused connection or a connect timeout.
    *
    * @param inputFile TMX file to import.
    * @param options Options for the import (display name, content type, timeout, extra body
@@ -4224,6 +4273,9 @@ public class DeepLClient {
    * Creates a new style rule with the specified details and returns a {@link StyleRuleInfo} object
    * with details about the newly created style rule.
    *
+   * <p>The create request is retried only when the request was not sent: after HTTP 429, a DNS
+   * resolution failure, a refused connection or a connect timeout.
+   *
    * @param name User-defined name for the style rule.
    * @param language Language code for the style rule (e.g. "en", "de").
    * @param configuredRules Optional configured rules, as a map from category to rule to value in
@@ -4252,7 +4304,7 @@ public class DeepLClient {
     putIfNotNull(requestData, "custom_instructions", customInstructions);
     String jsonBody = jsonBodyWithExtraParameters(requestData, options);
     HttpResponse response =
-        httpClientWrapper.sendJsonRequestWithBackoff("/v3/style_rules", jsonBody);
+        httpClientWrapper.sendJsonRequestRetryingOnlyUnprocessed("/v3/style_rules", jsonBody);
     checkResponse(response, false, false);
     return jsonParser.parseStyleRuleInfo(response.getBody());
   }
@@ -4453,6 +4505,9 @@ public class DeepLClient {
    * Creates a new custom instruction for the style rule with the specified ID and returns the
    * created {@link CustomInstruction} object.
    *
+   * <p>The create request is retried only when the request was not sent: after HTTP 429, a DNS
+   * resolution failure, a refused connection or a connect timeout.
+   *
    * @param styleId ID of the style rule to add the custom instruction to.
    * @param label Label for the custom instruction.
    * @param prompt Prompt text for the custom instruction.
@@ -4492,7 +4547,8 @@ public class DeepLClient {
       throws DeepLException, InterruptedException {
     String relativeUrl = styleRulePath(styleId) + "/custom_instructions";
     String jsonBody = customInstructionBody(label, prompt, sourceLanguage, options);
-    HttpResponse response = httpClientWrapper.sendJsonRequestWithBackoff(relativeUrl, jsonBody);
+    HttpResponse response =
+        httpClientWrapper.sendJsonRequestRetryingOnlyUnprocessed(relativeUrl, jsonBody);
     checkResponse(response, false, false);
     return jsonParser.parseCustomInstruction(response.getBody());
   }
@@ -4972,7 +5028,7 @@ public class DeepLClient {
     dictionaries.add(
         createGlossaryDictionaryData(sourceLanguageCode, targetLanguageCode, entries, "csv"));
     HttpResponse response =
-        httpClientWrapper.sendJsonRequestWithBackoff(
+        httpClientWrapper.sendJsonRequestRetryingOnlyUnprocessed(
             "/v3/glossaries", createGlossaryBody(name, dictionaries, options));
     checkResponse(response, false, true);
     return jsonParser.parseMultilingualGlossaryInfo(response.getBody());

@@ -70,9 +70,16 @@ class HttpClientWrapper {
     return sendDeleteRequestWithBackoff(relativeUrl, null);
   }
 
-  public HttpResponse sendRequestWithBackoff(String relativeUrl)
+  /**
+   * Sends a POST request without a body that must not be repeated if the server may have processed
+   * it, such as creating a resource. It is retried only when the request was not sent: after HTTP
+   * 429, a DNS resolution failure, a refused connection or a connect timeout.
+   */
+  public HttpResponse sendRequestRetryingOnlyUnprocessed(String relativeUrl)
       throws InterruptedException, DeepLException {
-    return sendRequestWithBackoff(POST, relativeUrl, null);
+    return sendRequestToUrlWithBackoff(
+            POST, serverUrl + relativeUrl, null, this.headers, true, true)
+        .toStringResponse();
   }
 
   public HttpResponse sendRequestWithBackoff(
@@ -216,7 +223,10 @@ class HttpClientWrapper {
     } catch (Exception e) {
       throw new DeepLException("Failed building request", e);
     }
-    return sendRequestWithBackoff(POST, relativeUrl, content);
+    // An upload creates a document job, so it is retried only when the request was not sent.
+    return sendRequestToUrlWithBackoff(
+            POST, serverUrl + relativeUrl, content, this.headers, true, true)
+        .toStringResponse();
   }
 
   /**
@@ -406,6 +416,10 @@ class HttpClientWrapper {
           // over plain HTTP, 407 challenges) cannot be replayed from a streamed body.
           connection.setFixedLengthStreamingMode(content.getContent().length);
         }
+      } else if (retryOnlyUnprocessed) {
+        // Same as above for a POST without a body: an empty fixed-length body.
+        connection.setDoOutput(true);
+        connection.setFixedLengthStreamingMode(0);
       }
 
       // Connect separately: a DNS, refused or timed-out connect means nothing was sent yet.

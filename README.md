@@ -1858,7 +1858,8 @@ response, or `null` if there was none. `DeepLException.getShouldRetry()`
 returns `true` for transient errors (HTTP 429, HTTP 5xx, connection, DNS and
 timeout failures, connection resets, broken pipes and a response body cut off
 mid-read); the client has already retried these up to the configured
-maximum number of retries.
+maximum number of retries, except for requests that create a resource, which
+are retried only when the request was not sent (see `setMaxRetries()`).
 
 ### Writing a Plugin
 
@@ -1903,6 +1904,12 @@ The available options setters are:
   HTTP 429, HTTP 5xx, and connection, DNS and timeout failures, connection
   resets and broken pipes, including a timeout while reading the response and
   a response body cut off mid-read.
+  Requests that create a resource (glossary, multilingual glossary, spoken
+  terms, style profile, style rule, custom instruction, translation memory
+  import or export job) and the document upload are retried only when the
+  request was not sent: after HTTP 429, a DNS resolution failure, a refused
+  connection or a connect timeout. They are sent in streaming mode and do not
+  follow HTTP redirects.
   A document or translation memory export download is retried only while
   nothing has been written to the output yet. Every request, including `PATCH` requests, is sent at most `maxRetries + 1`
   times.
