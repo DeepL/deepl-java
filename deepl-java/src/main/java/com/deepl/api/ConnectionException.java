@@ -26,7 +26,8 @@ public class ConnectionException extends DeepLException {
 
   /**
    * Returns <code>true</code> if this exception occurred due to transient condition and the request
-   * should be retried, otherwise <code>false</code>.
+   * should be retried, otherwise <code>false</code>. For a request that creates a resource, see
+   * {@link DeepLException#getShouldRetry()}.
    */
   @Override
   public boolean getShouldRetry() {

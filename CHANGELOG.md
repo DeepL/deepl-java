@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Changed
+- **Breaking:** for requests that create a resource (including
+  `DeepLAdminClient.createDeveloperKey()`) and the document upload,
+  `getShouldRetry()` of the thrown exception is `true` only if the request was
+  not sent (HTTP 429, a DNS resolution failure, a refused connection or a
+  connect timeout) or the response body was cut off mid-read. After HTTP 5xx, a
+  read timeout, a connection reset or a broken pipe it is now `false`, because
+  the server may have created the resource. A `DocumentTranslationException`
+  from a failed upload in `translateDocument()` reports the same value.
 - **Breaking:** requests that create a resource are retried only when the
   request was not sent: after HTTP 429, a DNS resolution failure, a refused
   connection or a connect timeout. A server error (HTTP 5xx), a timeout while

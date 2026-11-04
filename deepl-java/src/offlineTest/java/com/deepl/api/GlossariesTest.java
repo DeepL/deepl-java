@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.github.tomakehurst.wiremock.http.Fault;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -239,11 +240,27 @@ class GlossariesTest {
   @Test
   void doesNotRetryGlossaryCreationAfterAServerError() {
     wm.stubFor(post("/v2/glossaries").willReturn(aResponse().withStatus(503)));
-    assertThrows(
-        DeepLException.class,
-        () ->
-            translator.createGlossary(
-                "n", "en", "de", new GlossaryEntries(Collections.singletonMap("a", "b"))));
+    DeepLException thrown =
+        assertThrows(
+            DeepLException.class,
+            () ->
+                translator.createGlossary(
+                    "n", "en", "de", new GlossaryEntries(Collections.singletonMap("a", "b"))));
+    assertFalse(thrown.getShouldRetry());
+    wm.verify(1, postRequestedFor(urlEqualTo("/v2/glossaries")));
+  }
+
+  @Test
+  void doesNotRetryGlossaryCreationAfterACutOffBodyButReportsItRetryable() {
+    wm.stubFor(
+        post("/v2/glossaries").willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
+    ConnectionException thrown =
+        assertThrows(
+            ConnectionException.class,
+            () ->
+                translator.createGlossary(
+                    "n", "en", "de", new GlossaryEntries(Collections.singletonMap("a", "b"))));
+    assertTrue(thrown.getShouldRetry());
     wm.verify(1, postRequestedFor(urlEqualTo("/v2/glossaries")));
   }
 }

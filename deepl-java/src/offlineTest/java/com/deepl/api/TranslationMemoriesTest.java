@@ -914,7 +914,9 @@ class TranslationMemoriesTest {
   @Test
   void doesNotRetryAnExportCreationAfterAServerError() {
     wm.stubFor(post("/v3/translation_memories/tm1/export").willReturn(aResponse().withStatus(503)));
-    assertThrows(DeepLException.class, () -> client.createTranslationMemoryExport("tm1"));
+    DeepLException thrown =
+        assertThrows(DeepLException.class, () -> client.createTranslationMemoryExport("tm1"));
+    assertFalse(thrown.getShouldRetry());
     wm.verify(1, postRequestedFor(urlEqualTo("/v3/translation_memories/tm1/export")));
   }
 }

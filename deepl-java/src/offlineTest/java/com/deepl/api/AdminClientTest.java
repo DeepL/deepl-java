@@ -426,7 +426,8 @@ class AdminClientTest {
   @Test
   void doesNotRetryKeyCreationAfterAServerError() {
     wm.stubFor(post("/v2/admin/developer-keys").willReturn(aResponse().withStatus(503)));
-    assertThrows(DeepLException.class, client::createDeveloperKey);
+    DeepLException thrown = assertThrows(DeepLException.class, client::createDeveloperKey);
+    assertFalse(thrown.getShouldRetry());
     wm.verify(1, postRequestedFor(urlEqualTo("/v2/admin/developer-keys")));
   }
 
@@ -468,16 +469,27 @@ class AdminClientTest {
         post("/v2/admin/developer-keys")
             .withRequestBody(equalToJson("{\"label\":\"cut off\"}"))
             .willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
-    assertThrows(
-        ConnectionException.class,
-        () -> timeoutClient.createDeveloperKey(new CreateDeveloperKeyOptions().setLabel("slow")));
-    assertThrows(
-        ConnectionException.class,
-        () -> timeoutClient.createDeveloperKey(new CreateDeveloperKeyOptions().setLabel("reset")));
-    assertThrows(
-        ConnectionException.class,
-        () ->
-            timeoutClient.createDeveloperKey(new CreateDeveloperKeyOptions().setLabel("cut off")));
+    ConnectionException slow =
+        assertThrows(
+            ConnectionException.class,
+            () ->
+                timeoutClient.createDeveloperKey(new CreateDeveloperKeyOptions().setLabel("slow")));
+    ConnectionException reset =
+        assertThrows(
+            ConnectionException.class,
+            () ->
+                timeoutClient.createDeveloperKey(
+                    new CreateDeveloperKeyOptions().setLabel("reset")));
+    ConnectionException cutOff =
+        assertThrows(
+            ConnectionException.class,
+            () ->
+                timeoutClient.createDeveloperKey(
+                    new CreateDeveloperKeyOptions().setLabel("cut off")));
+    // The server may have created a key after a read timeout or a reset, not after a cut-off body.
+    assertFalse(slow.getShouldRetry());
+    assertFalse(reset.getShouldRetry());
+    assertTrue(cutOff.getShouldRetry());
     wm.verify(3, postRequestedFor(urlEqualTo("/v2/admin/developer-keys")));
   }
 

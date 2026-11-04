@@ -1859,7 +1859,12 @@ returns `true` for transient errors (HTTP 429, HTTP 5xx, connection, DNS and
 timeout failures, connection resets, broken pipes and a response body cut off
 mid-read); the client has already retried these up to the configured
 maximum number of retries, except for requests that create a resource, which
-are retried only when the request was not sent (see `setMaxRetries()`).
+are retried only when the request was not sent (see `setMaxRetries()`). For
+these requests and the document upload, `getShouldRetry()` returns `true` only
+if the request was not sent (HTTP 429, DNS failure, refused connection, connect
+timeout) or the response body was cut off mid-read. After HTTP 5xx, a read
+timeout, a connection reset or a broken pipe it returns `false`: the server may
+have created the resource, so a retry could create it twice.
 
 ### Writing a Plugin
 

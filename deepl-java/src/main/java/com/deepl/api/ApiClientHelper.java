@@ -115,9 +115,15 @@ final class ApiClientHelper {
       }
     }
 
-    throw createException(
-            response.getCode(), messageSuffix, inDocumentDownload, usingGlossary, keyName)
-        .setHttpStatusCode(response.getCode());
+    DeepLException exception =
+        createException(
+                response.getCode(), messageSuffix, inDocumentDownload, usingGlossary, keyName)
+            .setHttpStatusCode(response.getCode());
+    if (response.isRetriedOnlyIfUnsent()) {
+      // The server may have processed the request, so repeating it could duplicate the resource.
+      exception.setServerErrorNotRetryable();
+    }
+    throw exception;
   }
 
   @SuppressWarnings("deprecation")

@@ -30,9 +30,18 @@ public class HttpResponseStream implements AutoCloseable {
   }
 
   public HttpResponse toStringResponse() throws DeepLException {
+    return toStringResponse(false);
+  }
+
+  /**
+   * Reads the body into an {@link HttpResponse}.
+   *
+   * @param retriedOnlyIfUnsent See {@link HttpResponse#isRetriedOnlyIfUnsent()}.
+   */
+  public HttpResponse toStringResponse(boolean retriedOnlyIfUnsent) throws DeepLException {
     try {
       String content = this.body == null ? "" : StreamUtil.readStream(this.body);
-      return new HttpResponse(getCode(), content);
+      return new HttpResponse(getCode(), content, retriedOnlyIfUnsent);
     } catch (IOException exception) {
       throw new DeepLException("Error reading stream", exception);
     } finally {

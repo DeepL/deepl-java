@@ -79,7 +79,7 @@ class HttpClientWrapper {
       throws InterruptedException, DeepLException {
     return sendRequestToUrlWithBackoff(
             POST, serverUrl + relativeUrl, null, this.headers, true, true)
-        .toStringResponse();
+        .toStringResponse(true);
   }
 
   public HttpResponse sendRequestWithBackoff(
@@ -105,7 +105,7 @@ class HttpClientWrapper {
     HttpContent content = HttpContent.buildJsonContent(jsonBody);
     return sendRequestToUrlWithBackoff(
             POST, serverUrl + relativeUrl, content, this.headers, true, true)
-        .toStringResponse();
+        .toStringResponse(true);
   }
 
   public HttpResponse sendJsonRequestWithBackoff(String method, String relativeUrl, String jsonBody)
@@ -226,7 +226,7 @@ class HttpClientWrapper {
     // An upload creates a document job, so it is retried only when the request was not sent.
     return sendRequestToUrlWithBackoff(
             POST, serverUrl + relativeUrl, content, this.headers, true, true)
-        .toStringResponse();
+        .toStringResponse(true);
   }
 
   /**
@@ -377,6 +377,9 @@ class HttpClientWrapper {
         boolean shouldRetry =
             retryOnlyUnprocessed ? exception.getRequestNotSent() : exception.getShouldRetry();
         if (!shouldRetry || backoffTimer.getNumRetries() >= this.maxRetries) {
+          if (retryOnlyUnprocessed) {
+            throw reportOnlyUnsentOrCutOffAsRetryable(exception);
+          }
           throw exception;
         }
       }
@@ -483,6 +486,21 @@ class HttpClientWrapper {
     boolean shouldRetry =
         isUnsentFailure(e) || isConnectionResetOrBrokenPipe(e) || isPrematureEndOfBody(e);
     return new ConnectionException(e.getMessage(), shouldRetry, e);
+  }
+
+  // For a request that must not be repeated, a failure is reported as retryable only if the request
+  // was not sent or the response body was cut off mid-read: after a read timeout, a reset or a
+  // broken pipe the server may have processed it.
+  private static ConnectionException reportOnlyUnsentOrCutOffAsRetryable(
+      ConnectionException exception) {
+    Throwable cause = exception.getCause();
+    boolean cutOff = cause instanceof Exception && isPrematureEndOfBody((Exception) cause);
+    boolean shouldRetry = exception.getRequestNotSent() || cutOff;
+    if (shouldRetry == exception.getShouldRetry()) {
+      return exception;
+    }
+    return new ConnectionException(
+        exception.getMessage(), shouldRetry, cause, exception.getRequestNotSent());
   }
 
   // Failures of the connect step after which the server cannot have received the request.

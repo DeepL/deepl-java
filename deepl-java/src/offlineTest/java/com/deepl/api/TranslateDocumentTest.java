@@ -931,15 +931,17 @@ class TranslateDocumentTest {
   @Test
   void doesNotRetryAnUploadAfterAServerError() {
     wm.stubFor(post("/v2/document").willReturn(aResponse().withStatus(503)));
-    assertThrows(
-        DeepLException.class,
-        () ->
-            client.translateDocumentUpload(
-                new ByteArrayInputStream("Hello".getBytes(StandardCharsets.UTF_8)),
-                "a.txt",
-                null,
-                "de",
-                null));
+    DeepLException thrown =
+        assertThrows(
+            DeepLException.class,
+            () ->
+                client.translateDocumentUpload(
+                    new ByteArrayInputStream("Hello".getBytes(StandardCharsets.UTF_8)),
+                    "a.txt",
+                    null,
+                    "de",
+                    null));
+    assertFalse(thrown.getShouldRetry());
     wm.verify(1, postRequestedFor(urlEqualTo("/v2/document")));
   }
 }
