@@ -29,6 +29,11 @@ public class DeepLClient {
   /** Time to wait between polls of the status of a translation memory job, in milliseconds. */
   private static final long TRANSLATION_MEMORY_JOB_POLL_INTERVAL_MILLIS = 5000;
 
+  // Set by the translation memory file helpers while they wait, so the base wait reports each
+  // fetched job status to them without changing the overridable waitUntilTranslationMemoryJobDone.
+  private final ThreadLocal<TranslationMemoryJob[]> fetchedTranslationMemoryJobSink =
+      new ThreadLocal<>();
+
   /** Base URL for DeepL API Free accounts. */
   private static final String DEEPL_SERVER_URL_FREE = "https://api-free.deepl.com";
   /** Base URL for DeepL API Pro accounts */
@@ -3686,7 +3691,7 @@ public class DeepLClient {
       }
     }
     long deadline = timeoutNanos != null ? System.nanoTime() + timeoutNanos : 0;
-    TranslationMemoryJob job = getTranslationMemoryJob(jobId);
+    TranslationMemoryJob job = recordFetchedJob(getTranslationMemoryJob(jobId));
     while (!job.done() && job.ok()) {
       // The API always returns exactly one result; an empty list would never reach a terminal
       // status and the no-timeout overload would poll forever.
@@ -3705,7 +3710,7 @@ public class DeepLClient {
         sleepMillis = Math.min(sleepMillis, remainingMillis);
       }
       Thread.sleep(sleepMillis);
-      job = getTranslationMemoryJob(jobId);
+      job = recordFetchedJob(getTranslationMemoryJob(jobId));
     }
     if (!job.ok()) {
       TranslationMemoryJobResult result = job.getResult();
@@ -3853,16 +3858,17 @@ public class DeepLClient {
       throws TranslationMemoryJobException, InterruptedException {
     byte[] fileContent = readTranslationMemoryFile(inputFile);
     String jobId = null;
+    TranslationMemoryJob[] lastJob = new TranslationMemoryJob[1];
     try {
       TranslationMemoryImport translationMemoryImport =
           createTranslationMemoryImport(inputFile.getName(), fileContent.length, null, displayName);
       jobId = translationMemoryImport.getJobId();
       uploadTranslationMemoryFile(translationMemoryImport, fileContent);
-      return waitUntilTranslationMemoryJobDone(jobId, timeout);
+      return waitTrackingLastJob(jobId, timeout, lastJob);
     } catch (InterruptedException exception) {
       throw exception;
     } catch (Exception exception) {
-      throw translationMemoryJobError(exception, jobId);
+      throw translationMemoryJobError(exception, jobId, lastJob[0]);
     }
   }
 
@@ -3919,16 +3925,17 @@ public class DeepLClient {
       timeout = options.getTimeout();
     }
     String jobId = null;
+    TranslationMemoryJob[] lastJob = new TranslationMemoryJob[1];
     try {
       TranslationMemoryImport translationMemoryImport =
           createTranslationMemoryImport(fileName, fileContent.length, createOptions);
       jobId = translationMemoryImport.getJobId();
       uploadTranslationMemoryFile(translationMemoryImport, fileContent, contentType);
-      return waitUntilTranslationMemoryJobDone(jobId, timeout);
+      return waitTrackingLastJob(jobId, timeout, lastJob);
     } catch (InterruptedException exception) {
       throw exception;
     } catch (Exception exception) {
-      throw translationMemoryJobError(exception, jobId);
+      throw translationMemoryJobError(exception, jobId, lastJob[0]);
     }
   }
 
@@ -3997,15 +4004,16 @@ public class DeepLClient {
       throws TranslationMemoryJobException, InterruptedException {
     checkExportOutputFile(outputFile);
     String jobId = null;
+    TranslationMemoryJob[] lastJob = new TranslationMemoryJob[1];
     try {
       jobId = createTranslationMemoryExport(translationMemoryId).getJobId();
-      TranslationMemoryJob job = waitUntilTranslationMemoryJobDone(jobId, timeout);
+      TranslationMemoryJob job = waitTrackingLastJob(jobId, timeout, lastJob);
       downloadTranslationMemoryExport(job, outputFile);
       return job;
     } catch (InterruptedException exception) {
       throw exception;
     } catch (Exception exception) {
-      throw translationMemoryJobError(exception, jobId);
+      throw translationMemoryJobError(exception, jobId, lastJob[0]);
     }
   }
 
@@ -4052,15 +4060,16 @@ public class DeepLClient {
       throw new IllegalArgumentException("outputStream must not be null");
     }
     String jobId = null;
+    TranslationMemoryJob[] lastJob = new TranslationMemoryJob[1];
     try {
       jobId = createTranslationMemoryExport(translationMemoryId).getJobId();
-      TranslationMemoryJob job = waitUntilTranslationMemoryJobDone(jobId, timeout);
+      TranslationMemoryJob job = waitTrackingLastJob(jobId, timeout, lastJob);
       downloadTranslationMemoryExport(job, outputStream);
       return job;
     } catch (InterruptedException exception) {
       throw exception;
     } catch (Exception exception) {
-      throw translationMemoryJobError(exception, jobId);
+      throw translationMemoryJobError(exception, jobId, lastJob[0]);
     }
   }
 
@@ -4155,7 +4164,7 @@ public class DeepLClient {
     try {
       return Files.readAllBytes(inputFile.toPath());
     } catch (IOException exception) {
-      throw translationMemoryJobError(exception, null);
+      throw translationMemoryJobError(exception, null, null);
     }
   }
 
@@ -4166,19 +4175,48 @@ public class DeepLClient {
       throw new IllegalArgumentException("outputFile must not be null");
     }
     if (outputFile.exists()) {
-      throw translationMemoryJobError(new IOException("File already exists at output path"), null);
+      throw translationMemoryJobError(
+          new IOException("File already exists at output path"), null, null);
     }
     File directory = outputFile.getAbsoluteFile().getParentFile();
     if (directory == null || !directory.isDirectory()) {
       throw translationMemoryJobError(
-          new FileNotFoundException("Directory of output path does not exist"), null);
+          new FileNotFoundException("Directory of output path does not exist"), null, null);
     }
   }
 
-  /** Wraps a failure of the translation memory file helpers, with the job ID once created. */
+  /** Wraps a failure of the translation memory file helpers with the job ID and last job. */
   private static TranslationMemoryJobException translationMemoryJobError(
-      Exception exception, @Nullable String jobId) {
-    return new TranslationMemoryJobException(exception.getMessage(), exception, jobId);
+      Exception exception, @Nullable String jobId, @Nullable TranslationMemoryJob job) {
+    return new TranslationMemoryJobException(exception.getMessage(), exception, jobId, job);
+  }
+
+  /** Waits for a file helper's job, keeping the last fetched job status in {@code lastJob[0]}. */
+  private TranslationMemoryJob waitTrackingLastJob(
+      String jobId, @Nullable Duration timeout, TranslationMemoryJob[] lastJob)
+      throws DeepLException, InterruptedException {
+    TranslationMemoryJob[] previous = fetchedTranslationMemoryJobSink.get();
+    fetchedTranslationMemoryJobSink.set(lastJob);
+    try {
+      TranslationMemoryJob job = waitUntilTranslationMemoryJobDone(jobId, timeout);
+      lastJob[0] = job;
+      return job;
+    } finally {
+      if (previous == null) {
+        fetchedTranslationMemoryJobSink.remove();
+      } else {
+        fetchedTranslationMemoryJobSink.set(previous);
+      }
+    }
+  }
+
+  /** Reports a fetched job status to a waiting file helper, if any. */
+  private TranslationMemoryJob recordFetchedJob(TranslationMemoryJob job) {
+    TranslationMemoryJob[] sink = fetchedTranslationMemoryJobSink.get();
+    if (sink != null) {
+      sink[0] = job;
+    }
+    return job;
   }
 
   /** A missing input file is an argument error, raised before any request. */

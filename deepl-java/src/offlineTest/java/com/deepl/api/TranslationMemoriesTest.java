@@ -600,8 +600,24 @@ class TranslationMemoriesTest {
             TranslationMemoryJobException.class,
             () -> client.importTranslationMemoryFromFilepath(tmx, "TM"));
     assertEquals("j1", thrown.getJobId());
+    assertEquals(TranslationMemoryJobResult.Status.Failed, thrown.getJob().getResult().getStatus());
     assertEquals("bad tmx", thrown.getMessage());
     assertEquals(DeepLException.class, thrown.getCause().getClass());
+  }
+
+  @Test
+  void wrapsAFailedUploadWithTheJobIdButNoJob() throws Exception {
+    File tmx = Fixtures.writeFile(tempDir.resolve("example.tmx").toFile(), Fixtures.EXAMPLE_TMX);
+    wm.stubFor(
+        post("/v3/translation_memories/import")
+            .willReturn(okJson("{\"job_id\":\"j1\",\"upload_url\":\"" + storageUrl() + "\"}")));
+    wm.stubFor(put("/storage").willReturn(aResponse().withStatus(403)));
+    TranslationMemoryJobException thrown =
+        assertThrows(
+            TranslationMemoryJobException.class,
+            () -> client.importTranslationMemoryFromFilepath(tmx, "TM"));
+    assertEquals("j1", thrown.getJobId());
+    assertNull(thrown.getJob());
   }
 
   @Test
@@ -613,6 +629,7 @@ class TranslationMemoriesTest {
             TranslationMemoryJobException.class,
             () -> client.importTranslationMemoryFromFilepath(tmx, "TM"));
     assertNull(thrown.getJobId());
+    assertNull(thrown.getJob());
     assertTrue(thrown.getCause() instanceof AuthorizationException);
     assertEquals(403, thrown.getHttpStatusCode());
     assertFalse(thrown.getShouldRetry());
@@ -633,6 +650,7 @@ class TranslationMemoriesTest {
             TranslationMemoryJobException.class,
             () -> client.exportTranslationMemoryToFilepath("tm1", output));
     assertEquals("j1", thrown.getJobId());
+    assertEquals(TranslationMemoryJobResult.Status.Failed, thrown.getJob().getResult().getStatus());
     assertEquals("gone", thrown.getMessage());
     assertFalse(output.exists());
   }
@@ -663,6 +681,7 @@ class TranslationMemoriesTest {
             DeepLException.class, () -> client.exportTranslationMemoryToFilepath("tm1", occupied));
     assertTrue(thrown.getCause() instanceof IOException);
     assertNull(((TranslationMemoryJobException) thrown).getJobId());
+    assertNull(((TranslationMemoryJobException) thrown).getJob());
     assertTrue(thrown.getMessage().contains("already exists"));
     assertEquals("mine", Fixtures.readFile(occupied));
 
@@ -703,6 +722,9 @@ class TranslationMemoriesTest {
             DeepLException.class, () -> client.exportTranslationMemoryToFilepath("tm1", failing));
     assertSame(diskFull, thrown.getCause());
     assertEquals("j1", ((TranslationMemoryJobException) thrown).getJobId());
+    assertEquals(
+        TranslationMemoryJobResult.Status.Completed,
+        ((TranslationMemoryJobException) thrown).getJob().getResult().getStatus());
   }
 
   @Test
@@ -829,6 +851,9 @@ class TranslationMemoriesTest {
                         .setTimeout(Duration.ofSeconds(1))
                         .setExtraBodyParameters(Collections.singletonMap("extra", "value"))));
     assertTrue(thrown.getMessage().contains("Manual timeout of 1s exceeded"));
+    assertEquals(
+        "awaiting_input",
+        ((TranslationMemoryJobException) thrown).getJob().getResult().getStatusString());
   }
 
   @Test

@@ -1348,6 +1348,10 @@ job or an exceeded timeout, throws a `TranslationMemoryJobException` with the
 underlying error as its cause. Once the import job was created, its
 `getJobId()` returns the job ID, so you can inspect the job or wait for it
 again; it returns `null` for a failure before that, such as an unreadable file.
+Once the job status was fetched, `getJob()` returns the last fetched
+`TranslationMemoryJob`, for example the failed job or the job still processing
+when the timeout expired; it returns `null` before the first status request,
+for example after a failed upload.
 
 `ImportTranslationMemoryOptions` groups the import options: `setDisplayName()`,
 `setContentType()` (declared when the job is created and sent with the upload;
@@ -1438,8 +1442,9 @@ path is checked before the export job is created: if a file already exists there
 or its directory does not exist, a `TranslationMemoryJobException` without job
 ID is thrown. Every later failure, including an API error, a failed job, an
 exceeded timeout, the download or writing the file, throws a
-`TranslationMemoryJobException` carrying the job ID. The underlying error, such
-as the `IOException` of a local file failure, is its cause.
+`TranslationMemoryJobException` carrying the job ID and, once the job status
+was fetched, the last fetched job (`getJob()`). The underlying error, such as
+the `IOException` of a local file failure, is its cause.
 Instead of a `File`, you can pass an `OutputStream`, which is not closed:
 
 ```java
@@ -1863,7 +1868,8 @@ invalid arguments are provided, they may raise the standard exceptions
 - `TranslationMemoryJobException`: any failure in
   `importTranslationMemoryFromFilepath()` or
   `exportTranslationMemoryToFilepath()` except a missing input file, with the
-  job ID once the job was created. Like `DocumentTranslationException`, it
+  job ID once the job was created (`getJobId()`) and the last fetched job status
+  (`getJob()`). Like `DocumentTranslationException`, it
   reports the HTTP status code and retry hint of its cause.
 
 The exception message includes the error message of the response body, or the

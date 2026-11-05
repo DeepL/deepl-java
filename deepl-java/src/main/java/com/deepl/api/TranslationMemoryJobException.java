@@ -14,11 +14,16 @@ import org.jetbrains.annotations.Nullable;
 public class TranslationMemoryJobException extends DeepLException {
 
   private final @Nullable String jobId;
+  private final @Nullable TranslationMemoryJob job;
 
   public TranslationMemoryJobException(
-      String message, @Nullable Throwable cause, @Nullable String jobId) {
+      String message,
+      @Nullable Throwable cause,
+      @Nullable String jobId,
+      @Nullable TranslationMemoryJob job) {
     super(message, cause);
     this.jobId = jobId;
+    this.job = job;
   }
 
   /**
@@ -27,6 +32,14 @@ public class TranslationMemoryJobException extends DeepLException {
    */
   public @Nullable String getJobId() {
     return jobId;
+  }
+
+  /**
+   * Get the last fetched status of the import or export job, for example a failed or expired job,
+   * or <code>null</code> if the error occurred before the job status was first fetched.
+   */
+  public @Nullable TranslationMemoryJob getJob() {
+    return job;
   }
 
   /** Returns the HTTP status code of the underlying error, if it came from an HTTP response. */
