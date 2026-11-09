@@ -4,6 +4,7 @@
 package com.deepl.api;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -621,27 +622,19 @@ class TranslateTextTest {
   }
 
   @Test
-  void sendsExtraBodyParametersAsJsonValuesAndDropsNullOnes() throws Exception {
+  void sendsExtraBodyParametersAsJsonValuesAndNullAsJsonNull() throws Exception {
     Map<String, Object> extra = new LinkedHashMap<>();
     extra.put("show_billed_characters", false);
     extra.put("translation_memory_threshold", 75);
     extra.put("beta_tags", Arrays.asList("a", "b"));
     extra.put("beta_settings", Collections.singletonMap("mode", "x"));
     extra.put("context", null);
+    // Written out because JsonBody (WireMock's Json.write) drops null values.
     expectBody(
-        JsonBody.of(
-            "target_lang",
-            "de",
-            "text",
-            JsonBody.list("Hello"),
-            "show_billed_characters",
-            false,
-            "translation_memory_threshold",
-            75,
-            "beta_tags",
-            JsonBody.list("a", "b"),
-            "beta_settings",
-            JsonBody.object("mode", "x")));
+        equalToJson(
+            "{\"target_lang\":\"de\",\"text\":[\"Hello\"],\"show_billed_characters\":false,"
+                + "\"translation_memory_threshold\":75,\"beta_tags\":[\"a\",\"b\"],"
+                + "\"beta_settings\":{\"mode\":\"x\"},\"context\":null}"));
     client.translateText(
         "Hello",
         null,

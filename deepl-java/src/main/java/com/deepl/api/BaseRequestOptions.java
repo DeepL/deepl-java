@@ -17,7 +17,8 @@ public abstract class BaseRequestOptions {
    * <p>In JSON request bodies each value is sent as its JSON form, so a {@link Boolean}, {@link
    * Number}, {@link java.util.List} or {@link Map} keeps its type. In form-encoded and multipart
    * bodies a collection is sent comma-separated and any other value as its {@code toString()}. A
-   * {@code null} value removes the key from the request.
+   * {@code null} value is sent as JSON {@code null} in a JSON body, replacing a built-in field with
+   * the same key; in a form-encoded or multipart body it removes the key from the request.
    *
    * @param extraBodyParameters Map of additional parameters to include in the request.
    * @return This options object for method chaining.

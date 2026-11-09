@@ -4236,10 +4236,17 @@ public class DeepLClient {
   /** Serializes a JSON request body, adding the extra body parameters last. */
   private String jsonBodyWithExtraParameters(
       Map<String, Object> requestData, @Nullable BaseRequestOptions options) {
+    Gson gson = jsonParser.getGson();
+    // The SDK's own null fields are dropped here; an extra null value is sent as JSON null.
+    JsonObject body = gson.toJsonTree(requestData).getAsJsonObject();
     if (options != null && options.getExtraBodyParameters() != null) {
-      requestData.putAll(options.getExtraBodyParameters());
+      for (Map.Entry<String, ?> entry : options.getExtraBodyParameters().entrySet()) {
+        Object value = entry.getValue();
+        body.add(entry.getKey(), value == null ? JsonNull.INSTANCE : gson.toJsonTree(value));
+      }
     }
-    return jsonParser.getGson().toJson(requestData);
+    // JsonObject.toString() keeps explicit nulls, unlike Gson.toJson() with default settings.
+    return body.toString();
   }
 
   /** Extracts the ID of the given style profile. */

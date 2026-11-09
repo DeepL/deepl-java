@@ -620,10 +620,11 @@ class AdminClientTest {
   }
 
   @Test
-  void sendsExtraBodyParametersAsJsonValuesAndRemovesNullOnes() throws Exception {
+  void sendsExtraBodyParametersAsJsonValuesAndNullAsJsonNull() throws Exception {
     wm.stubFor(
         post("/v2/admin/developer-keys")
-            .withRequestBody(equalToJson("{\"beta\":true,\"count\":3,\"ids\":[\"a\"]}"))
+            .withRequestBody(
+                equalToJson("{\"beta\":true,\"count\":3,\"ids\":[\"a\"],\"label\":null}"))
             .willReturn(okJson(DEVELOPER_KEY)));
     Map<String, Object> extra = new HashMap<>();
     extra.put("beta", true);

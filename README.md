@@ -245,7 +245,7 @@ The following options are only used if `setTagHandling()` is set to `'xml'`:
   The map is a `Map<String, ?>`: the request body is JSON, and each value is
   sent as its JSON form, so `true`, `5` or `Arrays.asList("a", "b")` keep their
   types. A string stays a JSON string, so pass `false`, not `"0"`, for a boolean
-  parameter. A `null` value removes the parameter from the request.
+  parameter. A `null` value is sent as JSON `null`.
 
 For a detailed explanation of the XML handling options, see the
 [API documentation][api-docs-xml-handling].
@@ -437,7 +437,8 @@ arguments, `translateDocument()` accepts an optional
   is not sent and no watermark is added.
 - `setExtraBodyParameters()`: a map of additional parameters added last to the
   upload request, as for text translation. The upload is a multipart request, so
-  a collection is sent comma-separated and any other value as its `toString()`.
+  a collection is sent comma-separated and any other value as its `toString()`;
+  a `null` value removes the parameter from the request.
 
 ### Glossaries
 
@@ -1766,7 +1767,7 @@ a `null` limit means unlimited.
 `DeactivateDeveloperKeyOptions`, `RenameDeveloperKeyOptions` or
 `SetDeveloperKeyUsageLimitsOptions`. All four options classes support
 `setExtraBodyParameters()`; these parameters are added to the JSON body last
-and replace a field with the same key.
+and replace a field with the same key. A `null` value is sent as JSON `null`.
 
 #### Retrieving usage analytics
 

@@ -6,6 +6,7 @@ package com.deepl.api;
 import com.deepl.api.http.HttpResponse;
 import com.deepl.api.parsing.Parser;
 import com.deepl.api.utils.KeyValuePair;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -614,17 +615,16 @@ public class DeepLAdminClient {
 
   /**
    * Adds the extra body parameters last as JSON values, replacing fields with the same key; a
-   * <code>null</code> value removes the field.
+   * <code>null</code> value is sent as JSON <code>null</code>.
    */
   private void addExtraBodyParameters(
       JsonObject requestData, @Nullable BaseRequestOptions options) {
     if (options != null && options.getExtraBodyParameters() != null) {
       for (Map.Entry<String, ?> entry : options.getExtraBodyParameters().entrySet()) {
-        if (entry.getValue() == null) {
-          requestData.remove(entry.getKey());
-        } else {
-          requestData.add(entry.getKey(), jsonParser.getGson().toJsonTree(entry.getValue()));
-        }
+        Object value = entry.getValue();
+        requestData.add(
+            entry.getKey(),
+            value == null ? JsonNull.INSTANCE : jsonParser.getGson().toJsonTree(value));
       }
     }
   }
