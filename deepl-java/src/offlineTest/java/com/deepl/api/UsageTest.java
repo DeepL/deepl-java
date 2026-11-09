@@ -154,6 +154,19 @@ class UsageTest {
   }
 
   @Test
+  void leavesTheProductUnitCountsNullWhenAbsent() throws Exception {
+    wm.stubFor(
+        get("/v2/usage")
+            .willReturn(
+                okJson(
+                    "{\"character_count\":1,\"character_limit\":2,\"products\":"
+                        + "[{\"product_type\":\"write\",\"billing_unit\":\"characters\"}]}")));
+    Usage.Product product = client.getUsage().getProducts().get(0);
+    assertNull(product.getApiKeyUnitCount());
+    assertNull(product.getAccountUnitCount());
+  }
+
+  @Test
   void leavesTheApiProFieldsNullForAFreeResponse() throws Exception {
     wm.stubFor(
         get("/v2/usage")

@@ -113,6 +113,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   key, instead of removing the key. In form-encoded and multipart bodies (the
   document upload) it still removes the key. To leave a parameter out of a JSON
   body, do not put its key in the map.
+- **Breaking:** `Usage.Product.getApiKeyUnitCount()` and
+  `getAccountUnitCount()` return a `Long` that is `null` when the API response
+  omits the count, instead of a `long` that was `0`; the `Usage.Product`
+  constructor takes `Long` counts. Check for null before unboxing.
 - `StyleRuleInfo.getConfiguredRules()` now returns the configured rules as the
   API sends them, as a `Map<String, Map<String, String>>` from category to rule
   to value in snake_case form, instead of a `ConfiguredRules` object. Categories

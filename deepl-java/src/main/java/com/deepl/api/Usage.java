@@ -116,14 +116,14 @@ public class Usage {
   public static class Product {
     private final @Nullable String productType;
     private final @Nullable String billingUnit;
-    private final long apiKeyUnitCount;
-    private final long accountUnitCount;
+    private final @Nullable Long apiKeyUnitCount;
+    private final @Nullable Long accountUnitCount;
 
     public Product(
         @Nullable String productType,
         @Nullable String billingUnit,
-        long apiKeyUnitCount,
-        long accountUnitCount) {
+        @Nullable Long apiKeyUnitCount,
+        @Nullable Long accountUnitCount) {
       this.productType = productType;
       this.billingUnit = billingUnit;
       this.apiKeyUnitCount = apiKeyUnitCount;
@@ -146,13 +146,19 @@ public class Usage {
       return billingUnit;
     }
 
-    /** @return Units used for this product by this API key in the current billing period. */
-    public long getApiKeyUnitCount() {
+    /**
+     * @return Units used for this product by this API key in the current billing period, or null if
+     *     the response does not include it.
+     */
+    public @Nullable Long getApiKeyUnitCount() {
       return apiKeyUnitCount;
     }
 
-    /** @return Units used for this product by the whole account in the current billing period. */
-    public long getAccountUnitCount() {
+    /**
+     * @return Units used for this product by the whole account in the current billing period, or
+     *     null if the response does not include it.
+     */
+    public @Nullable Long getAccountUnitCount() {
       return accountUnitCount;
     }
 

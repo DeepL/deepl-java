@@ -1547,7 +1547,8 @@ properties are `null`:
   `getProductType()` (for example `"translate"`, `"write"`, `"speechToText"`;
   new values may be added), `getBillingUnit()` (`"characters"` or `"minutes"`),
   `getApiKeyUnitCount()` (units used by this API key) and
-  `getAccountUnitCount()` (units used by the whole account).
+  `getAccountUnitCount()` (units used by the whole account). Both counts are a
+  `Long` that is `null` when the API omits it.
 
 ```java
 class Example {  // Continuing class Example from above

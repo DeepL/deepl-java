@@ -36,14 +36,12 @@ class UsageDeserializer implements JsonDeserializer<Usage> {
     for (JsonElement item : element.getAsJsonArray()) {
       if (!item.isJsonObject()) continue;
       JsonObject product = item.getAsJsonObject();
-      Long apiKeyUnitCount = Parser.getAsLongOrNull(product, "api_key_unit_count");
-      Long accountUnitCount = Parser.getAsLongOrNull(product, "account_unit_count");
       products.add(
           new Usage.Product(
               Parser.getAsStringOrNull(product, "product_type"),
               Parser.getAsStringOrNull(product, "billing_unit"),
-              apiKeyUnitCount == null ? 0 : apiKeyUnitCount,
-              accountUnitCount == null ? 0 : accountUnitCount));
+              Parser.getAsLongOrNull(product, "api_key_unit_count"),
+              Parser.getAsLongOrNull(product, "account_unit_count")));
     }
     return products;
   }
