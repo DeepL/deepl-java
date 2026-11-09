@@ -41,7 +41,6 @@ public class DeepLClient {
 
   protected final Parser jsonParser = new Parser();
   protected final HttpClientWrapper httpClientWrapper;
-  protected final DeepLApiVersion apiVersion;
   // Package-private so offline tests can shorten the wait between document status requests.
   int documentPollIntervalMillis = 5000;
 
@@ -76,7 +75,6 @@ public class DeepLClient {
     }
 
     String sanitizedAuthKey = authKey.trim();
-    this.apiVersion = options.apiVersion;
     String serverUrl =
         (options.getServerUrl() != null)
             ? options.getServerUrl()
@@ -206,8 +204,7 @@ public class DeepLClient {
         createTextTranslationData(texts, sourceLang, targetLang, options);
     HttpResponse response =
         httpClientWrapper.sendJsonRequestWithBackoff(
-            String.format("/%s/translate", this.apiVersion),
-            jsonBodyWithExtraParameters(requestData, options));
+            "/v2/translate", jsonBodyWithExtraParameters(requestData, options));
     checkResponse(response, false);
     return jsonParser.parseTextResult(response.getBody());
   }
@@ -263,8 +260,7 @@ public class DeepLClient {
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
   public Usage getUsage() throws DeepLException, InterruptedException {
-    HttpResponse response =
-        httpClientWrapper.sendGetRequestWithBackoff(String.format("/%s/usage", apiVersion));
+    HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff("/v2/usage");
     checkResponse(response, false);
     return jsonParser.parseUsage(response.getBody());
   }
@@ -473,10 +469,7 @@ public class DeepLClient {
     try (FileInputStream inputStream = new FileInputStream(inputFile)) {
       HttpResponse response =
           httpClientWrapper.uploadWithBackoff(
-              String.format("/%s/document", apiVersion),
-              params,
-              uploadFileName(inputFile.getName(), options),
-              inputStream);
+              "/v2/document", params, uploadFileName(inputFile.getName(), options), inputStream);
       checkResponse(response, false);
       return jsonParser.parseDocumentHandle(response.getBody());
     }
@@ -524,10 +517,7 @@ public class DeepLClient {
         createHttpParams(sourceLang, targetLang, options);
     HttpResponse response =
         httpClientWrapper.uploadWithBackoff(
-            String.format("/%s/document", apiVersion),
-            params,
-            uploadFileName(fileName, options),
-            inputStream);
+            "/v2/document", params, uploadFileName(fileName, options), inputStream);
     checkResponse(response, false);
     return jsonParser.parseDocumentHandle(response.getBody());
   }
@@ -558,7 +548,7 @@ public class DeepLClient {
     ArrayList<KeyValuePair<String, String>> params = new ArrayList<>();
     params.add(new KeyValuePair<>("document_key", handle.getDocumentKey()));
     String relativeUrl =
-        String.format("/%s/document/%s", apiVersion, encodePathSegment(handle.getDocumentId()));
+        String.format("/v2/document/%s", encodePathSegment(handle.getDocumentId()));
     HttpResponse response = httpClientWrapper.sendRequestWithBackoff(relativeUrl, params);
     checkResponse(response, false);
     return jsonParser.parseDocumentStatus(response.getBody());
@@ -672,8 +662,7 @@ public class DeepLClient {
     ArrayList<KeyValuePair<String, String>> params = new ArrayList<>();
     params.add(new KeyValuePair<>("document_key", handle.getDocumentKey()));
     String relativeUrl =
-        String.format(
-            "/%s/document/%s/result", apiVersion, encodePathSegment(handle.getDocumentId()));
+        String.format("/v2/document/%s/result", encodePathSegment(handle.getDocumentId()));
     httpClientWrapper.downloadWithBackoff(relativeUrl, params, this::checkResponse, outputStream);
   }
 
@@ -768,7 +757,7 @@ public class DeepLClient {
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
   public GlossaryInfo getGlossary(String glossaryId) throws DeepLException, InterruptedException {
-    String relativeUrl = String.format("/%s/glossaries/%s", apiVersion, glossaryId);
+    String relativeUrl = String.format("/v2/glossaries/%s", glossaryId);
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
     checkResponse(response, false);
     return jsonParser.parseGlossaryInfo(response.getBody());
@@ -784,8 +773,7 @@ public class DeepLClient {
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
   public List<GlossaryInfo> listGlossaries() throws DeepLException, InterruptedException {
-    HttpResponse response =
-        httpClientWrapper.sendGetRequestWithBackoff(String.format("/%s/glossaries", apiVersion));
+    HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff("/v2/glossaries");
     checkResponse(response, false);
     return jsonParser.parseGlossaryInfoList(response.getBody());
   }
@@ -816,7 +804,7 @@ public class DeepLClient {
    */
   public GlossaryEntries getGlossaryEntries(String glossaryId)
       throws DeepLException, InterruptedException {
-    String relativeUrl = String.format("/%s/glossaries/%s/entries", apiVersion, glossaryId);
+    String relativeUrl = String.format("/v2/glossaries/%s/entries", glossaryId);
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
     checkResponse(response, false);
     return GlossaryEntries.fromTsv(response.getBody());
@@ -841,7 +829,7 @@ public class DeepLClient {
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
   public void deleteGlossary(String glossaryId) throws DeepLException, InterruptedException {
-    String relativeUrl = String.format("/%s/glossaries/%s", apiVersion, glossaryId);
+    String relativeUrl = String.format("/v2/glossaries/%s", glossaryId);
     HttpResponse response = httpClientWrapper.sendDeleteRequestWithBackoff(relativeUrl);
     checkResponse(response, false);
   }
@@ -1206,7 +1194,7 @@ public class DeepLClient {
     requestData.put("entries", entries);
     HttpResponse response =
         httpClientWrapper.sendJsonRequestRetryingOnlyUnprocessed(
-            String.format("/%s/glossaries", apiVersion), jsonParser.getGson().toJson(requestData));
+            "/v2/glossaries", jsonParser.getGson().toJson(requestData));
     checkResponse(response, false);
     return jsonParser.parseGlossaryInfo(response.getBody());
   }
@@ -1335,7 +1323,7 @@ public class DeepLClient {
       throws InterruptedException, DeepLException {
     HttpResponse response =
         httpClientWrapper.sendJsonRequestWithBackoff(
-            String.format("/%s/write/%s", apiVersion, operation), jsonBody);
+            String.format("/v2/write/%s", operation), jsonBody);
     checkResponse(response, false);
     List<WriteResult> results = jsonParser.parseWriteResult(response.getBody());
     if (results.size() != textCount || results.contains(null)) {

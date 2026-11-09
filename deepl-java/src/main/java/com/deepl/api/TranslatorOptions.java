@@ -20,11 +20,8 @@ public class TranslatorOptions {
   @Nullable private String serverUrl = null;
   private boolean sendPlatformInfo = true;
   @Nullable private AppInfo appInfo = null;
-  @Nullable protected DeepLApiVersion apiVersion = null;
 
-  protected TranslatorOptions() {
-    apiVersion = DeepLApiVersion.VERSION_2;
-  }
+  protected TranslatorOptions() {}
 
   /**
    * Set the maximum number of failed attempts that the client will retry, per request. By default,

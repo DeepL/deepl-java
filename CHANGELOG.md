@@ -155,8 +155,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `createStyleRule(String, String, Map, List, CreateStyleRuleOptions)` and
   `updateStyleRuleConfiguredRules(String, Map,
   UpdateStyleRuleConfiguredRulesOptions)`, with `null` as the options.
-- Removed `DeepLClientOptions.setApiVersion()` and `getApiVersion()`,
-  deprecated in 1.18.0. Delete the calls; the client always uses API version 2.
+- **Breaking:** removed `DeepLClientOptions.setApiVersion()` and
+  `getApiVersion()`, deprecated in 1.18.0, the `DeepLApiVersion` enum, and the
+  protected `apiVersion` fields of `TranslatorOptions` and `DeepLClient`.
+  Delete the calls; the client always uses API version 2. Subclasses that set
+  or read `apiVersion` must drop it.
 - Removed `DocumentTranslationOptions.setGlossaryId()`, `setGlossaries()`,
   `setStyleId()` and `setTranslationMemoryId()`, deprecated in 1.18.0. Call
   `setGlossary()`, `setGlossaryIds()`, `setStyleRule()` and
