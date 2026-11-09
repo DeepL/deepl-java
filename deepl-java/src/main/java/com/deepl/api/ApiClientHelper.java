@@ -77,7 +77,8 @@ final class ApiClientHelper {
 
   /** Throws IllegalArgumentException unless serverUrl is an absolute http(s) URL with a host. */
   private static void checkServerUrl(String serverUrl) {
-    String message = "serverUrl must be an absolute http or https URL with a host: " + serverUrl;
+    // The value is left out: it may contain credentials and the message may be logged.
+    String message = "serverUrl must be an absolute http or https URL with a host";
     URI uri;
     try {
       uri = new URI(serverUrl);
