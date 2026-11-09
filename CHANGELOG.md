@@ -49,7 +49,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The `DeepLClient` and `DeepLAdminClient` constructors throw
   `IllegalArgumentException` if the server URL set with `setServerUrl()` is not
   an absolute `http` or `https` URL with a host, instead of failing on the first
-  request with a `ConnectionException`.
+  request with a `ConnectionException`. An empty string is rejected too; to use
+  the default server, do not call `setServerUrl()` (for example when an
+  environment variable for it is unset or empty).
 - `updateMultilingualGlossaryName()` (all overloads) throws `InterruptedException`
   unwrapped when the thread is interrupted, like the other `DeepLClient`
   methods, instead of a `DeepLException`, and declares it. Callers must catch or
