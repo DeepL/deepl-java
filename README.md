@@ -1942,7 +1942,9 @@ The available options setters are:
   times.
 - `setTimeout()`: connection timeout for each HTTP request.
 - `setProxy()`: provide details about a proxy to use for all HTTP requests to
-  DeepL, as a `java.net.Proxy`.
+  DeepL, as any `java.net.Proxy`, HTTP or SOCKS. `Proxy.NO_PROXY` connects
+  directly, ignoring the JVM proxy settings. By default the JVM proxy settings
+  apply.
 - `setProxyUrl()`: the same as an HTTP proxy URL such as
   `"http://proxy.example.com:3128"` (port 80 if omitted; credentials in the
   URL are not supported).

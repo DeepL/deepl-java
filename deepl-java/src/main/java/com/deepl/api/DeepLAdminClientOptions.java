@@ -45,8 +45,9 @@ public class DeepLAdminClientOptions {
   }
 
   /**
-   * Set the proxy to use for HTTP requests. By default, this value is <code>null</code> and no
-   * proxy will be used.
+   * Set the proxy to use for HTTP requests, as any {@link Proxy}, HTTP or SOCKS. {@link
+   * Proxy#NO_PROXY} connects directly, ignoring the JVM proxy settings. By default, this value is
+   * <code>null</code> and the JVM proxy settings apply.
    */
   public DeepLAdminClientOptions setProxy(Proxy proxy) {
     this.proxy = proxy;

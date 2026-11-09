@@ -15,11 +15,20 @@ import org.apache.http.HttpHost;
 import org.apache.http.MalformedChunkCodingException;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpPatch;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.ConnectTimeoutException;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
+import org.apache.http.impl.conn.DefaultRoutePlanner;
+import org.apache.http.protocol.HttpContext;
+import org.apache.http.ssl.SSLContexts;
 import org.apache.http.util.EntityUtils;
 import org.jetbrains.annotations.*;
 
@@ -145,9 +154,12 @@ class HttpClientWrapper {
     // Automatic retries are disabled so that only the backoff loop retries, up to maxRetries.
     HttpClientBuilder builder =
         HttpClients.custom().useSystemProperties().disableAutomaticRetries();
-    if (proxy != null) {
-      InetSocketAddress addr = (InetSocketAddress) proxy.address();
-      builder.setProxy(new HttpHost(addr.getHostName(), addr.getPort()));
+    try {
+      if (proxy != null) {
+        configurePatchProxy(builder, proxy);
+      }
+    } catch (RuntimeException e) {
+      throw toConnectionException(e);
     }
     try (CloseableHttpClient httpClient = builder.build()) {
       HttpPatch request = new HttpPatch(serverUrl + relativeUrl);
@@ -180,6 +192,49 @@ class HttpClientWrapper {
           response.getStatusLine().getStatusCode(), new String(body, StandardCharsets.UTF_8));
     } catch (RuntimeException | IOException e) {
       throw toConnectionException(e);
+    }
+  }
+
+  /** Applies the configured proxy to the PATCH client the way HttpURLConnection applies it. */
+  private static void configurePatchProxy(HttpClientBuilder builder, Proxy proxy) {
+    switch (proxy.type()) {
+      case DIRECT:
+        // Connect directly, ignoring the JVM proxy settings, like openConnection(NO_PROXY).
+        builder.setRoutePlanner(new DefaultRoutePlanner(null));
+        break;
+      case HTTP:
+        InetSocketAddress addr = (InetSocketAddress) proxy.address();
+        builder.setProxy(new HttpHost(addr.getHostString(), addr.getPort()));
+        break;
+      case SOCKS:
+        // HttpClient has no SOCKS support of its own: open every socket through the proxy.
+        Registry<ConnectionSocketFactory> registry =
+            RegistryBuilder.<ConnectionSocketFactory>create()
+                .register(
+                    "http",
+                    new PlainConnectionSocketFactory() {
+                      @Override
+                      public Socket createSocket(HttpContext context) {
+                        return new Socket(proxy);
+                      }
+                    })
+                .register(
+                    "https",
+                    new SSLConnectionSocketFactory(
+                        SSLContexts.createSystemDefault(),
+                        SSLConnectionSocketFactory.getDefaultHostnameVerifier()) {
+                      @Override
+                      public Socket createSocket(HttpContext context) {
+                        return new Socket(proxy);
+                      }
+                    })
+                .build();
+        builder
+            .setRoutePlanner(new DefaultRoutePlanner(null))
+            .setConnectionManager(new BasicHttpClientConnectionManager(registry));
+        break;
+      default:
+        throw new IllegalArgumentException("Unsupported proxy type: " + proxy.type());
     }
   }
 

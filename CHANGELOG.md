@@ -172,6 +172,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `getTargetLanguages()`. `LanguageCode.removeRegionalVariant()` and
   `LanguageCode.standardize()` remain.
 
+### Fixed
+- `PATCH` requests (`updateMultilingualGlossary()`,
+  `updateMultilingualGlossaryName()` and the other multilingual glossary
+  updates, `updateSpokenTerms()`, `updateStyleProfile()`,
+  `updateStyleRuleName()`) honour the proxy set with `setProxy()` like every
+  other request: `Proxy.NO_PROXY` connects directly, ignoring the JVM proxy
+  settings, instead of throwing a `NullPointerException`, and a SOCKS proxy is
+  used as SOCKS instead of being spoken to as an HTTP proxy.
+
 ## [1.18.0] - 2026-11-02
 TL;DR: new APIs in this release: the Admin API, spoken terms, style profiles and text correction.
 Translation memories, style rules and multilingual glossaries gained many options and fixes.

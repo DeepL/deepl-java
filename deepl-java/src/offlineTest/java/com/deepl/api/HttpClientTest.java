@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
+import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -213,6 +214,46 @@ class HttpClientTest {
         assertThrows(ConnectionException.class, () -> new DeepLClient("k", options).getUsage());
     assertTrue(thrown.getCause() instanceof UnknownHostException, thrown.toString());
     assertTrue(thrown.getShouldRetry(), "a failed DNS lookup is retried");
+  }
+
+  @Test
+  void sendsPatchRequestsDirectlyWithNoProxy() {
+    DeepLClientOptions options = new DeepLClientOptions();
+    options.setServerUrl("https://example.invalid").setProxy(Proxy.NO_PROXY).setMaxRetries(0);
+    ConnectionException thrown =
+        assertThrows(
+            ConnectionException.class,
+            () -> new DeepLClient("k", options).updateMultilingualGlossaryName("g1", "n"));
+    assertTrue(thrown.getCause() instanceof UnknownHostException, thrown.toString());
+  }
+
+  @Test
+  void sendsPatchRequestsThroughASocksProxy() throws Exception {
+    AtomicInteger firstByte = new AtomicInteger(-1);
+    try (ServerSocket server = new ServerSocket(0)) {
+      Thread acceptor =
+          new Thread(
+              () -> {
+                try (Socket socket = server.accept()) {
+                  firstByte.set(socket.getInputStream().read());
+                } catch (Exception closed) {
+                  // the server socket was closed at the end of the test
+                }
+              });
+      acceptor.start();
+      DeepLClientOptions options = new DeepLClientOptions();
+      options
+          .setServerUrl("http://127.0.0.1:1")
+          .setProxy(
+              new Proxy(
+                  Proxy.Type.SOCKS, new InetSocketAddress("127.0.0.1", server.getLocalPort())))
+          .setMaxRetries(0);
+      DeepLClient socksClient = new DeepLClient("k", options);
+      assertThrows(
+          ConnectionException.class, () -> socksClient.updateMultilingualGlossaryName("g1", "n"));
+      acceptor.join(5000);
+    }
+    assertEquals(5, firstByte.get());
   }
 
   @Test
