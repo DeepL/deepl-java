@@ -9,9 +9,11 @@ import com.deepl.api.utils.KeyValuePair;
 import com.google.gson.JsonSyntaxException;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -88,8 +90,21 @@ final class ApiClientHelper {
     String scheme = uri.getScheme();
     if (!uri.isAbsolute()
         || !("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme))
-        || uri.getHost() == null) {
+        || !hasHost(uri, serverUrl)) {
       throw new IllegalArgumentException(message);
+    }
+  }
+
+  private static boolean hasHost(URI uri, String serverUrl) {
+    if (uri.getHost() != null) {
+      return true;
+    }
+    // URI rejects host names that HttpURLConnection accepts, such as "deepl_mock".
+    try {
+      String host = new URL(serverUrl).getHost();
+      return host != null && !host.isEmpty();
+    } catch (MalformedURLException e) {
+      return false;
     }
   }
 

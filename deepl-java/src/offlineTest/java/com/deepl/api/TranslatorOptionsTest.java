@@ -7,6 +7,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -165,6 +166,17 @@ class TranslatorOptionsTest {
     assertThrows(IllegalArgumentException.class, () -> new DeepLClient(null));
     assertThrows(IllegalArgumentException.class, () -> new DeepLClient(""));
     assertThrows(IllegalArgumentException.class, () -> new DeepLClient(" \n"));
+  }
+
+  @Test
+  void acceptsAServerUrlWithAnUnderscoreInTheHostName() {
+    assertDoesNotThrow(
+        () ->
+            new DeepLClient("k", new DeepLClientOptions().setServerUrl("http://deepl_mock:3000")));
+    assertDoesNotThrow(
+        () ->
+            new DeepLAdminClient(
+                "k", new DeepLAdminClientOptions().setServerUrl("http://deepl_mock:3000")));
   }
 
   @ParameterizedTest
