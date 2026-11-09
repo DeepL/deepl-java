@@ -18,6 +18,7 @@ import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.ConnectTimeoutException;
+import org.apache.http.conn.DnsResolver;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
@@ -207,7 +208,11 @@ class HttpClientWrapper {
         builder.setProxy(new HttpHost(addr.getHostString(), addr.getPort()));
         break;
       case SOCKS:
-        // HttpClient has no SOCKS support of its own: open every socket through the proxy.
+        // HttpClient has no SOCKS support of its own: open every socket through the proxy, and
+        // pass the host name to it unresolved so that the proxy resolves it. The DNS resolver only
+        // returns a placeholder that connectSocket replaces.
+        DnsResolver noLookup =
+            host -> new InetAddress[] {InetAddress.getByAddress(host, new byte[] {0, 0, 0, 0})};
         Registry<ConnectionSocketFactory> registry =
             RegistryBuilder.<ConnectionSocketFactory>create()
                 .register(
@@ -216,6 +221,24 @@ class HttpClientWrapper {
                       @Override
                       public Socket createSocket(HttpContext context) {
                         return new Socket(proxy);
+                      }
+
+                      @Override
+                      public Socket connectSocket(
+                          int connectTimeout,
+                          Socket socket,
+                          HttpHost host,
+                          InetSocketAddress remoteAddress,
+                          InetSocketAddress localAddress,
+                          HttpContext context)
+                          throws IOException {
+                        return super.connectSocket(
+                            connectTimeout,
+                            socket,
+                            host,
+                            unresolved(host, remoteAddress),
+                            localAddress,
+                            context);
                       }
                     })
                 .register(
@@ -227,15 +250,38 @@ class HttpClientWrapper {
                       public Socket createSocket(HttpContext context) {
                         return new Socket(proxy);
                       }
+
+                      @Override
+                      public Socket connectSocket(
+                          int connectTimeout,
+                          Socket socket,
+                          HttpHost host,
+                          InetSocketAddress remoteAddress,
+                          InetSocketAddress localAddress,
+                          HttpContext context)
+                          throws IOException {
+                        return super.connectSocket(
+                            connectTimeout,
+                            socket,
+                            host,
+                            unresolved(host, remoteAddress),
+                            localAddress,
+                            context);
+                      }
                     })
                 .build();
         builder
             .setRoutePlanner(new DefaultRoutePlanner(null))
-            .setConnectionManager(new BasicHttpClientConnectionManager(registry));
+            .setConnectionManager(
+                new BasicHttpClientConnectionManager(registry, null, null, noLookup));
         break;
       default:
         throw new IllegalArgumentException("Unsupported proxy type: " + proxy.type());
     }
+  }
+
+  private static InetSocketAddress unresolved(HttpHost host, InetSocketAddress remoteAddress) {
+    return InetSocketAddress.createUnresolved(host.getHostName(), remoteAddress.getPort());
   }
 
   /** Checks a download response before its body is copied, throwing for an error status. */

@@ -17,14 +17,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
+import java.io.DataInputStream;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -254,6 +257,45 @@ class HttpClientTest {
       acceptor.join(5000);
     }
     assertEquals(5, firstByte.get());
+  }
+
+  @Test
+  void sendsTheHostNameToTheSocksProxyInPatchRequests() throws Exception {
+    AtomicInteger addressType = new AtomicInteger(-1);
+    AtomicReference<String> hostName = new AtomicReference<>();
+    try (ServerSocket server = new ServerSocket(0)) {
+      Thread acceptor =
+          new Thread(
+              () -> {
+                try (Socket socket = server.accept()) {
+                  DataInputStream in = new DataInputStream(socket.getInputStream());
+                  in.readUnsignedByte(); // version
+                  in.skipBytes(in.readUnsignedByte()); // offered authentication methods
+                  socket.getOutputStream().write(new byte[] {5, 0});
+                  in.skipBytes(3); // version, CONNECT, reserved
+                  addressType.set(in.readUnsignedByte());
+                  byte[] host = new byte[in.readUnsignedByte()];
+                  in.readFully(host);
+                  hostName.set(new String(host, StandardCharsets.US_ASCII));
+                } catch (Exception closed) {
+                  // the server socket was closed at the end of the test
+                }
+              });
+      acceptor.start();
+      DeepLClientOptions options = new DeepLClientOptions();
+      options
+          .setServerUrl("http://deepl-test.invalid")
+          .setProxy(
+              new Proxy(
+                  Proxy.Type.SOCKS, new InetSocketAddress("127.0.0.1", server.getLocalPort())))
+          .setMaxRetries(0);
+      DeepLClient socksClient = new DeepLClient("k", options);
+      assertThrows(
+          ConnectionException.class, () -> socksClient.updateMultilingualGlossaryName("g1", "n"));
+      acceptor.join(5000);
+    }
+    assertEquals(3, addressType.get(), "address type: domain name");
+    assertEquals("deepl-test.invalid", hostName.get());
   }
 
   @Test

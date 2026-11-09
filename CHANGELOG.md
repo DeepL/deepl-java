@@ -194,7 +194,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `updateStyleRuleName()`) honour the proxy set with `setProxy()` like every
   other request: `Proxy.NO_PROXY` connects directly, ignoring the JVM proxy
   settings, instead of throwing a `NullPointerException`, and a SOCKS proxy is
-  used as SOCKS instead of being spoken to as an HTTP proxy.
+  used as SOCKS instead of being spoken to as an HTTP proxy. The host name is
+  passed to the SOCKS proxy unresolved, so the proxy resolves it.
 
 ## [1.18.0] - 2026-11-02
 TL;DR: new APIs in this release: the Admin API, spoken terms, style profiles and text correction.
