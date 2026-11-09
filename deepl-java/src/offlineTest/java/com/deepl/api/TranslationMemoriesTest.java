@@ -430,10 +430,12 @@ class TranslationMemoriesTest {
   }
 
   @Test
-  void sendsAnEmptyPostWhenCreatingAnExportAndParsesANewJob() throws Exception {
+  void sendsAnEmptyPostWithoutContentTypeWhenCreatingAnExportAndParsesANewJob() throws Exception {
     wm.stubFor(
         post("/v3/translation_memories/tm1/export")
             .withRequestBody(absent())
+            .withHeader("Content-Type", absent())
+            .withHeader("Content-Length", equalTo("0"))
             .willReturn(
                 aResponse()
                     .withStatus(202)

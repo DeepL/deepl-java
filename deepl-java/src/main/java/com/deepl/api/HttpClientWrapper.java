@@ -14,7 +14,9 @@ import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpHost;
 import org.apache.http.MalformedChunkCodingException;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpPatch;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.ConnectTimeoutException;
@@ -81,9 +83,7 @@ class HttpClientWrapper {
    */
   public HttpResponse sendRequestRetryingOnlyUnprocessed(String relativeUrl)
       throws InterruptedException, DeepLException {
-    return sendRequestToUrlWithBackoff(
-            POST, serverUrl + relativeUrl, null, this.headers, true, true)
-        .toStringResponse(true);
+    return sendApacheRequestWithBackoff(POST, relativeUrl, null, true);
   }
 
   public HttpResponse sendRequestWithBackoff(
@@ -120,22 +120,39 @@ class HttpClientWrapper {
 
   public HttpResponse sendJsonPatchRequestWithBackoff(String relativeUrl, String jsonBody)
       throws InterruptedException, DeepLException {
-    return sendPatchRequestWithBackoff(relativeUrl, HttpContent.buildJsonContent(jsonBody));
+    return sendApacheRequestWithBackoff(
+        "PATCH", relativeUrl, HttpContent.buildJsonContent(jsonBody), false);
   }
 
-  private HttpResponse sendPatchRequestWithBackoff(String relativeUrl, HttpContent content)
+  /**
+   * Sends a PATCH request, or a POST request without a body, through Apache HttpClient: unlike
+   * HttpURLConnection, it supports PATCH and sends a bodiless POST without a Content-Type.
+   * retryOnlyUnprocessed has the meaning of {@link #sendRequestToUrlWithBackoff}.
+   */
+  private HttpResponse sendApacheRequestWithBackoff(
+      String method,
+      String relativeUrl,
+      @Nullable HttpContent content,
+      boolean retryOnlyUnprocessed)
       throws InterruptedException, DeepLException {
     BackoffTimer backoffTimer = new BackoffTimer(this.minTimeout);
     while (true) {
       try {
-        HttpResponse response = sendPatchRequest(relativeUrl, content, backoffTimer);
+        HttpResponse response =
+            sendApacheRequest(method, relativeUrl, content, retryOnlyUnprocessed, backoffTimer);
         if (backoffTimer.getNumRetries() >= this.maxRetries) {
           return response;
-        } else if (response.getCode() != 429 && response.getCode() < 500) {
+        } else if (response.getCode() != 429
+            && (retryOnlyUnprocessed || response.getCode() < 500)) {
           return response;
         }
       } catch (ConnectionException exception) {
-        if (!exception.getShouldRetry() || backoffTimer.getNumRetries() >= this.maxRetries) {
+        boolean shouldRetry =
+            retryOnlyUnprocessed ? exception.getRequestNotSent() : exception.getShouldRetry();
+        if (!shouldRetry || backoffTimer.getNumRetries() >= this.maxRetries) {
+          if (retryOnlyUnprocessed) {
+            throw reportOnlyUnsentOrCutOffAsRetryable(exception);
+          }
           throw exception;
         }
       }
@@ -143,25 +160,34 @@ class HttpClientWrapper {
     }
   }
 
-  /** Caller headers (lower-cased) that PATCH requests skip, so the library sets them. */
-  private static final Set<String> PATCH_LIBRARY_HEADERS =
+  /** Caller headers (lower-cased) that Apache requests skip, so the library sets them. */
+  private static final Set<String> APACHE_LIBRARY_HEADERS =
       new HashSet<>(Arrays.asList("host", "content-length", "transfer-encoding"));
 
-  private HttpResponse sendPatchRequest(
-      String relativeUrl, HttpContent content, BackoffTimer backoffTimer) throws DeepLException {
+  private HttpResponse sendApacheRequest(
+      String method,
+      String relativeUrl,
+      @Nullable HttpContent content,
+      boolean retryOnlyUnprocessed,
+      BackoffTimer backoffTimer)
+      throws DeepLException {
     // Like HttpURLConnection, honor the JVM's proxy settings unless a proxy was configured.
     // Automatic retries are disabled so that only the backoff loop retries, up to maxRetries.
     HttpClientBuilder builder =
         HttpClients.custom().useSystemProperties().disableAutomaticRetries();
     try {
       if (proxy != null) {
-        configurePatchProxy(builder, proxy);
+        configureApacheProxy(builder, proxy);
       }
     } catch (RuntimeException e) {
       throw toConnectionException(e);
     }
     try (CloseableHttpClient httpClient = builder.build()) {
-      HttpPatch request = new HttpPatch(serverUrl + relativeUrl);
+      // Without an entity, the request has Content-Length: 0 and no Content-Type.
+      HttpEntityEnclosingRequestBase request =
+          POST.equals(method)
+              ? new HttpPost(serverUrl + relativeUrl)
+              : new HttpPatch(serverUrl + relativeUrl);
 
       // Set timeouts
       RequestConfig requestConfig =
@@ -174,14 +200,16 @@ class HttpClientWrapper {
       // Set headers
       for (Map.Entry<String, String> entry : this.headers.entrySet()) {
         // Like every other request, these keep the library's values.
-        if (PATCH_LIBRARY_HEADERS.contains(entry.getKey().toLowerCase(Locale.ROOT))) {
+        if (APACHE_LIBRARY_HEADERS.contains(entry.getKey().toLowerCase(Locale.ROOT))) {
           continue;
         }
         request.setHeader(entry.getKey(), entry.getValue());
       }
 
-      request.setHeader("Content-Type", content.getContentType());
-      request.setEntity(new ByteArrayEntity(content.getContent()));
+      if (content != null) {
+        request.setHeader("Content-Type", content.getContentType());
+        request.setEntity(new ByteArrayEntity(content.getContent()));
+      }
 
       // Execute the request
       org.apache.http.HttpResponse response = httpClient.execute(request);
@@ -192,14 +220,28 @@ class HttpClientWrapper {
               ? new byte[0]
               : EntityUtils.toByteArray(response.getEntity());
       return new HttpResponse(
-          response.getStatusLine().getStatusCode(), new String(body, StandardCharsets.UTF_8));
+          response.getStatusLine().getStatusCode(),
+          new String(body, StandardCharsets.UTF_8),
+          retryOnlyUnprocessed);
     } catch (RuntimeException | IOException e) {
-      throw toConnectionException(e);
+      ConnectionException failure = toConnectionException(e);
+      throw new ConnectionException(
+          failure.getMessage(), failure.getShouldRetry(), e, isApacheUnsentFailure(e));
     }
   }
 
-  /** Applies the configured proxy to the PATCH client the way HttpURLConnection applies it. */
-  private static void configurePatchProxy(HttpClientBuilder builder, Proxy proxy) {
+  // Failures of an Apache request after which the server cannot have received it. Unlike
+  // isUnsentFailure, this excludes SocketTimeoutException: Apache reports a read timeout as one
+  // too, and a connect timeout as ConnectTimeoutException.
+  private static boolean isApacheUnsentFailure(Exception e) {
+    return e instanceof ConnectException
+        || e instanceof NoRouteToHostException
+        || e instanceof UnknownHostException
+        || e instanceof ConnectTimeoutException;
+  }
+
+  /** Applies the configured proxy to the Apache client the way HttpURLConnection applies it. */
+  private static void configureApacheProxy(HttpClientBuilder builder, Proxy proxy) {
     switch (proxy.type()) {
       case DIRECT:
         // Connect directly, ignoring the JVM proxy settings, like openConnection(NO_PROXY).
@@ -522,10 +564,6 @@ class HttpClientWrapper {
           // over plain HTTP, 407 challenges) cannot be replayed from a streamed body.
           connection.setFixedLengthStreamingMode(content.getContent().length);
         }
-      } else if (retryOnlyUnprocessed) {
-        // Same as above for a POST without a body: an empty fixed-length body.
-        connection.setDoOutput(true);
-        connection.setFixedLengthStreamingMode(0);
       }
 
       // Connect separately: a DNS, refused or timed-out connect means nothing was sent yet.
@@ -626,7 +664,8 @@ class HttpClientWrapper {
   }
 
   // The response body broke off. HttpURLConnection reports this as an IOException "Premature EOF",
-  // Apache HttpClient (PATCH) as a ConnectionClosedException or MalformedChunkCodingException.
+  // Apache HttpClient (PATCH, export POST) as a ConnectionClosedException or
+  // MalformedChunkCodingException.
   private static boolean isPrematureEndOfBody(Exception e) {
     if (e instanceof EOFException
         || e instanceof ConnectionClosedException

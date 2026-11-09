@@ -197,6 +197,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - `DELETE` requests no longer send an empty form body with a
   `Content-Type: application/x-www-form-urlencoded` header.
+- `createTranslationMemoryExport()` sends its `POST` without a `Content-Type`
+  header (an empty body with `Content-Length: 0`) instead of
+  `application/x-www-form-urlencoded`.
 - `PATCH` requests (`updateMultilingualGlossary()`,
   `updateMultilingualGlossaryName()` and the other multilingual glossary
   updates, `updateSpokenTerms()`, `updateStyleProfile()`,
