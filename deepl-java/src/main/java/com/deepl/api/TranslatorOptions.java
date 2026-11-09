@@ -74,6 +74,10 @@ public class TranslatorOptions {
    * Set the base URL for DeepL API that may be overridden for testing purposes. By default, this
    * value is <code>null</code> and the correct DeepL API base URL is selected based on the API
    * account type (free or paid).
+   *
+   * <p>The URL must be an absolute <code>http</code> or <code>https</code> URL with a host; a port
+   * and a path prefix are allowed. It is checked when the client is created: the client constructor
+   * throws {@link IllegalArgumentException} for an invalid URL.
    */
   public TranslatorOptions setServerUrl(String serverUrl) {
     this.serverUrl = serverUrl;

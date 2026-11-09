@@ -10,6 +10,8 @@ import com.google.gson.JsonSyntaxException;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -52,6 +54,7 @@ final class ApiClientHelper {
       Duration timeout,
       @Nullable Proxy proxy,
       int maxRetries) {
+    checkServerUrl(serverUrl);
     Map<String, String> headers = new HashMap<>();
     boolean hasCustomAuthorization = false;
     boolean hasCustomUserAgent = false;
@@ -70,6 +73,23 @@ final class ApiClientHelper {
     }
 
     return new HttpClientWrapper(serverUrl, headers, timeout, proxy, maxRetries);
+  }
+
+  /** Throws IllegalArgumentException unless serverUrl is an absolute http(s) URL with a host. */
+  private static void checkServerUrl(String serverUrl) {
+    String message = "serverUrl must be an absolute http or https URL with a host: " + serverUrl;
+    URI uri;
+    try {
+      uri = new URI(serverUrl);
+    } catch (URISyntaxException e) {
+      throw new IllegalArgumentException(message, e);
+    }
+    String scheme = uri.getScheme();
+    if (!uri.isAbsolute()
+        || !("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme))
+        || uri.getHost() == null) {
+      throw new IllegalArgumentException(message);
+    }
   }
 
   /**

@@ -38,7 +38,9 @@ public class DeepLAdminClient {
    *
    * @param adminKey Admin API key as found in your DeepL account.
    * @param options Additional options controlling client behaviour.
-   * @throws IllegalArgumentException If adminKey is null or blank, or if options is null.
+   * @throws IllegalArgumentException If adminKey is null or blank, if options is null, or if the
+   *     server URL set in the options is not an absolute <code>http</code> or <code>https</code>
+   *     URL with a host.
    */
   public DeepLAdminClient(String adminKey, DeepLAdminClientOptions options)
       throws IllegalArgumentException {

@@ -80,6 +80,10 @@ public class DeepLAdminClientOptions {
    * Set the base URL for the DeepL Admin API that may be overridden for testing purposes. By
    * default, this value is <code>null</code> and <code>https://api.deepl.com</code>, the only
    * server offering the Admin API, is used.
+   *
+   * <p>The URL must be an absolute <code>http</code> or <code>https</code> URL with a host; a port
+   * and a path prefix are allowed. It is checked when the client is created: the client constructor
+   * throws {@link IllegalArgumentException} for an invalid URL.
    */
   public DeepLAdminClientOptions setServerUrl(String serverUrl) {
     this.serverUrl = serverUrl;

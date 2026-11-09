@@ -1955,7 +1955,9 @@ The available options setters are:
   (import upload and export download) get only the `User-Agent`.
 - `setServerUrl()`: base URL for DeepL API, may be overridden for testing
   purposes. By default, the correct DeepL API (Free or Pro) is automatically
-  selected.
+  selected. It must be an absolute `http` or `https` URL with a host (a port
+  and a path prefix are allowed); the client constructor throws
+  `IllegalArgumentException` otherwise.
 
 #### Anonymous platform information
 

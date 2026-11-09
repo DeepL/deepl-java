@@ -67,7 +67,8 @@ public class DeepLClient {
    * @param authKey DeepL Authentication Key as found in your <a
    *     href="https://www.deepl.com/pro-account/">DeepL account</a>.
    * @param options Additional options controlling Client behaviour.
-   * @throws IllegalArgumentException If authKey is invalid.
+   * @throws IllegalArgumentException If authKey is invalid, or if the server URL set in the options
+   *     is not an absolute <code>http</code> or <code>https</code> URL with a host.
    */
   public DeepLClient(String authKey, DeepLClientOptions options) throws IllegalArgumentException {
     if (authKey == null || authKey.trim().isEmpty()) {

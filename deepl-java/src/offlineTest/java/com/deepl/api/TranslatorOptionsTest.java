@@ -167,12 +167,15 @@ class TranslatorOptionsTest {
     assertThrows(IllegalArgumentException.class, () -> new DeepLClient(" \n"));
   }
 
-  @Test
-  void throwsConnectionExceptionWhenTheServerUrlIsInvalid() {
-    DeepLClient translator =
-        new DeepLClient(
-            "k", new DeepLClientOptions().setServerUrl("http:/api.deepl.com").setMaxRetries(0));
-    assertThrows(ConnectionException.class, translator::getUsage);
+  @ParameterizedTest
+  @ValueSource(strings = {"http:/api.deepl.com", "api.deepl.com", "ftp://api.deepl.com", "http://"})
+  void throwsIllegalArgumentWhenTheServerUrlIsNotAnAbsoluteHttpUrl(String url) {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new DeepLClient("k", new DeepLClientOptions().setServerUrl(url)));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new DeepLAdminClient("k", new DeepLAdminClientOptions().setServerUrl(url)));
   }
 
   @Test

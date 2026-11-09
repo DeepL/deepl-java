@@ -46,6 +46,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `translateDocumentUpload()` and `translateDocument()`. These requests are
   sent in streaming mode, so they do not follow HTTP redirects. Retry such
   errors yourself only after checking that the resource was not created.
+- The `DeepLClient` and `DeepLAdminClient` constructors throw
+  `IllegalArgumentException` if the server URL set with `setServerUrl()` is not
+  an absolute `http` or `https` URL with a host, instead of failing on the first
+  request with a `ConnectionException`.
 - `updateMultilingualGlossaryName()` (all overloads) throws `InterruptedException`
   unwrapped when the thread is interrupted, like the other `DeepLClient`
   methods, instead of a `DeepLException`, and declares it. Callers must catch or
