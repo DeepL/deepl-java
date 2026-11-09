@@ -4,6 +4,7 @@
 package com.deepl.api;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
@@ -26,6 +27,8 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
@@ -407,5 +410,26 @@ class HttpClientTest {
                 new DeepLClientOptions().setMaxRetries(0).setTimeout(Duration.ofMillis(200)));
     assertThrows(
         ConnectionException.class, () -> timeoutClient.updateMultilingualGlossaryName("g1", "n"));
+  }
+
+  @Test
+  void keepsTheLibraryHostAndBodyHeadersInPatchRequests() throws Exception {
+    Map<String, String> headers = new HashMap<>();
+    headers.put("host", "example.invalid");
+    headers.put("CONTENT-LENGTH", "999");
+    headers.put("Transfer-Encoding", "chunked");
+    DeepLClient client =
+        OfflineClient.createClient(
+            wm, (DeepLClientOptions) new DeepLClientOptions().setHeaders(headers).setMaxRetries(0));
+    wm.stubFor(
+        patch(urlEqualTo("/v3/glossaries/g1"))
+            .withHeader("Host", equalTo("localhost:" + wm.getPort()))
+            .willReturn(okJson(GLOSSARY)));
+
+    MultilingualGlossaryInfo result = client.updateMultilingualGlossaryName("g1", "n");
+
+    assertEquals("g1", result.getGlossaryId());
+    wm.verify(
+        1, patchRequestedFor(urlEqualTo("/v3/glossaries/g1")).withoutHeader("Transfer-Encoding"));
   }
 }

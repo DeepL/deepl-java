@@ -149,6 +149,10 @@ class HttpClientWrapper {
     }
   }
 
+  /** Caller headers (lower-cased) that PATCH requests skip, so the library sets them. */
+  private static final Set<String> PATCH_LIBRARY_HEADERS =
+      new HashSet<>(Arrays.asList("host", "content-length", "transfer-encoding"));
+
   private HttpResponse sendPatchRequest(
       String relativeUrl, HttpContent content, BackoffTimer backoffTimer) throws DeepLException {
     // Like HttpURLConnection, honor the JVM's proxy settings unless a proxy was configured.
@@ -175,6 +179,10 @@ class HttpClientWrapper {
 
       // Set headers
       for (Map.Entry<String, String> entry : this.headers.entrySet()) {
+        // Like every other request, these keep the library's values.
+        if (PATCH_LIBRARY_HEADERS.contains(entry.getKey().toLowerCase(Locale.ROOT))) {
+          continue;
+        }
         request.setHeader(entry.getKey(), entry.getValue());
       }
 

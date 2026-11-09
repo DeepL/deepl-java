@@ -69,7 +69,9 @@ public class DeepLAdminClientOptions {
   /**
    * Set HTTP headers attached to every HTTP request. By default, this value is <code>null</code>
    * and no extra headers are used. An <code>Authorization</code> or <code>User-Agent</code> header,
-   * in any casing, replaces the one built by the client.
+   * in any casing, replaces the one built by the client. The headers <code>Content-Type</code>,
+   * <code>Content-Length</code>, <code>Transfer-Encoding</code> and <code>Host</code> keep the
+   * library's values.
    */
   public DeepLAdminClientOptions setHeaders(Map<String, String> headers) {
     this.headers = headers;

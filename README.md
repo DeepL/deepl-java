@@ -1952,8 +1952,9 @@ The available options setters are:
   URL are not supported).
 - `setHeaders()`: additional HTTP headers to attach to all requests. A header
   with the same name as one the library sets, matched in any casing, replaces
-  it, including `Authorization` and `User-Agent`; `Content-Type` keeps the
-  library's value. Requests to the pre-signed translation memory storage URLs
+  it, including `Authorization` and `User-Agent`; `Content-Type`,
+  `Content-Length`, `Transfer-Encoding` and `Host` keep the library's values.
+  Requests to the pre-signed translation memory storage URLs
   (import upload and export download) get only the `User-Agent`.
 - `setServerUrl()`: base URL for DeepL API, may be overridden for testing
   purposes. By default, the correct DeepL API (Free or Pro) is automatically

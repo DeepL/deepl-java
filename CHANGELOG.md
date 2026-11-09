@@ -198,6 +198,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   settings, instead of throwing a `NullPointerException`, and a SOCKS proxy is
   used as SOCKS instead of being spoken to as an HTTP proxy. The host name is
   passed to the SOCKS proxy unresolved, so the proxy resolves it.
+- `PATCH` requests (`updateMultilingualGlossary*()`, `updateSpokenTerms()`,
+  `updateStyleProfile()`, `updateStyleRuleName()`) no longer fail with
+  `ConnectionException` when `setHeaders()` contains `Content-Length` or
+  `Transfer-Encoding`, and no longer send a custom `Host` header; these headers
+  keep the library's values, as in all other requests.
 
 ## [1.18.0] - 2026-11-02
 TL;DR: new APIs in this release: the Admin API, spoken terms, style profiles and text correction.
