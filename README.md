@@ -1960,7 +1960,7 @@ The available options setters are:
   purposes. By default, the correct DeepL API (Free or Pro) is automatically
   selected. It must be an absolute `http` or `https` URL with a host (a port
   and a path prefix are allowed); the client constructor throws
-  `IllegalArgumentException` otherwise.
+  `IllegalArgumentException` otherwise. A trailing `/` is ignored.
 
 #### Anonymous platform information
 

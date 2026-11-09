@@ -79,7 +79,8 @@ public class TranslatorOptions {
    *
    * <p>The URL must be an absolute <code>http</code> or <code>https</code> URL with a host; a port
    * and a path prefix are allowed. It is checked when the client is created: the client constructor
-   * throws {@link IllegalArgumentException} for an invalid URL.
+   * throws {@link IllegalArgumentException} for an invalid URL. A trailing <code>/</code> is
+   * ignored.
    */
   public TranslatorOptions setServerUrl(String serverUrl) {
     this.serverUrl = serverUrl;

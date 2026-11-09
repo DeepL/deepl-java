@@ -57,6 +57,8 @@ final class ApiClientHelper {
       @Nullable Proxy proxy,
       int maxRetries) {
     checkServerUrl(serverUrl);
+    // Relative URLs start with "/", so a trailing "/" would produce "//v2/..." request paths.
+    String baseUrl = serverUrl.replaceAll("/+$", "");
     Map<String, String> headers = new HashMap<>();
     boolean hasCustomAuthorization = false;
     boolean hasCustomUserAgent = false;
@@ -74,7 +76,7 @@ final class ApiClientHelper {
       headers.put("User-Agent", DeepLClient.constructUserAgentString(sendPlatformInfo, appInfo));
     }
 
-    return new HttpClientWrapper(serverUrl, headers, timeout, proxy, maxRetries);
+    return new HttpClientWrapper(baseUrl, headers, timeout, proxy, maxRetries);
   }
 
   /** Throws IllegalArgumentException unless serverUrl is an absolute http(s) URL with a host. */

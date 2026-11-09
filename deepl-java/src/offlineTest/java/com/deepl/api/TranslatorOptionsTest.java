@@ -122,6 +122,17 @@ class TranslatorOptionsTest {
   }
 
   @ParameterizedTest
+  @ValueSource(strings = {"/", "/prefix/", "/prefix//"})
+  void sendsToTheServerUrlWithoutItsTrailingSlash(String suffix) throws Exception {
+    String prefix = suffix.replaceAll("/+$", "");
+    wm.stubFor(get(prefix + "/v2/usage").willReturn(okJson(USAGE)));
+    Usage usage =
+        new DeepLClient("k", new DeepLClientOptions().setServerUrl(wm.baseUrl() + suffix))
+            .getUsage();
+    assertEquals(1, usage.getCharacter().getCount());
+  }
+
+  @ParameterizedTest
   @MethodSource("userAgents")
   void sendsTheUserAgent(DeepLClientOptions options, String expectedPattern) throws Exception {
     expectUsage("User-Agent", matching(expectedPattern));
