@@ -204,8 +204,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Transfer-Encoding`, and no longer send a custom `Host` header; these headers
   keep the library's values, as in all other requests.
 - A server URL ending in `/` (also after a path prefix) no longer produces
-  `//v2/...` request paths, which the API answers with a redirect that `POST`,
-  `PATCH` and `DELETE` requests did not follow.
+  `//v2/...` request paths, which the API does not serve (HTTP 301 or 404), so
+  those requests failed.
 
 ## [1.18.0] - 2026-11-02
 TL;DR: new APIs in this release: the Admin API, spoken terms, style profiles and text correction.
