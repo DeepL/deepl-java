@@ -195,6 +195,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `LanguageCode.standardize()` remain.
 
 ### Fixed
+- `DELETE` requests no longer send an empty form body with a
+  `Content-Type: application/x-www-form-urlencoded` header.
 - `PATCH` requests (`updateMultilingualGlossary()`,
   `updateMultilingualGlossaryName()` and the other multilingual glossary
   updates, `updateSpokenTerms()`, `updateStyleProfile()`,

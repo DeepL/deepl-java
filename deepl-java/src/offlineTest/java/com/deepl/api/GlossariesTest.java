@@ -165,10 +165,11 @@ class GlossariesTest {
   }
 
   @Test
-  void sendsADeleteRequestWithAnEmptyFormBody() throws Exception {
+  void sendsADeleteRequestWithoutABodyOrContentType() throws Exception {
     wm.stubFor(
         delete("/v2/glossaries/g1")
-            .withHeader("Content-Type", equalTo("application/x-www-form-urlencoded"))
+            .withHeader("Content-Type", absent())
+            .withHeader("Content-Length", absent())
             .withRequestBody(absent())
             .willReturn(aResponse().withStatus(204)));
     translator.deleteGlossary("g1");

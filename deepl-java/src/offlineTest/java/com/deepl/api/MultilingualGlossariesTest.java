@@ -41,7 +41,6 @@ class MultilingualGlossariesTest {
           + "{\"source_lang\":\"de\",\"target_lang\":\"en\",\"entry_count\":1}]}";
   private static final String DICTIONARY =
       "{\"source_lang\":\"en\",\"target_lang\":\"de\",\"entry_count\":3}";
-  private static final String FORM = "application/x-www-form-urlencoded";
   private static final String JSON = "application/json";
   private static final Map<String, String> EXTRA = Collections.singletonMap("extra", "x");
 
@@ -325,10 +324,11 @@ class MultilingualGlossariesTest {
   }
 
   @Test
-  void sendsADeleteRequestWithAnEmptyFormBodyWhenDeletingAGlossary() throws Exception {
+  void sendsADeleteRequestWithoutABodyOrContentTypeWhenDeletingAGlossary() throws Exception {
     wm.stubFor(
         delete("/v3/glossaries/g1")
-            .withHeader("Content-Type", equalTo(FORM))
+            .withHeader("Content-Type", absent())
+            .withHeader("Content-Length", absent())
             .withRequestBody(absent())
             .willReturn(aResponse().withStatus(204)));
     client.deleteMultilingualGlossary("g1");

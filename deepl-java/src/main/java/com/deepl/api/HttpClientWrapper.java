@@ -68,16 +68,10 @@ class HttpClientWrapper {
     return sendRequestWithBackoff(GET, relativeUrl, null);
   }
 
-  public HttpResponse sendDeleteRequestWithBackoff(
-      String relativeUrl, @Nullable Iterable<KeyValuePair<String, String>> params)
-      throws InterruptedException, DeepLException {
-    HttpContent content = HttpContent.buildFormURLEncodedContent(params);
-    return sendRequestWithBackoff(DELETE, relativeUrl, content);
-  }
-
+  /** Sends a DELETE request without a body or Content-Type, like a GET request. */
   public HttpResponse sendDeleteRequestWithBackoff(String relativeUrl)
       throws InterruptedException, DeepLException {
-    return sendDeleteRequestWithBackoff(relativeUrl, null);
+    return sendRequestWithBackoff(DELETE, relativeUrl, null);
   }
 
   /**
