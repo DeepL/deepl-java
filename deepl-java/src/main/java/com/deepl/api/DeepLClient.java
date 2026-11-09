@@ -1544,11 +1544,12 @@ public class DeepLClient {
    * @param glossary {@link MultilingualGlossaryInfo} object of the glossary to retrieve.
    * @return {@link MultilingualGlossaryInfo} object with details about the specified glossary.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
+   * @throws IllegalArgumentException If glossary is null.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
   public MultilingualGlossaryInfo getMultilingualGlossary(MultilingualGlossaryInfo glossary)
       throws DeepLException, InterruptedException {
-    return getMultilingualGlossary(glossary.getGlossaryId());
+    return getMultilingualGlossary(multilingualGlossaryId(glossary));
   }
 
   /**
@@ -1631,7 +1632,7 @@ public class DeepLClient {
       MultilingualGlossaryInfo glossary, String sourceLanguageCode, String targetLanguageCode)
       throws DeepLException, IllegalArgumentException, InterruptedException {
     return getMultilingualGlossaryDictionaryEntries(
-        glossary.getGlossaryId(), sourceLanguageCode, targetLanguageCode);
+        multilingualGlossaryId(glossary), sourceLanguageCode, targetLanguageCode);
   }
 
   /**
@@ -1651,7 +1652,7 @@ public class DeepLClient {
       MultilingualGlossaryInfo glossary, MultilingualGlossaryDictionaryInfo glossaryDict)
       throws DeepLException, IllegalArgumentException, InterruptedException {
     return getMultilingualGlossaryDictionaryEntries(
-        glossary.getGlossaryId(),
+        multilingualGlossaryId(glossary),
         glossaryDict.getSourceLanguageCode(),
         glossaryDict.getTargetLanguageCode());
   }
@@ -1755,7 +1756,8 @@ public class DeepLClient {
       MultilingualGlossaryDictionaryEntries glossaryDict,
       @Nullable ReplaceMultilingualGlossaryDictionaryOptions options)
       throws DeepLException, IllegalArgumentException, InterruptedException {
-    return replaceMultilingualGlossaryDictionary(glossary.getGlossaryId(), glossaryDict, options);
+    return replaceMultilingualGlossaryDictionary(
+        multilingualGlossaryId(glossary), glossaryDict, options);
   }
 
   /**
@@ -1777,7 +1779,8 @@ public class DeepLClient {
   public MultilingualGlossaryDictionaryInfo replaceMultilingualGlossaryDictionary(
       MultilingualGlossaryInfo glossary, MultilingualGlossaryDictionaryEntries glossaryDict)
       throws DeepLException, IllegalArgumentException, InterruptedException {
-    return replaceMultilingualGlossaryDictionary(glossary.getGlossaryId(), glossaryDict, null);
+    return replaceMultilingualGlossaryDictionary(
+        multilingualGlossaryId(glossary), glossaryDict, null);
   }
 
   /**
@@ -1803,7 +1806,7 @@ public class DeepLClient {
       GlossaryEntries entries)
       throws DeepLException, IllegalArgumentException, InterruptedException {
     return replaceGlossaryDictionaryInternal(
-        glossary.getGlossaryId(),
+        multilingualGlossaryId(glossary),
         sourceLanguageCode,
         targetLanguageCode,
         entries.toTsv(),
@@ -1915,7 +1918,7 @@ public class DeepLClient {
       File csvFile)
       throws DeepLException, IllegalArgumentException, InterruptedException, IOException {
     return replaceMultilingualGlossaryDictionaryFromCsv(
-        glossary.getGlossaryId(), sourceLanguageCode, targetLanguageCode, csvFile, null);
+        multilingualGlossaryId(glossary), sourceLanguageCode, targetLanguageCode, csvFile, null);
   }
 
   /**
@@ -1944,7 +1947,7 @@ public class DeepLClient {
       @Nullable ReplaceMultilingualGlossaryDictionaryOptions options)
       throws DeepLException, IllegalArgumentException, InterruptedException, IOException {
     return replaceMultilingualGlossaryDictionaryFromCsv(
-        glossary.getGlossaryId(), sourceLanguageCode, targetLanguageCode, csvFile, options);
+        multilingualGlossaryId(glossary), sourceLanguageCode, targetLanguageCode, csvFile, options);
   }
 
   /**
@@ -1997,7 +2000,7 @@ public class DeepLClient {
       String csvContent)
       throws DeepLException, IllegalArgumentException, InterruptedException {
     return replaceMultilingualGlossaryDictionaryFromCsv(
-        glossary.getGlossaryId(), sourceLanguageCode, targetLanguageCode, csvContent, null);
+        multilingualGlossaryId(glossary), sourceLanguageCode, targetLanguageCode, csvContent, null);
   }
 
   /**
@@ -2025,7 +2028,11 @@ public class DeepLClient {
       @Nullable ReplaceMultilingualGlossaryDictionaryOptions options)
       throws DeepLException, IllegalArgumentException, InterruptedException {
     return replaceMultilingualGlossaryDictionaryFromCsv(
-        glossary.getGlossaryId(), sourceLanguageCode, targetLanguageCode, csvContent, options);
+        multilingualGlossaryId(glossary),
+        sourceLanguageCode,
+        targetLanguageCode,
+        csvContent,
+        options);
   }
 
   /**
@@ -2080,7 +2087,7 @@ public class DeepLClient {
       GlossaryEntries entries)
       throws DeepLException, IllegalArgumentException, InterruptedException {
     return updateGlossaryDictionaryInternal(
-        glossary.getGlossaryId(),
+        multilingualGlossaryId(glossary),
         sourceLanguageCode,
         targetLanguageCode,
         entries.toTsv(),
@@ -2161,7 +2168,8 @@ public class DeepLClient {
       MultilingualGlossaryDictionaryEntries glossaryDict,
       @Nullable BaseRequestOptions options)
       throws DeepLException, IllegalArgumentException, InterruptedException {
-    return updateMultilingualGlossaryDictionary(glossary.getGlossaryId(), glossaryDict, options);
+    return updateMultilingualGlossaryDictionary(
+        multilingualGlossaryId(glossary), glossaryDict, options);
   }
 
   /**
@@ -2180,7 +2188,8 @@ public class DeepLClient {
   public MultilingualGlossaryInfo updateMultilingualGlossaryDictionary(
       MultilingualGlossaryInfo glossary, MultilingualGlossaryDictionaryEntries glossaryDict)
       throws DeepLException, IllegalArgumentException, InterruptedException {
-    return updateMultilingualGlossaryDictionary(glossary.getGlossaryId(), glossaryDict, null);
+    return updateMultilingualGlossaryDictionary(
+        multilingualGlossaryId(glossary), glossaryDict, null);
   }
 
   /**
@@ -2215,7 +2224,7 @@ public class DeepLClient {
   public MultilingualGlossaryInfo updateMultilingualGlossaryName(
       MultilingualGlossaryInfo glossary, String name)
       throws DeepLException, IllegalArgumentException, InterruptedException {
-    return updateMultilingualGlossaryName(glossary.getGlossaryId(), name, null);
+    return updateMultilingualGlossaryName(multilingualGlossaryId(glossary), name, null);
   }
 
   /**
@@ -2263,7 +2272,7 @@ public class DeepLClient {
   public MultilingualGlossaryInfo updateMultilingualGlossaryName(
       MultilingualGlossaryInfo glossary, String name, @Nullable BaseRequestOptions options)
       throws DeepLException, IllegalArgumentException, InterruptedException {
-    return updateMultilingualGlossaryName(glossary.getGlossaryId(), name, options);
+    return updateMultilingualGlossaryName(multilingualGlossaryId(glossary), name, options);
   }
 
   /**
@@ -2321,7 +2330,7 @@ public class DeepLClient {
   public MultilingualGlossaryInfo updateMultilingualGlossary(
       MultilingualGlossaryInfo glossary, @Nullable UpdateMultilingualGlossaryOptions options)
       throws DeepLException, IllegalArgumentException, InterruptedException {
-    return updateMultilingualGlossary(glossary.getGlossaryId(), options);
+    return updateMultilingualGlossary(multilingualGlossaryId(glossary), options);
   }
 
   /**
@@ -2429,7 +2438,7 @@ public class DeepLClient {
       File csvFile)
       throws DeepLException, IllegalArgumentException, InterruptedException, IOException {
     return updateMultilingualGlossaryDictionaryFromCsv(
-        glossary.getGlossaryId(), sourceLanguageCode, targetLanguageCode, csvFile, null);
+        multilingualGlossaryId(glossary), sourceLanguageCode, targetLanguageCode, csvFile, null);
   }
 
   /**
@@ -2459,7 +2468,7 @@ public class DeepLClient {
       @Nullable BaseRequestOptions options)
       throws DeepLException, IllegalArgumentException, InterruptedException, IOException {
     return updateMultilingualGlossaryDictionaryFromCsv(
-        glossary.getGlossaryId(), sourceLanguageCode, targetLanguageCode, csvFile, options);
+        multilingualGlossaryId(glossary), sourceLanguageCode, targetLanguageCode, csvFile, options);
   }
 
   /**
@@ -2513,7 +2522,7 @@ public class DeepLClient {
       String csvContent)
       throws DeepLException, IllegalArgumentException, InterruptedException {
     return updateMultilingualGlossaryDictionaryFromCsv(
-        glossary.getGlossaryId(), sourceLanguageCode, targetLanguageCode, csvContent, null);
+        multilingualGlossaryId(glossary), sourceLanguageCode, targetLanguageCode, csvContent, null);
   }
 
   /**
@@ -2542,7 +2551,11 @@ public class DeepLClient {
       @Nullable BaseRequestOptions options)
       throws DeepLException, IllegalArgumentException, InterruptedException {
     return updateMultilingualGlossaryDictionaryFromCsv(
-        glossary.getGlossaryId(), sourceLanguageCode, targetLanguageCode, csvContent, options);
+        multilingualGlossaryId(glossary),
+        sourceLanguageCode,
+        targetLanguageCode,
+        csvContent,
+        options);
   }
 
   /**
@@ -2563,12 +2576,13 @@ public class DeepLClient {
    * Deletes the specified glossary.
    *
    * @param glossary {@link MultilingualGlossaryInfo} object corresponding to glossary to delete.
+   * @throws IllegalArgumentException If glossary is null.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
    *     DeepLException} or a derived class will be thrown.
    */
   public void deleteMultilingualGlossary(MultilingualGlossaryInfo glossary)
       throws DeepLException, InterruptedException {
-    this.deleteMultilingualGlossary(glossary.getGlossaryId());
+    this.deleteMultilingualGlossary(multilingualGlossaryId(glossary));
   }
 
   /**
@@ -2614,6 +2628,7 @@ public class DeepLClient {
    * @param glossary The glossary that contains the glossary dictionary to delete.
    * @param sourceLanguageCode Source language code of the glossary dictionary to be deleted.
    * @param targetLanguageCode Target language code of the glossary dictionary to be deleted.
+   * @throws IllegalArgumentException If glossary is null.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
    *     DeepLException} or a derived class will be thrown.
    */
@@ -2621,7 +2636,7 @@ public class DeepLClient {
       MultilingualGlossaryInfo glossary, String sourceLanguageCode, String targetLanguageCode)
       throws DeepLException, InterruptedException, IllegalArgumentException {
     deleteMultilingualGlossaryDictionary(
-        glossary.getGlossaryId(), sourceLanguageCode, targetLanguageCode);
+        multilingualGlossaryId(glossary), sourceLanguageCode, targetLanguageCode);
   }
 
   /**
@@ -2631,6 +2646,7 @@ public class DeepLClient {
    * @param glossaryDict {@link MultilingualGlossaryDictionaryInfo} object corresponding to glossary
    *     dictionary to delete.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
+   * @throws IllegalArgumentException If glossary is null.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
    *     DeepLException} or a derived class will be thrown.
    */
@@ -2638,7 +2654,7 @@ public class DeepLClient {
       MultilingualGlossaryInfo glossary, MultilingualGlossaryDictionaryInfo glossaryDict)
       throws DeepLException, InterruptedException, IllegalArgumentException {
     deleteMultilingualGlossaryDictionary(
-        glossary.getGlossaryId(),
+        multilingualGlossaryId(glossary),
         glossaryDict.getSourceLanguageCode(),
         glossaryDict.getTargetLanguageCode());
   }
@@ -5161,6 +5177,15 @@ public class DeepLClient {
         httpClientWrapper.sendJsonPatchRequestWithBackoff(relativeUrl, jsonBody);
     checkResponse(response, false);
     return jsonParser.parseMultilingualGlossaryInfo(response.getBody());
+  }
+
+  /** Extracts the ID of the given multilingual glossary. */
+  private static String multilingualGlossaryId(MultilingualGlossaryInfo glossary)
+      throws IllegalArgumentException {
+    if (glossary == null) {
+      throw new IllegalArgumentException("glossary must not be null");
+    }
+    return glossary.getGlossaryId();
   }
 
   /** Validates the multilingual glossary ID and builds its URL path with the ID escaped. */

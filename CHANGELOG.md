@@ -24,6 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the API rejected it with a `DeepLException` before. `createGlossary()` and
   `createMultilingualGlossary()` also throw `IllegalArgumentException` for empty
   `GlossaryEntries` (in any dictionary) instead of sending them.
+- **Breaking:** the multilingual glossary functions that take a
+  `MultilingualGlossaryInfo` object throw `IllegalArgumentException` for a
+  `null` object, before any request, instead of `NullPointerException`, like
+  the functions that take a translation memory, Spoken Terms, style profile or
+  style rule object.
 - **Breaking:** for requests that create a resource (including
   `DeepLAdminClient.createDeveloperKey()`) and the document upload,
   `getShouldRetry()` of the thrown exception is `true` only if the request was
