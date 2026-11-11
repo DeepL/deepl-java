@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Changed
+- This release removes everything deprecated in 1.18.0 and changes the error
+  handling of several functions. See [the upgrading guide](upgrading_to_v2.md)
+  for the changes and how to migrate from 1.x.
 - **Breaking:** `createStyleRule()` (for its custom instructions),
   `createStyleRuleCustomInstruction()` and
   `updateStyleRuleCustomInstruction()` throw `IllegalArgumentException` for an
@@ -197,13 +200,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Check `ok()` for failure. `waitUntilTranslationMemoryJobDone()` still returns
   the completed job and throws `DeepLException` on failure or expiry.
 - `importTranslationMemoryFromFilepath()` and
-  `exportTranslationMemoryToFilepath()` throw `DeepLException`, with the
-  `IOException` as its cause, for local file failures: an unreadable input file,
-  an occupied output path, a missing output directory, an output file that
-  cannot be created (checked before the export job is created), or a failed
-  write. They
-  no longer declare `IOException`; catch `DeepLException` instead and inspect
-  `getCause()`.
+  `exportTranslationMemoryToFilepath()` throw `TranslationMemoryJobException`,
+  with the `IOException` as its cause, for local file failures: an unreadable
+  input file, an occupied output path, a missing output directory, an output
+  file that cannot be created (checked before the export job is created), or a
+  failed write. They no longer declare `IOException`; catch
+  `TranslationMemoryJobException` instead and inspect `getCause()`.
 - `translateDocument(File, File, ...)` and `translateDocumentUpload(File, ...)`
   throw `IllegalArgumentException` for a missing input file, before any
   request, instead of `FileNotFoundException`.
@@ -234,7 +236,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `toString()`. A `null` value removes the parameter. Callers passing a
   `Map<String, String>` compile unchanged; code that assigns the result of
   `getExtraBodyParameters()` to a `Map<String, String>` must use
-  `Map<String, ?>`.
+  `Map<String, ?>`. The change is binary-incompatible: recompile code that
+  calls these methods.
 - **Breaking:** a `null` value in `setExtraBodyParameters()` is sent as JSON
   `null` in JSON request bodies (text translation, rephrasing, text correction,
   glossaries, spoken terms, style profiles and rules, translation memories and
@@ -271,8 +274,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `NotFoundException` instead. The `usingGlossary` parameter of the protected
   `DeepLClient.checkResponse()` is removed.
 - Removed `Usage.getDocument()`, `Usage.getTeamDocument()` and the matching
-  `document` and `teamDocument` parameters of the `Usage` constructors: the API
-  no longer returns document usage. `toString()` no longer prints "Documents"
+  `document` and `teamDocument` parameters of the `Usage` constructors, which
+  are now `Usage(Detail)` and a seven-argument constructor: the API no longer
+  returns document usage. `toString()` no longer prints "Documents"
   or "Team documents" lines. Responses that still contain these fields parse;
   the fields are ignored.
 - Removed `TranslationMemoryJobResult.Status.Downloaded`: the API does not

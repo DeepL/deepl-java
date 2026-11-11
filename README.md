@@ -25,6 +25,10 @@ account you can consume up to 500,000 characters/month for free.
 Java 8 or later. The library is tested on the LTS releases 8, 11, 17, 21
 and 25.
 
+## Upgrading from 1.x
+
+To upgrade from version 1.x to 2.0.0, see [the upgrading guide](upgrading_to_v2.md).
+
 ## Installation
 
 ### Gradle users
