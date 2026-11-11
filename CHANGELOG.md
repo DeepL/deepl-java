@@ -76,8 +76,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `createStyleRuleCustomInstruction()`, `createTranslationMemoryImport()`
   (and so `importTranslationMemoryFromFilepath()`),
   `createTranslationMemoryExport()` and the document upload of
-  `translateDocumentUpload()` and `translateDocument()`. These requests are
-  sent in streaming mode, so they do not follow HTTP redirects. Retry such
+  `translateDocumentUpload()` and `translateDocument()`. Except for
+  `createTranslationMemoryExport()`, which has no body, these requests are sent
+  in streaming mode, so they do not follow HTTP redirects. Retry such
   errors yourself only after checking that the resource was not created.
 - **Breaking:** a failure while connecting, before the request is written, is
   retried whatever its exception class, for every request: for example
