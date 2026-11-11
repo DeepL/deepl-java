@@ -236,8 +236,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `toString()`. A `null` value removes the parameter. Callers passing a
   `Map<String, String>` compile unchanged; code that assigns the result of
   `getExtraBodyParameters()` to a `Map<String, String>` must use
-  `Map<String, ?>`. The change is binary-incompatible: recompile code that
-  calls these methods.
+  `Map<String, ?>`.
 - **Breaking:** a `null` value in `setExtraBodyParameters()` is sent as JSON
   `null` in JSON request bodies (text translation, rephrasing, text correction,
   glossaries, spoken terms, style profiles and rules, translation memories and

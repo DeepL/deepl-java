@@ -15,9 +15,9 @@ upgrade to 2.0.0 and fix the remaining compile errors.
 - Java 8 or later, as before. The library is tested on the LTS releases 8, 11, 17, 21 and 25.
 - The runtime dependencies are unchanged (Apache HttpClient, Gson and the JetBrains
   annotations), and so are the Maven group and artifact (`com.deepl.api:deepl-java`).
-- Recompile your code against 2.0.0. Some signatures changed in a way that is
-  source-compatible but binary-incompatible (see
-  [Extra body parameters](#extra-body-parameters)).
+- Recompile your code against 2.0.0. Some changed signatures are binary-incompatible, for
+  example the return type of `TextResult.getBilledCharacters()` and the `Usage.Product`
+  counts (see [Types and signatures](#types-and-signatures)).
 - Building the library from source needs JDK 17 or later to run Gradle (it still compiles for
   Java 8). This does not affect users of the published jar.
 
@@ -92,7 +92,7 @@ A server URL that ends in `/` no longer produces request paths with a double sla
 
 `BaseRequestOptions.setExtraBodyParameters()` and `getExtraBodyParameters()`, and the
 overrides in every options class, use `Map<String, ?>` instead of `Map<String, String>`.
-Code that passes a `Map<String, String>` compiles unchanged, but must be recompiled. Code
+Code that passes a `Map<String, String>` compiles unchanged. Code
 that assigns the result of `getExtraBodyParameters()` to a `Map<String, String>` no longer
 compiles.
 
@@ -307,8 +307,7 @@ if (usage.anyCharacterLimitReached()) { ... }
   `createTranslationMemoryExport()`, `DeepLAdminClient.createDeveloperKey()` and the document
   upload. After HTTP 5xx, a read timeout or a connection reset, the error is raised without a
   retry and `DeepLException.getShouldRetry()` is `false`, because the resource may exist.
-  Check before you retry such a request yourself. These requests are streamed and do not
-  follow HTTP redirects.
+  Check before you retry such a request yourself.
 - The `checkResponse` method that subclasses of `DeepLClient` can override lost its
   `usingGlossary` parameter: `checkResponse(HttpResponse, boolean)`.
 - `updateMultilingualGlossaryName()`, `translateDocument()` and the translation memory file
