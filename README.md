@@ -1447,7 +1447,8 @@ ID is thrown. Every later failure, including an API error, a failed job, an
 exceeded timeout, the download or writing the file, throws a
 `TranslationMemoryJobException` carrying the job ID and, once the job status
 was fetched, the last fetched job (`getJob()`). The underlying error, such as
-the `IOException` of a local file failure, is its cause.
+the `IOException` of a local file failure, is its cause. A `null`
+`TranslationMemoryInfo` or an empty ID is wrapped the same way, without job ID.
 Instead of a `File`, you can pass an `OutputStream`, which is not closed:
 
 ```java

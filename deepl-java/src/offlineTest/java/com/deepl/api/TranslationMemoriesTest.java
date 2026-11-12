@@ -34,12 +34,14 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.api.io.TempDir;
 
 class TranslationMemoriesTest {
@@ -694,6 +696,26 @@ class TranslationMemoriesTest {
             () -> client.exportTranslationMemoryToFilepath("tm1", noDirectory));
     assertTrue(thrown.getCause() instanceof FileNotFoundException);
     wm.verify(0, postRequestedFor(urlPathMatching("/v3/translation_memories/.*")));
+  }
+
+  @Test
+  void wrapsANullTranslationMemoryObjectWhenExporting() {
+    TranslationMemoryInfo none = null;
+    File output = tempDir.resolve("export.tmx").toFile();
+    OutputStream stream = new ByteArrayOutputStream();
+    for (Executable call :
+        Arrays.<Executable>asList(
+            () -> client.exportTranslationMemoryToFilepath(none, output),
+            () -> client.exportTranslationMemoryToFilepath(none, output, Duration.ofSeconds(1)),
+            () -> client.exportTranslationMemoryToFilepath(none, stream),
+            () -> client.exportTranslationMemoryToFilepath(none, stream, Duration.ofSeconds(1)))) {
+      TranslationMemoryJobException thrown =
+          assertThrows(TranslationMemoryJobException.class, call);
+      assertTrue(thrown.getCause() instanceof IllegalArgumentException);
+      assertNull(thrown.getJobId());
+      assertNull(thrown.getJob());
+    }
+    assertFalse(output.exists());
   }
 
   @Test

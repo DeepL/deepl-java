@@ -15,7 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   request. Before, API errors, a failed job and an exceeded timeout were
   thrown unwrapped and local file errors as a plain `DeepLException`. The underlying error is the cause;
   `getHttpStatusCode()` and `getShouldRetry()` are taken from it. A missing
-  input file still throws `IllegalArgumentException`. Code that catches
+  input file still throws `IllegalArgumentException`. A `null`
+  `TranslationMemoryInfo` or an empty ID passed to
+  `exportTranslationMemoryToFilepath()` is wrapped as well, without job ID. Code that catches
   `DeepLException` keeps working; code that catches a subclass such as
   `AuthorizationException` must inspect `getCause()`.
 - **Breaking:** `createGlossary()`, `createGlossaryFromCsv()`,

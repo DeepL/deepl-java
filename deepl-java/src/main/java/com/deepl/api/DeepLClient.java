@@ -4024,19 +4024,22 @@ public class DeepLClient {
 
   /**
    * Functions the same as {@link DeepLClient#exportTranslationMemoryToFilepath(String, File)} but
-   * accepts a {@link TranslationMemoryInfo} object.
+   * accepts a {@link TranslationMemoryInfo} object. A <code>null</code> object is wrapped in a
+   * {@link TranslationMemoryJobException} without job ID, like every other failure.
    *
    * @see DeepLClient#exportTranslationMemoryToFilepath(String, File)
    */
   public TranslationMemoryJob exportTranslationMemoryToFilepath(
       TranslationMemoryInfo translationMemory, File outputFile)
       throws TranslationMemoryJobException, InterruptedException {
-    return exportTranslationMemoryToFilepath(translationMemoryId(translationMemory), outputFile);
+    return exportTranslationMemoryToFilepath(
+        translationMemoryIdForJob(translationMemory), outputFile);
   }
 
   /**
    * Functions the same as {@link DeepLClient#exportTranslationMemoryToFilepath(String, File,
-   * Duration)} but accepts a {@link TranslationMemoryInfo} object.
+   * Duration)} but accepts a {@link TranslationMemoryInfo} object. A <code>null</code> object is
+   * wrapped in a {@link TranslationMemoryJobException} without job ID, like every other failure.
    *
    * @see DeepLClient#exportTranslationMemoryToFilepath(String, File, Duration)
    */
@@ -4044,7 +4047,7 @@ public class DeepLClient {
       TranslationMemoryInfo translationMemory, File outputFile, @Nullable Duration timeout)
       throws TranslationMemoryJobException, InterruptedException {
     return exportTranslationMemoryToFilepath(
-        translationMemoryId(translationMemory), outputFile, timeout);
+        translationMemoryIdForJob(translationMemory), outputFile, timeout);
   }
 
   /**
@@ -4092,7 +4095,9 @@ public class DeepLClient {
 
   /**
    * Functions the same as {@link DeepLClient#exportTranslationMemoryToFilepath(String,
-   * OutputStream, Duration)} but accepts a {@link TranslationMemoryInfo} object.
+   * OutputStream, Duration)} but accepts a {@link TranslationMemoryInfo} object. A <code>null
+   * </code> object is wrapped in a {@link TranslationMemoryJobException} without job ID, like every
+   * other failure.
    *
    * @see DeepLClient#exportTranslationMemoryToFilepath(String, OutputStream, Duration)
    */
@@ -4102,13 +4107,14 @@ public class DeepLClient {
       @Nullable Duration timeout)
       throws TranslationMemoryJobException, InterruptedException {
     return exportTranslationMemoryToFilepath(
-        translationMemoryId(translationMemory), outputStream, timeout);
+        translationMemoryIdForJob(translationMemory), outputStream, timeout);
   }
 
   /**
    * Functions the same as {@link DeepLClient#exportTranslationMemoryToFilepath(String,
    * OutputStream, Duration)} but accepts a {@link TranslationMemoryInfo} object and waits
-   * indefinitely.
+   * indefinitely. A <code>null</code> object is wrapped in a {@link TranslationMemoryJobException}
+   * without job ID, like every other failure.
    *
    * @see DeepLClient#exportTranslationMemoryToFilepath(String, OutputStream, Duration)
    */
@@ -4116,7 +4122,17 @@ public class DeepLClient {
       TranslationMemoryInfo translationMemory, OutputStream outputStream)
       throws TranslationMemoryJobException, InterruptedException {
     return exportTranslationMemoryToFilepath(
-        translationMemoryId(translationMemory), outputStream, null);
+        translationMemoryIdForJob(translationMemory), outputStream, null);
+  }
+
+  /** Resolves the ID for the file helpers, which wrap every failure, argument errors included. */
+  private static String translationMemoryIdForJob(TranslationMemoryInfo translationMemory)
+      throws TranslationMemoryJobException {
+    try {
+      return translationMemoryId(translationMemory);
+    } catch (IllegalArgumentException exception) {
+      throw translationMemoryJobError(exception, null, null);
+    }
   }
 
   /** Extracts the ID of the given translation memory. */
