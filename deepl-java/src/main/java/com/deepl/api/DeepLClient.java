@@ -164,7 +164,10 @@ public class DeepLClient {
   public TextResult translateText(String text, @Nullable Language sourceLang, Language targetLang)
       throws DeepLException, InterruptedException {
     return translateText(
-        text, (sourceLang != null) ? sourceLang.getCode() : null, targetLang.getCode(), null);
+        text,
+        (sourceLang != null) ? sourceLang.getCode() : null,
+        targetLanguageCode(targetLang),
+        null);
   }
 
   /**
@@ -180,7 +183,10 @@ public class DeepLClient {
       @Nullable TextTranslationOptions options)
       throws DeepLException, InterruptedException {
     return translateText(
-        text, (sourceLang != null) ? sourceLang.getCode() : null, targetLang.getCode(), options);
+        text,
+        (sourceLang != null) ? sourceLang.getCode() : null,
+        targetLanguageCode(targetLang),
+        options);
   }
 
   /**
@@ -221,7 +227,10 @@ public class DeepLClient {
       List<String> texts, @Nullable Language sourceLang, Language targetLang)
       throws DeepLException, InterruptedException {
     return translateText(
-        texts, (sourceLang != null) ? sourceLang.getCode() : null, targetLang.getCode(), null);
+        texts,
+        (sourceLang != null) ? sourceLang.getCode() : null,
+        targetLanguageCode(targetLang),
+        null);
   }
 
   /**
@@ -237,7 +246,10 @@ public class DeepLClient {
       @Nullable TextTranslationOptions options)
       throws DeepLException, InterruptedException {
     return translateText(
-        texts, (sourceLang != null) ? sourceLang.getCode() : null, targetLang.getCode(), options);
+        texts,
+        (sourceLang != null) ? sourceLang.getCode() : null,
+        targetLanguageCode(targetLang),
+        options);
   }
 
   /**
@@ -329,7 +341,8 @@ public class DeepLClient {
    * @param options Options influencing translation.
    * @return Status when document translation completed, this allows the number of billed characters
    *     to be queried.
-   * @throws IllegalArgumentException If the input file does not exist; checked before any request.
+   * @throws IllegalArgumentException If the input file does not exist, the target language is
+   *     <code>null</code> or empty, or the source language is empty; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DocumentTranslationException If the output path is occupied, a local file cannot be
    *     read or written, or any error occurs while communicating with the DeepL API. The exception
@@ -343,6 +356,7 @@ public class DeepLClient {
       @Nullable DocumentTranslationOptions options)
       throws DocumentTranslationException, InterruptedException {
     checkDocumentInputFile(inputFile);
+    checkValidLanguages(sourceLang, targetLang);
     // Checked before the try block: its handler deletes the output file.
     if (outputFile.exists()) {
       throw new DocumentTranslationException(
@@ -393,6 +407,8 @@ public class DeepLClient {
    * @param options Options influencing translation.
    * @return Status when document translation completed, this allows the number of billed characters
    *     to be queried.
+   * @throws IllegalArgumentException If the target language is <code>null</code> or empty, or the
+   *     source language is empty; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DocumentTranslationException If any error occurs while communicating with the DeepL
    *     API. The exception includes the document handle that may be used to retrieve the document.
@@ -405,6 +421,7 @@ public class DeepLClient {
       String targetLang,
       @Nullable DocumentTranslationOptions options)
       throws DocumentTranslationException, InterruptedException {
+    checkValidLanguages(sourceLang, targetLang);
     DocumentHandle handle = null;
     try {
       handle = translateDocumentUpload(inputStream, fileName, sourceLang, targetLang, options);
@@ -1046,11 +1063,11 @@ public class DeepLClient {
       @Nullable List<String> glossaryIds,
       boolean standardizeLanguages,
       boolean requireSourceLangForGlossary) {
+    checkValidLanguages(sourceLang, targetLang);
     if (standardizeLanguages) {
       targetLang = LanguageCode.standardize(targetLang);
       sourceLang = sourceLang == null ? null : LanguageCode.standardize(sourceLang);
     }
-    checkValidLanguages(sourceLang, targetLang);
 
     Map<String, Object> params = new LinkedHashMap<>();
     if (sourceLang != null) {
@@ -1169,7 +1186,7 @@ public class DeepLClient {
    *
    * @param sourceLang Language code of the input language, or <code>null</code> to use
    *     auto-detection.
-   * @param targetLang Language code of the desired output language.
+   * @param targetLang Language code of the desired output language; must not be <code>null</code>.
    * @throws IllegalArgumentException If either language code is invalid.
    */
   protected static void checkValidLanguages(@Nullable String sourceLang, String targetLang)
@@ -1177,9 +1194,17 @@ public class DeepLClient {
     if (sourceLang != null && sourceLang.isEmpty()) {
       throw new IllegalArgumentException("sourceLang must be null or non-empty");
     }
-    if (targetLang.isEmpty()) {
+    if (targetLang == null || targetLang.isEmpty()) {
       throw new IllegalArgumentException("targetLang must not be empty");
     }
+  }
+
+  /** Returns the code of the target language object, which must not be null. */
+  private static String targetLanguageCode(Language targetLang) throws IllegalArgumentException {
+    if (targetLang == null) {
+      throw new IllegalArgumentException("targetLang must not be null");
+    }
+    return targetLang.getCode();
   }
 
   /** Creates a glossary with given details. */

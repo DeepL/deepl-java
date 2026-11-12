@@ -87,7 +87,9 @@ to translate multiple texts.
 
 `sourceLang` and `targetLang` specify the source and target language codes
 respectively. The `sourceLang` is optional, if it is `null` the source language
-will be auto-detected.
+will be auto-detected. The `targetLang` is required: `null` or an empty string
+throws an `IllegalArgumentException`, as does an empty `sourceLang`, before any
+request is sent.
 
 Language codes are **case-insensitive** strings according to ISO 639-1, for
 example `'de'`, `'fr'`, `'ja''`. Some target languages also include the regional

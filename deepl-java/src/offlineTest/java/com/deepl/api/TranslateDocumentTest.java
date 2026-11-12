@@ -678,6 +678,18 @@ class TranslateDocumentTest {
   }
 
   @Test
+  void throwsIllegalArgumentWhenTheTargetLanguageIsNull() throws Exception {
+    File input = writeInput("example.txt", "a");
+    File output = tempDir.resolve("out.txt").toFile();
+    String none = null;
+    assertThrows(
+        IllegalArgumentException.class, () -> client.translateDocumentUpload(input, "en", none));
+    assertThrows(
+        IllegalArgumentException.class, () -> client.translateDocument(input, output, "en", none));
+    assertFalse(output.exists());
+  }
+
+  @Test
   void rethrowsTheInterruptionUnwrappedWhenTranslatingADocument() throws Exception {
     wm.stubFor(post("/v2/document").willReturn(okJson(HANDLE)));
     wm.stubFor(

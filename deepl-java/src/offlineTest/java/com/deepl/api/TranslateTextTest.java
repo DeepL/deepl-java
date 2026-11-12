@@ -735,6 +735,24 @@ class TranslateTextTest {
   }
 
   @Test
+  void throwsIllegalArgumentWhenTheTargetLanguageIsNull() {
+    String none = null;
+    assertThrows(IllegalArgumentException.class, () -> client.translateText("Hello", null, none));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> client.translateText(Arrays.asList("Hello"), null, none));
+    Language noLanguage = null;
+    assertThrows(
+        IllegalArgumentException.class, () -> client.translateText("Hello", null, noLanguage));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> client.translateText(Arrays.asList("Hello"), null, noLanguage));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> client.translateText("Hello", null, noLanguage, null));
+  }
+
+  @Test
   void throwsIllegalArgumentWhenThresholdHasNoTranslationMemory() {
     IllegalArgumentException thrown =
         assertThrows(
