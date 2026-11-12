@@ -446,4 +446,19 @@ class StyleRulesTest {
     assertThrows(
         IllegalArgumentException.class, () -> client.deleteStyleRuleCustomInstruction("s1", ""));
   }
+
+  @Test
+  void throwsIllegalArgumentForAnEmptyCustomInstructionSourceLanguage() {
+    List<CustomInstruction> instructions =
+        Collections.singletonList(new CustomInstruction("L", "P", ""));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> client.createStyleRule("Test", "en", null, instructions, null));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> client.createStyleRuleCustomInstruction("s1", "L", "P", "", null));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> client.updateStyleRuleCustomInstruction("s1", "i1", "L", "P", "", null));
+  }
 }

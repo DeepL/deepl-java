@@ -950,7 +950,11 @@ category to rule to value, in the API's snake_case form (for example
 `"dates_and_times"` → `"calendar_era"` → `"use_bc_and_ad"`), and are sent as
 given, so new categories and rules can be used as soon as the API supports
 them. The last argument is a `CreateStyleRuleOptions` object or `null`; its
-`setExtraBodyParameters()` adds further body parameters, sent last.
+`setExtraBodyParameters()` adds further body parameters, sent last. A custom
+instruction's source language is optional; `null` leaves it unset and an empty
+string throws an `IllegalArgumentException` before any request is sent. The same
+holds for `createStyleRuleCustomInstruction()` and
+`updateStyleRuleCustomInstruction()`.
 
 ```java
 class Example {  // Continuing class Example from above

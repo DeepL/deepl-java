@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Changed
+- **Breaking:** `createStyleRule()` (for its custom instructions),
+  `createStyleRuleCustomInstruction()` and
+  `updateStyleRuleCustomInstruction()` throw `IllegalArgumentException` for an
+  empty source language, before any request; it was sent to the API before.
+  `null` still leaves it unset.
 - **Breaking:** the Spoken Terms functions that take a language
   (`createSpokenTerms()`, `updateSpokenTerms()` and `replaceSpokenTermsList()`
   through the term lists, `getSpokenTermsEntries()`,

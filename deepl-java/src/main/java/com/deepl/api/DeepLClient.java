@@ -4409,7 +4409,8 @@ public class DeepLClient {
    * @param configuredRules Optional configured rules, as a map from category to rule to value in
    *     the API's snake_case form (e.g. {@code "dates_and_times" -> {"calendar_era" ->
    *     "use_bc_and_ad"}}), sent as given.
-   * @param customInstructions Optional list of custom instructions for the style rule.
+   * @param customInstructions Optional list of custom instructions for the style rule; the source
+   *     language of each must be <code>null</code> or non-empty.
    * @param options Options for the request, or <code>null</code>; its extra body parameters are
    *     added to the request last.
    * @return {@link StyleRuleInfo} object with details about the newly created style rule.
@@ -4425,6 +4426,11 @@ public class DeepLClient {
       throws DeepLException, InterruptedException {
     validateParameter("name", name);
     validateParameter("language", language);
+    if (customInstructions != null) {
+      for (CustomInstruction instruction : customInstructions) {
+        validateOptionalLanguage("sourceLanguage", instruction.getSourceLanguage());
+      }
+    }
     Map<String, Object> requestData = new LinkedHashMap<>();
     requestData.put("name", name);
     requestData.put("language", language);
@@ -4639,7 +4645,8 @@ public class DeepLClient {
    * @param styleId ID of the style rule to add the custom instruction to.
    * @param label Label for the custom instruction.
    * @param prompt Prompt text for the custom instruction.
-   * @param sourceLanguage Optional source language code for the custom instruction.
+   * @param sourceLanguage Optional source language code for the custom instruction, or {@code null}
+   *     to leave it unset; must not be empty.
    * @return {@link CustomInstruction} object with details about the newly created custom
    *     instruction.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
@@ -4659,7 +4666,8 @@ public class DeepLClient {
    * @param styleId ID of the style rule to add the custom instruction to.
    * @param label Label for the custom instruction.
    * @param prompt Prompt text for the custom instruction.
-   * @param sourceLanguage Optional source language code for the custom instruction.
+   * @param sourceLanguage Optional source language code for the custom instruction, or {@code null}
+   *     to leave it unset; must not be empty.
    * @param options Options for the request, or <code>null</code>.
    * @return {@link CustomInstruction} object with details about the newly created custom
    *     instruction.
@@ -4688,7 +4696,8 @@ public class DeepLClient {
    * @param styleRule The style rule to add the custom instruction to.
    * @param label Label for the custom instruction.
    * @param prompt Prompt text for the custom instruction.
-   * @param sourceLanguage Optional source language code for the custom instruction.
+   * @param sourceLanguage Optional source language code for the custom instruction, or {@code null}
+   *     to leave it unset; must not be empty.
    * @return {@link CustomInstruction} object with details about the newly created custom
    *     instruction.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
@@ -4709,7 +4718,8 @@ public class DeepLClient {
    * @param styleRule The style rule to add the custom instruction to.
    * @param label Label for the custom instruction.
    * @param prompt Prompt text for the custom instruction.
-   * @param sourceLanguage Optional source language code for the custom instruction.
+   * @param sourceLanguage Optional source language code for the custom instruction, or {@code null}
+   *     to leave it unset; must not be empty.
    * @param options Options for the request, or <code>null</code>.
    * @return {@link CustomInstruction} object with details about the newly created custom
    *     instruction.
@@ -4805,7 +4815,8 @@ public class DeepLClient {
    * @param instructionId ID of the custom instruction to update.
    * @param label New label for the custom instruction.
    * @param prompt New prompt text for the custom instruction.
-   * @param sourceLanguage Optional new source language code for the custom instruction.
+   * @param sourceLanguage Optional new source language code for the custom instruction, or {@code
+   *     null} to leave it unset; must not be empty.
    * @return {@link CustomInstruction} object with updated details about the custom instruction.
    * @throws NotFoundException If no style rule or custom instruction with the given IDs is found.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
@@ -4831,7 +4842,8 @@ public class DeepLClient {
    * @param instructionId ID of the custom instruction to update.
    * @param label New label for the custom instruction.
    * @param prompt New prompt text for the custom instruction.
-   * @param sourceLanguage Optional new source language code for the custom instruction.
+   * @param sourceLanguage Optional new source language code for the custom instruction, or {@code
+   *     null} to leave it unset; must not be empty.
    * @param options Options for the request, or <code>null</code>.
    * @return {@link CustomInstruction} object with updated details about the custom instruction.
    * @throws NotFoundException If no style rule or custom instruction with the given IDs is found.
@@ -4862,7 +4874,8 @@ public class DeepLClient {
    * @param instructionId ID of the custom instruction to update.
    * @param label New label for the custom instruction.
    * @param prompt New prompt text for the custom instruction.
-   * @param sourceLanguage Optional new source language code for the custom instruction.
+   * @param sourceLanguage Optional new source language code for the custom instruction, or {@code
+   *     null} to leave it unset; must not be empty.
    * @return {@link CustomInstruction} object with updated details about the custom instruction.
    * @throws NotFoundException If the style rule or custom instruction is not found.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
@@ -4888,7 +4901,8 @@ public class DeepLClient {
    * @param instructionId ID of the custom instruction to update.
    * @param label New label for the custom instruction.
    * @param prompt New prompt text for the custom instruction.
-   * @param sourceLanguage Optional new source language code for the custom instruction.
+   * @param sourceLanguage Optional new source language code for the custom instruction, or {@code
+   *     null} to leave it unset; must not be empty.
    * @param options Options for the request, or <code>null</code>.
    * @return {@link CustomInstruction} object with updated details about the custom instruction.
    * @throws NotFoundException If the style rule or custom instruction is not found.
@@ -4915,7 +4929,8 @@ public class DeepLClient {
    * @param instruction The custom instruction to update.
    * @param label New label for the custom instruction.
    * @param prompt New prompt text for the custom instruction.
-   * @param sourceLanguage Optional new source language code for the custom instruction.
+   * @param sourceLanguage Optional new source language code for the custom instruction, or {@code
+   *     null} to leave it unset; must not be empty.
    * @return {@link CustomInstruction} object with updated details about the custom instruction.
    * @throws NotFoundException If the style rule or custom instruction is not found.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
@@ -4941,7 +4956,8 @@ public class DeepLClient {
    * @param instruction The custom instruction to update.
    * @param label New label for the custom instruction.
    * @param prompt New prompt text for the custom instruction.
-   * @param sourceLanguage Optional new source language code for the custom instruction.
+   * @param sourceLanguage Optional new source language code for the custom instruction, or {@code
+   *     null} to leave it unset; must not be empty.
    * @param options Options for the request, or <code>null</code>.
    * @return {@link CustomInstruction} object with updated details about the custom instruction.
    * @throws NotFoundException If the style rule or custom instruction is not found.
@@ -4969,7 +4985,8 @@ public class DeepLClient {
    * @param instruction The custom instruction to update.
    * @param label New label for the custom instruction.
    * @param prompt New prompt text for the custom instruction.
-   * @param sourceLanguage Optional new source language code for the custom instruction.
+   * @param sourceLanguage Optional new source language code for the custom instruction, or {@code
+   *     null} to leave it unset; must not be empty.
    * @return {@link CustomInstruction} object with updated details about the custom instruction.
    * @throws NotFoundException If the style rule or custom instruction is not found.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
@@ -5000,7 +5017,8 @@ public class DeepLClient {
    * @param instruction The custom instruction to update.
    * @param label New label for the custom instruction.
    * @param prompt New prompt text for the custom instruction.
-   * @param sourceLanguage Optional new source language code for the custom instruction.
+   * @param sourceLanguage Optional new source language code for the custom instruction, or {@code
+   *     null} to leave it unset; must not be empty.
    * @param options Options for the request, or <code>null</code>.
    * @return {@link CustomInstruction} object with updated details about the custom instruction.
    * @throws NotFoundException If the style rule or custom instruction is not found.
@@ -5137,6 +5155,7 @@ public class DeepLClient {
       @Nullable BaseRequestOptions options) {
     validateParameter("label", label);
     validateParameter("prompt", prompt);
+    validateOptionalLanguage("sourceLanguage", sourceLanguage);
     Map<String, Object> requestData = new LinkedHashMap<>();
     requestData.put("label", label);
     requestData.put("prompt", prompt);
@@ -5270,6 +5289,15 @@ public class DeepLClient {
     if (value == null || value.isEmpty()) {
       throw new IllegalArgumentException(
           String.format("Parameter %s must not be empty", paramName));
+    }
+  }
+
+  /** Rejects an empty optional language code; null means unset. */
+  private static void validateOptionalLanguage(String paramName, @Nullable String value)
+      throws IllegalArgumentException {
+    if (value != null && value.isEmpty()) {
+      throw new IllegalArgumentException(
+          String.format("Parameter %s must be null or non-empty", paramName));
     }
   }
 
