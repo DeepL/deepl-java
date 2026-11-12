@@ -700,6 +700,37 @@ class MultilingualGlossariesTest {
   }
 
   @Test
+  void throwsIllegalArgumentForAnEmptyOrNullDictionaryLanguageBeforeAnyRequest() {
+    GlossaryEntries entries = entries("a", "b");
+    for (String bad : new String[] {"", null}) {
+      List<MultilingualGlossaryDictionaryEntries> noSource =
+          Collections.singletonList(new MultilingualGlossaryDictionaryEntries(bad, "de", entries));
+      List<MultilingualGlossaryDictionaryEntries> noTarget =
+          Collections.singletonList(new MultilingualGlossaryDictionaryEntries("en", bad, entries));
+      assertThrows(
+          IllegalArgumentException.class, () -> client.createMultilingualGlossary("n", noSource));
+      assertThrows(
+          IllegalArgumentException.class, () -> client.createMultilingualGlossary("n", noTarget));
+      assertThrows(
+          IllegalArgumentException.class,
+          () -> client.createMultilingualGlossaryFromCsv("n", bad, "de", "a,b"));
+      assertThrows(
+          IllegalArgumentException.class,
+          () -> client.createMultilingualGlossaryFromCsv("n", "en", bad, "a,b"));
+      assertThrows(
+          IllegalArgumentException.class,
+          () ->
+              client.updateMultilingualGlossary(
+                  "g1", new UpdateMultilingualGlossaryOptions().setDictionaries(noSource)));
+      assertThrows(
+          IllegalArgumentException.class,
+          () ->
+              client.updateMultilingualGlossary(
+                  "g1", new UpdateMultilingualGlossaryOptions().setDictionaries(noTarget)));
+    }
+  }
+
+  @Test
   void throwsIllegalArgumentForANullGlossaryObject() {
     MultilingualGlossaryInfo none = null;
     MultilingualGlossaryDictionaryInfo dict = new MultilingualGlossaryDictionaryInfo("en", "de", 1);

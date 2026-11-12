@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Changed
+- **Breaking:** `createMultilingualGlossary()`,
+  `createMultilingualGlossaryFromCsv()` and `updateMultilingualGlossary()`
+  throw `IllegalArgumentException` for an empty or `null` dictionary language
+  code, before any request; the code was sent to the API before.
 - **Breaking:** `translateText()` (including the overloads that take
   `Language` objects), `translateDocument()` and `translateDocumentUpload()`
   throw `IllegalArgumentException` for a `null` target language, before any

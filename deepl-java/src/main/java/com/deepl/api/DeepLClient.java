@@ -5242,6 +5242,8 @@ public class DeepLClient {
   /** Creates the JSON object of one glossary dictionary. */
   private static Map<String, Object> createGlossaryDictionaryData(
       String sourceLanguageCode, String targetLanguageCode, String entries, String entriesFormat) {
+    validateParameter("sourceLanguageCode", sourceLanguageCode);
+    validateParameter("targetLanguageCode", targetLanguageCode);
     Map<String, Object> data = new LinkedHashMap<>();
     data.put("source_lang", sourceLanguageCode);
     data.put("target_lang", targetLanguageCode);
@@ -5261,7 +5263,8 @@ public class DeepLClient {
     return ApiClientHelper.createQueryString(queryParams);
   }
 
-  private void validateParameter(String paramName, String value) throws IllegalArgumentException {
+  private static void validateParameter(String paramName, String value)
+      throws IllegalArgumentException {
     if (value == null || value.isEmpty()) {
       throw new IllegalArgumentException(
           String.format("Parameter %s must not be empty", paramName));

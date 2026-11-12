@@ -522,7 +522,9 @@ The create functions and `updateMultilingualGlossaryName()` throw an
 `IllegalArgumentException` for an empty glossary name, and the create functions
 for a dictionary with no entries, before any request is sent. Every function
 that takes a `MultilingualGlossaryInfo` object throws an
-`IllegalArgumentException` for a `null` object, before any request is sent.
+`IllegalArgumentException` for a `null` object, before any request is sent. The
+create functions and `updateMultilingualGlossary()` also throw it for an empty
+or `null` dictionary language code.
 
 You can also create a glossary using a glossary downloaded from the DeepL
 website by using `createMultilingualGlossaryFromCsv()` with either a CSV file,
