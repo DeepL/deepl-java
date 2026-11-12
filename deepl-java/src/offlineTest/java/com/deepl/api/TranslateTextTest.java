@@ -325,6 +325,13 @@ class TranslateTextTest {
   }
 
   @Test
+  void rejectsANullGlossary() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new TextTranslationOptions().setGlossary((IGlossary) null));
+  }
+
+  @Test
   void sendsTranslationMemoryAndThreshold() throws Exception {
     expectBody(
         JsonBody.of(

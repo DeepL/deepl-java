@@ -29,6 +29,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `null` object, before any request, instead of `NullPointerException`, like
   the functions that take a translation memory, Spoken Terms, style profile or
   style rule object.
+- **Breaking:** `TextTranslationOptions.setGlossary()` and
+  `DocumentTranslationOptions.setGlossary()` throw `IllegalArgumentException`
+  for a `null` glossary object instead of `NullPointerException`, like the
+  setters that take a style rule, style profile or translation memory object.
 - **Breaking:** for requests that create a resource (including
   `DeepLAdminClient.createDeveloperKey()`) and the document upload,
   `getShouldRetry()` of the thrown exception is `true` only if the request was

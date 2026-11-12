@@ -337,6 +337,13 @@ class TranslateDocumentTest {
   }
 
   @Test
+  void rejectsANullGlossary() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new DocumentTranslationOptions().setGlossary((IGlossary) null));
+  }
+
+  @Test
   void sendsStreamUploadsToThePathWithoutATrailingSlash() throws Exception {
     expectUpload(
         "/v2/document",

@@ -64,8 +64,13 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
   /**
    * Sets the glossary to use with the translation. By default, this value is <code>null</code> and
    * no glossary is used.
+   *
+   * @throws IllegalArgumentException If <code>glossary</code> is <code>null</code>.
    */
   public DocumentTranslationOptions setGlossary(IGlossary glossary) {
+    if (glossary == null) {
+      throw new IllegalArgumentException("glossary must not be null");
+    }
     return setGlossary(glossary.getGlossaryId());
   }
 
