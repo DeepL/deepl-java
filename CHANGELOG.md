@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Changed
+- **Breaking:** the Spoken Terms functions that take a language
+  (`createSpokenTerms()`, `updateSpokenTerms()` and `replaceSpokenTermsList()`
+  through the term lists, `getSpokenTermsEntries()`,
+  `deleteSpokenTermsList()`) throw `IllegalArgumentException` for an empty or
+  `null` language code, before any request; the code was sent to the API
+  before.
 - **Breaking:** `createMultilingualGlossary()`,
   `createMultilingualGlossaryFromCsv()` and `updateMultilingualGlossary()`
   throw `IllegalArgumentException` for an empty or `null` dictionary language

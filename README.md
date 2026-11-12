@@ -835,7 +835,9 @@ object. Each term is trimmed of leading and trailing whitespace and then
 checked like a glossary term before any request is sent: a term that is empty
 or contains a control character such as a newline throws an
 `IllegalArgumentException`. Other invalid term lists are rejected by the API
-with a `DeepLException`.
+with a `DeepLException`. An empty or `null` language code of a term list, or
+passed to `getSpokenTermsEntries()` or `deleteSpokenTermsList()`, throws an
+`IllegalArgumentException` before any request is sent.
 
 #### Creating a Spoken Terms collection
 

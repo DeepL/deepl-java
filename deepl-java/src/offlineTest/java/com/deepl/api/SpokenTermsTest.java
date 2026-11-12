@@ -172,4 +172,23 @@ class SpokenTermsTest {
         () -> client.replaceSpokenTermsList("st1", termLists.get(0)));
     wm.verify(0, anyRequestedFor(anyUrl()));
   }
+
+  @Test
+  void rejectsAnEmptyOrNullLanguageBeforeSendingAnyRequest() {
+    for (String bad : new String[] {"", null}) {
+      SpokenTermsEntries entries = new SpokenTermsEntries(bad, Collections.singletonList("a"));
+      List<SpokenTermsEntries> termLists = Collections.singletonList(entries);
+      assertThrows(IllegalArgumentException.class, () -> client.createSpokenTerms("n", termLists));
+      assertThrows(
+          IllegalArgumentException.class,
+          () ->
+              client.updateSpokenTerms(
+                  "st1", new UpdateSpokenTermsOptions().setTermLists(termLists)));
+      assertThrows(
+          IllegalArgumentException.class, () -> client.replaceSpokenTermsList("st1", entries));
+      assertThrows(IllegalArgumentException.class, () -> client.getSpokenTermsEntries("st1", bad));
+      assertThrows(IllegalArgumentException.class, () -> client.deleteSpokenTermsList("st1", bad));
+    }
+    wm.verify(0, anyRequestedFor(anyUrl()));
+  }
 }

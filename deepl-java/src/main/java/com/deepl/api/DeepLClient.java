@@ -4351,6 +4351,7 @@ public class DeepLClient {
 
   /** Builds the query string that selects the term list of the given language. */
   private static String langQueryString(String lang) {
+    validateParameter("lang", lang);
     List<KeyValuePair<String, String>> queryParams = new ArrayList<>();
     queryParams.add(new KeyValuePair<>("lang", lang));
     return ApiClientHelper.createQueryString(queryParams);
@@ -4361,6 +4362,7 @@ public class DeepLClient {
    * term is trimmed and then checked like a glossary term: a term containing a newline would split.
    */
   private static Map<String, Object> createSpokenTermsListData(SpokenTermsEntries entries) {
+    validateParameter("lang", entries.getLang());
     List<String> terms = new ArrayList<>();
     for (String term : entries.getEntries()) {
       String trimmed = trimWhitespace(term);
