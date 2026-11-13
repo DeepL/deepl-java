@@ -143,6 +143,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   file name of the import and export helpers is no longer wrapped in a
   `TranslationMemoryJobException`. A missing input file still throws
   `IllegalArgumentException`.
+- **Breaking:** `DeepLAdminClient` throws `NullPointerException` instead of
+  `IllegalArgumentException` for a `null` key ID, `DeveloperKey` or date;
+  `renameDeveloperKey()` throws it for a `null` label (sent as JSON `null`
+  before) and `setDeveloperKeyUsageLimits()` for `null` limits (the request
+  was sent without limits before).
+- Every `DeepLClient` and `DeepLAdminClient` method throws
+  `NullPointerException` naming the parameter for a `null` required argument
+  or a `null` entry of a list argument, before any request, where it threw an
+  unnamed `NullPointerException` or sent the request before.
 - `updateMultilingualGlossaryName()` (all overloads) throws `InterruptedException`
   unwrapped when the thread is interrupted, like the other `DeepLClient`
   methods, instead of a `DeepLException`, and declares it. Callers must catch or

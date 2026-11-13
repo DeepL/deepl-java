@@ -21,6 +21,10 @@ import org.jetbrains.annotations.Nullable;
  * Client for the DeepL API. To use the DeepL API, initialize an instance of this class using your
  * DeepL Authentication Key as found in your <a href="https://www.deepl.com/pro-account/">DeepL
  * account</a>.
+ *
+ * <p>Arguments not marked <code>@Nullable</code> are required: a <code>null</code> one, or a <code>
+ * null</code> entry of a list argument, throws {@link NullPointerException} naming the parameter,
+ * before any request. Optional arguments and option setters treat <code>null</code> as not given.
  */
 public class DeepLClient {
 

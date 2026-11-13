@@ -1794,7 +1794,8 @@ class AdminExample {  // Continuing class AdminExample from above
 
 `deactivateDeveloperKey()`, `renameDeveloperKey()` and
 `setDeveloperKeyUsageLimits()` accept either a key ID or a `DeveloperKey`
-object and return the updated `DeveloperKey`. The API validates labels and
+object and return the updated `DeveloperKey`. A `null` key, label or limits
+throws `NullPointerException` before any request is sent. The API validates labels and
 limit values. `DeveloperKey.getLabel()` and `getUsageLimits()` return `null`
 if the API sent no label or no usage limits; within `DeveloperKeyUsageLimits`
 a `null` limit means unlimited.
@@ -1812,7 +1813,8 @@ and replace a field with the same key. A `null` value is sent as JSON `null`.
 `getUsageAnalytics()` returns an `AdminUsageReport` for a date range. Dates are
 UTC calendar days, and both the start and the end day are included. Pass them
 as `java.time.LocalDate` objects, which are used as they are, as
-`"YYYY-MM-DD"` strings (an invalid string throws an `IllegalArgumentException`),
+`"YYYY-MM-DD"` strings (an invalid string throws an `IllegalArgumentException`,
+a `null` date a `NullPointerException`),
 or as `java.util.Date` or `java.time.Instant` values, of which the UTC day is
 sent: `2026-10-20T00:00+02:00` is the UTC day `2026-10-19`. The API requires the end date to be after the start date
 (so a report covers at least two days) and at most 366 days after it;
@@ -1887,8 +1889,10 @@ class AdminExample {  // Continuing class AdminExample from above
 ### Exceptions
 
 All module functions may raise `DeepLException` or one of its subclasses. If
-invalid arguments are provided, they may raise the standard exceptions
-`IllegalArgumentException`.
+invalid arguments are provided, they raise `IllegalArgumentException`; a `null`
+required argument, or a `null` entry of a list argument, raises
+`NullPointerException` naming the parameter. Both are raised before any request
+is sent.
 
 - `AuthorizationException`: the key is invalid or not authorized (HTTP 401 or
   403).

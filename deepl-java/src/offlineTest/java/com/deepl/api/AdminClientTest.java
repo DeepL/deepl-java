@@ -34,8 +34,13 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.function.ThrowingConsumer;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class AdminClientTest {
   @RegisterExtension static OfflineServer wm = new OfflineServer();
@@ -58,12 +63,32 @@ class AdminClientTest {
     assertThrows(IllegalArgumentException.class, () -> new DeepLAdminClient(" "));
   }
 
-  @Test
-  void rejectsMissingDatesWithoutSendingThem() {
+  private static Arguments nullRow(String name, ThrowingConsumer<DeepLAdminClient> call) {
+    return Arguments.of(name, call);
+  }
+
+  static Stream<Arguments> nullAdminArguments() {
     LocalDate date = LocalDate.of(2025, 10, 1);
-    assertThrows(IllegalArgumentException.class, () -> client.getUsageAnalytics(null, date));
-    assertThrows(
-        IllegalArgumentException.class, () -> client.getCustomTagUsageAnalytics(date, null));
+    return Stream.of(
+        nullRow("startDate", c -> c.getUsageAnalytics((LocalDate) null, date)),
+        nullRow("endDate", c -> c.getCustomTagUsageAnalytics(date, (LocalDate) null)),
+        nullRow("startDate", c -> c.getUsageAnalytics((String) null, "2026-10-20")),
+        nullRow("endDate", c -> c.getCustomTagUsageAnalytics("2026-10-19", (String) null)),
+        nullRow("startDate", c -> c.getUsageAnalytics((Date) null, new Date())),
+        nullRow("endDate", c -> c.getUsageAnalytics(Instant.now(), (Instant) null)),
+        nullRow("keyId", c -> c.deactivateDeveloperKey((String) null)),
+        nullRow("key", c -> c.deactivateDeveloperKey((DeveloperKey) null)),
+        nullRow("label", c -> c.renameDeveloperKey("k1", null)),
+        nullRow("limits", c -> c.setDeveloperKeyUsageLimits("k1", null)));
+  }
+
+  @ParameterizedTest(name = "{index}: {0}")
+  @MethodSource("nullAdminArguments")
+  void throwsNullPointerExceptionNamingANullAdminArgument(
+      String name, ThrowingConsumer<DeepLAdminClient> call) {
+    assertEquals(
+        name, assertThrows(NullPointerException.class, () -> call.accept(client)).getMessage());
+    assertEquals(0, wm.getAllServeEvents().size());
   }
 
   @Test
@@ -291,9 +316,6 @@ class AdminClientTest {
           IllegalArgumentException.class,
           () -> client.getCustomTagUsageAnalytics("2026-10-19", invalid));
     }
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> client.getUsageAnalytics((String) null, "2026-10-20"));
     assertEquals(0, wm.getAllServeEvents().size());
   }
 
@@ -301,7 +323,8 @@ class AdminClientTest {
   void rejectsAnEmptyKeyIdWithoutSendingIt() {
     assertThrows(IllegalArgumentException.class, () -> client.deactivateDeveloperKey(""));
     assertThrows(
-        IllegalArgumentException.class, () -> client.deactivateDeveloperKey((DeveloperKey) null));
+        IllegalArgumentException.class,
+        () -> client.deactivateDeveloperKey(new DeveloperKey(null, null, null, null, false, null)));
     assertThrows(IllegalArgumentException.class, () -> client.renameDeveloperKey("", "label"));
     assertThrows(
         IllegalArgumentException.class,
@@ -670,8 +693,6 @@ class AdminClientTest {
     client.getCustomTagUsageAnalytics(
         Date.from(start), Date.from(end), (CustomTagUsageAggregateBy) null, 2);
     assertEquals(4, wm.getAllServeEvents().size());
-    assertThrows(
-        IllegalArgumentException.class, () -> client.getUsageAnalytics((Date) null, new Date()));
   }
 
   @Test

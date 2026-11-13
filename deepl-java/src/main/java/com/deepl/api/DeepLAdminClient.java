@@ -25,6 +25,10 @@ import org.jetbrains.annotations.Nullable;
  * your <a href="https://www.deepl.com/your-account/keys?keyType=admin">DeepL account</a>.
  *
  * <p>Admin keys cannot be used for translation; developer keys cannot access the Admin API.
+ *
+ * <p>Arguments not marked <code>@Nullable</code> are required: a <code>null</code> one, or a <code>
+ * null</code> entry of a list argument, throws {@link NullPointerException} naming the parameter,
+ * before any request. Optional arguments and option setters treat <code>null</code> as not given.
  */
 public class DeepLAdminClient {
   /** Base URL for the DeepL Admin API, which is only available on the DeepL API Pro server. */
@@ -90,7 +94,7 @@ public class DeepLAdminClient {
    * @param endDate End date of the report, a UTC day.
    * @param groupBy How the usage is grouped, or <code>null</code> for totals only.
    * @return {@link AdminUsageReport} containing the usage statistics.
-   * @throws IllegalArgumentException If startDate or endDate is null.
+   * @throws NullPointerException If startDate or endDate is <code>null</code>.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
@@ -135,24 +139,28 @@ public class DeepLAdminClient {
    * AdminUsageGroupBy)} but takes the dates as ISO 8601 strings in the format <code>YYYY-MM-DD
    * </code>, which are UTC calendar days.
    *
-   * @throws IllegalArgumentException If a date is null or not a valid <code>YYYY-MM-DD</code> date.
+   * @throws NullPointerException If startDate or endDate is <code>null</code>.
+   * @throws IllegalArgumentException If a date is not a valid <code>YYYY-MM-DD</code> date.
    */
   public AdminUsageReport getUsageAnalytics(
       String startDate, String endDate, @Nullable AdminUsageGroupBy groupBy)
       throws DeepLException, InterruptedException {
-    return getUsageAnalytics(parseDate(startDate), parseDate(endDate), groupBy);
+    return getUsageAnalytics(
+        parseDate("startDate", startDate), parseDate("endDate", endDate), groupBy);
   }
 
   /**
    * Functions the same as {@link DeepLAdminClient#getUsageAnalytics(LocalDate, LocalDate, String)}
    * but takes the dates as <code>YYYY-MM-DD</code> strings.
    *
-   * @throws IllegalArgumentException If a date is null or not a valid <code>YYYY-MM-DD</code> date.
+   * @throws NullPointerException If startDate or endDate is <code>null</code>.
+   * @throws IllegalArgumentException If a date is not a valid <code>YYYY-MM-DD</code> date.
    */
   public AdminUsageReport getUsageAnalytics(
       String startDate, String endDate, @Nullable String groupBy)
       throws DeepLException, InterruptedException {
-    return getUsageAnalytics(parseDate(startDate), parseDate(endDate), groupBy);
+    return getUsageAnalytics(
+        parseDate("startDate", startDate), parseDate("endDate", endDate), groupBy);
   }
 
   /**
@@ -240,7 +248,7 @@ public class DeepLAdminClient {
    * @param page Page number, as returned by {@link CustomTagUsageReport#getNextPage()} of the
    *     previous page, or <code>null</code> for the first page.
    * @return {@link CustomTagUsageReport} containing the usage statistics.
-   * @throws IllegalArgumentException If startDate or endDate is null.
+   * @throws NullPointerException If startDate or endDate is <code>null</code>.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
@@ -291,7 +299,8 @@ public class DeepLAdminClient {
    * CustomTagUsageAggregateBy, Integer)} but takes the dates as ISO 8601 strings in the format
    * <code>YYYY-MM-DD</code>, which are UTC calendar days.
    *
-   * @throws IllegalArgumentException If a date is null or not a valid <code>YYYY-MM-DD</code> date.
+   * @throws NullPointerException If startDate or endDate is <code>null</code>.
+   * @throws IllegalArgumentException If a date is not a valid <code>YYYY-MM-DD</code> date.
    */
   public CustomTagUsageReport getCustomTagUsageAnalytics(
       String startDate,
@@ -299,19 +308,22 @@ public class DeepLAdminClient {
       @Nullable CustomTagUsageAggregateBy aggregateBy,
       @Nullable Integer page)
       throws DeepLException, InterruptedException {
-    return getCustomTagUsageAnalytics(parseDate(startDate), parseDate(endDate), aggregateBy, page);
+    return getCustomTagUsageAnalytics(
+        parseDate("startDate", startDate), parseDate("endDate", endDate), aggregateBy, page);
   }
 
   /**
    * Functions the same as {@link DeepLAdminClient#getCustomTagUsageAnalytics(LocalDate, LocalDate,
    * String, Integer)} but takes the dates as <code>YYYY-MM-DD</code> strings.
    *
-   * @throws IllegalArgumentException If a date is null or not a valid <code>YYYY-MM-DD</code> date.
+   * @throws NullPointerException If startDate or endDate is <code>null</code>.
+   * @throws IllegalArgumentException If a date is not a valid <code>YYYY-MM-DD</code> date.
    */
   public CustomTagUsageReport getCustomTagUsageAnalytics(
       String startDate, String endDate, @Nullable String aggregateBy, @Nullable Integer page)
       throws DeepLException, InterruptedException {
-    return getCustomTagUsageAnalytics(parseDate(startDate), parseDate(endDate), aggregateBy, page);
+    return getCustomTagUsageAnalytics(
+        parseDate("startDate", startDate), parseDate("endDate", endDate), aggregateBy, page);
   }
 
   /**
@@ -447,7 +459,8 @@ public class DeepLAdminClient {
    * @param keyId ID of the key to deactivate.
    * @param options Options for the request, or <code>null</code>.
    * @return {@link DeveloperKey} describing the deactivated key.
-   * @throws IllegalArgumentException If keyId is null or empty.
+   * @throws IllegalArgumentException If keyId is empty.
+   * @throws NullPointerException If keyId is <code>null</code>.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
@@ -492,7 +505,8 @@ public class DeepLAdminClient {
    * @param label New label for the key.
    * @param options Options for the request, or <code>null</code>.
    * @return {@link DeveloperKey} describing the renamed key.
-   * @throws IllegalArgumentException If keyId is null or empty.
+   * @throws IllegalArgumentException If keyId is empty.
+   * @throws NullPointerException If keyId or label is <code>null</code>.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
@@ -500,6 +514,7 @@ public class DeepLAdminClient {
       String keyId, String label, @Nullable RenameDeveloperKeyOptions options)
       throws DeepLException, InterruptedException {
     JsonObject requestData = createKeyRequest(keyId);
+    Objects.requireNonNull(label, "label");
     requestData.addProperty("label", label);
     return putDeveloperKey("/v2/admin/developer-keys/label", requestData, options);
   }
@@ -541,7 +556,8 @@ public class DeepLAdminClient {
    * @param limits Usage limits to change.
    * @param options Options for the request, or <code>null</code>.
    * @return {@link DeveloperKey} describing the modified key.
-   * @throws IllegalArgumentException If keyId is null or empty.
+   * @throws IllegalArgumentException If keyId is empty.
+   * @throws NullPointerException If keyId or limits is <code>null</code>.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
@@ -551,9 +567,8 @@ public class DeepLAdminClient {
       @Nullable SetDeveloperKeyUsageLimitsOptions options)
       throws DeepLException, InterruptedException {
     JsonObject requestData = createKeyRequest(keyId);
-    if (limits != null) {
-      limits.addTo(requestData);
-    }
+    Objects.requireNonNull(limits, "limits");
+    limits.addTo(requestData);
     return putDeveloperKey("/v2/admin/developer-keys/limits", requestData, options);
   }
 
@@ -605,7 +620,8 @@ public class DeepLAdminClient {
   }
 
   private static JsonObject createKeyRequest(String keyId) {
-    if (keyId == null || keyId.isEmpty()) {
+    Objects.requireNonNull(keyId, "keyId");
+    if (keyId.isEmpty()) {
       throw new IllegalArgumentException("keyId must not be empty");
     }
     JsonObject requestData = new JsonObject();
@@ -613,8 +629,12 @@ public class DeepLAdminClient {
     return requestData;
   }
 
-  private static @Nullable String keyIdOf(DeveloperKey key) {
-    return key != null ? key.getKeyId() : null;
+  private static String keyIdOf(DeveloperKey key) {
+    Objects.requireNonNull(key, "key");
+    if (key.getKeyId() == null) {
+      throw new IllegalArgumentException("key has no ID");
+    }
+    return key.getKeyId();
   }
 
   /**
@@ -641,10 +661,8 @@ public class DeepLAdminClient {
     return instant != null ? instant.atZone(ZoneOffset.UTC).toLocalDate() : null;
   }
 
-  private static LocalDate parseDate(String date) {
-    if (date == null) {
-      throw new IllegalArgumentException("startDate and endDate must not be null");
-    }
+  private static LocalDate parseDate(String paramName, String date) {
+    Objects.requireNonNull(date, paramName);
     try {
       return LocalDate.parse(date);
     } catch (DateTimeParseException exception) {
@@ -654,9 +672,8 @@ public class DeepLAdminClient {
 
   private static List<KeyValuePair<String, String>> createDateParams(
       LocalDate startDate, LocalDate endDate) {
-    if (startDate == null || endDate == null) {
-      throw new IllegalArgumentException("startDate and endDate must not be null");
-    }
+    Objects.requireNonNull(startDate, "startDate");
+    Objects.requireNonNull(endDate, "endDate");
     List<KeyValuePair<String, String>> queryParams = new ArrayList<>();
     queryParams.add(new KeyValuePair<>("start_date", startDate.toString()));
     queryParams.add(new KeyValuePair<>("end_date", endDate.toString()));
