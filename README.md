@@ -188,7 +188,8 @@ a `TextTranslationOptions`, with the following setters:
   glossary objects, pass their IDs as a list of strings).
   Glossaries are applied in the order provided (first match wins). This option
   cannot be combined with `setGlossary()`. An empty entry, or a glossary object
-  without ID, throws `IllegalArgumentException`.
+  without ID, throws `IllegalArgumentException`. A `null` entry throws
+  `NullPointerException`.
 - `setStyleRule()`: specifies a style rule to use with translation, as a string
   containing the ID of the style rule, or a `StyleRuleInfo` object.
 - `setStyleProfile()`: specifies a style profile to use with translation, as a
@@ -229,6 +230,9 @@ a `TextTranslationOptions`, with the following setters:
 - `setTagHandlingVersion()`: specifies which version of the tag handling algorithm
   to use, as a `TagHandlingVersion` (`TagHandlingVersion.V1`, `TagHandlingVersion.V2`)
   or a string (`"v1"`, `"v2"`).
+- Each of these setters given `null` leaves the option unset, the object
+  setters of `setGlossary()`, `setStyleRule()`, `setStyleProfile()` and
+  `setTranslationMemory()` included.
 
 The following options are only used if `setTagHandling()` is set to `'xml'`:
 
@@ -1140,6 +1144,7 @@ components to link, and whether the glossary order sets priority.
 `setGlossaryIds()`, `setStyleRuleIds()` and `setTranslationMemoryIds()` take a
 list of IDs or the objects themselves (`GlossaryInfo` or
 `MultilingualGlossaryInfo`, `StyleRuleInfo`, `TranslationMemoryInfo`).
+A `null` entry in a component ID list throws `NullPointerException`.
 `setExtraBodyParameters()` adds fields to the JSON request body, replacing a
 field with the same key. If any of the component IDs cannot be used, the
 request fails and no style profile is created.

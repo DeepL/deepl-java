@@ -50,10 +50,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `null` object, before any request, instead of `NullPointerException`, like
   the functions that take a translation memory, Spoken Terms, style profile or
   style rule object.
-- **Breaking:** `TextTranslationOptions.setGlossary()` and
-  `DocumentTranslationOptions.setGlossary()` throw `IllegalArgumentException`
-  for a `null` glossary object instead of `NullPointerException`, like the
-  setters that take a style rule, style profile or translation memory object.
 - **Breaking:** `DocumentTranslationOptions.setGlossary()`, `setStyleRule()`,
   `setStyleProfile()` and `setTranslationMemory()` throw
   `IllegalArgumentException` for an empty ID and for an object without ID; an
@@ -108,6 +104,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   it threw `IllegalArgumentException`. A `null` key throws
   `NullPointerException` instead of `IllegalArgumentException`; an empty or
   blank key still throws `IllegalArgumentException`.
+- **Breaking:** the setters of `TextTranslationOptions` and
+  `DocumentTranslationOptions` that take a glossary, style rule, style profile
+  or translation memory object leave the option unset for `null`, like the
+  setters that take an ID; they threw `IllegalArgumentException`
+  (`setGlossary()`: `NullPointerException`). A `null` entry of
+  `setGlossaryIds()` in both classes, and of `setGlossaryIds()`,
+  `setStyleRuleIds()` and `setTranslationMemoryIds()` of
+  `CreateStyleProfileOptions` and `UpdateStyleProfileOptions`, throws
+  `NullPointerException`; a `null` ID was sent and a `null` object threw
+  `IllegalArgumentException`.
 - `updateMultilingualGlossaryName()` (all overloads) throws `InterruptedException`
   unwrapped when the thread is interrupted, like the other `DeepLClient`
   methods, instead of a `DeepLException`, and declares it. Callers must catch or

@@ -27,8 +27,13 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class StyleProfilesTest {
   @RegisterExtension static OfflineServer wm = new OfflineServer();
@@ -188,9 +193,36 @@ class StyleProfilesTest {
             .setStyleRuleIds(rule)
             .setTranslationMemoryIds(tm1, tm2));
     client.updateStyleProfile(ID, new UpdateStyleProfileOptions().setStyleRuleIds(rule));
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> new CreateStyleProfileOptions().setStyleRuleIds(rule, (StyleRuleInfo) null));
+    assertEquals(
+        "styleRuleIds",
+        assertThrows(
+                NullPointerException.class,
+                () -> new CreateStyleProfileOptions().setStyleRuleIds(rule, (StyleRuleInfo) null))
+            .getMessage());
+  }
+
+  static Stream<Arguments> componentIdsWithANullEntry() {
+    return Stream.of(
+        Arguments.of(
+            "glossaryIds",
+            (Executable)
+                () -> new UpdateStyleProfileOptions().setGlossaryIds(Arrays.asList("g1", null))),
+        Arguments.of(
+            "styleRuleIds",
+            (Executable)
+                () -> new UpdateStyleProfileOptions().setStyleRuleIds(Arrays.asList("s1", null))),
+        Arguments.of(
+            "translationMemoryIds",
+            (Executable)
+                () ->
+                    new UpdateStyleProfileOptions()
+                        .setTranslationMemoryIds(Arrays.asList("t1", null))));
+  }
+
+  @ParameterizedTest
+  @MethodSource("componentIdsWithANullEntry")
+  void throwsNullPointerExceptionForANullComponentIdEntry(String name, Executable call) {
+    assertEquals(name, assertThrows(NullPointerException.class, call).getMessage());
   }
 
   @Test

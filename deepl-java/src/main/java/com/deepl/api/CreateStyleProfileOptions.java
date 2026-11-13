@@ -6,6 +6,7 @@ package com.deepl.api;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import org.jetbrains.annotations.Nullable;
 
@@ -40,51 +41,67 @@ public class CreateStyleProfileOptions extends BaseRequestOptions {
   /**
    * Sets the IDs of the glossaries to link, in priority order; an empty list unlinks all
    * glossaries.
+   *
+   * @throws NullPointerException If an entry is <code>null</code>.
    */
   public CreateStyleProfileOptions setGlossaryIds(@Nullable List<String> glossaryIds) {
-    this.glossaryIds = glossaryIds;
+    this.glossaryIds = ids("glossaryIds", glossaryIds);
     return this;
   }
 
   /**
    * Sets the glossaries to link, in priority order, as {@link GlossaryInfo} or {@link
    * MultilingualGlossaryInfo} objects; their IDs are sent.
+   *
+   * @throws NullPointerException If an entry is <code>null</code>.
    */
   public CreateStyleProfileOptions setGlossaryIds(IGlossary first, IGlossary... more) {
-    this.glossaryIds = idsOf(first, more, IGlossary::getGlossaryId, "glossaries");
+    this.glossaryIds = idsOf(first, more, IGlossary::getGlossaryId, "glossaryIds");
     return this;
   }
 
-  /** Sets the IDs of the style rules to link; an empty list unlinks all style rules. */
+  /**
+   * Sets the IDs of the style rules to link; an empty list unlinks all style rules.
+   *
+   * @throws NullPointerException If an entry is <code>null</code>.
+   */
   public CreateStyleProfileOptions setStyleRuleIds(@Nullable List<String> styleRuleIds) {
-    this.styleRuleIds = styleRuleIds;
+    this.styleRuleIds = ids("styleRuleIds", styleRuleIds);
     return this;
   }
 
-  /** Sets the style rules to link as {@link StyleRuleInfo} objects; their IDs are sent. */
+  /**
+   * Sets the style rules to link as {@link StyleRuleInfo} objects; their IDs are sent.
+   *
+   * @throws NullPointerException If an entry is <code>null</code>.
+   */
   public CreateStyleProfileOptions setStyleRuleIds(StyleRuleInfo first, StyleRuleInfo... more) {
-    this.styleRuleIds = idsOf(first, more, StyleRuleInfo::getStyleId, "style rules");
+    this.styleRuleIds = idsOf(first, more, StyleRuleInfo::getStyleId, "styleRuleIds");
     return this;
   }
 
   /**
    * Sets the IDs of the translation memories to link; an empty list unlinks all translation
    * memories.
+   *
+   * @throws NullPointerException If an entry is <code>null</code>.
    */
   public CreateStyleProfileOptions setTranslationMemoryIds(
       @Nullable List<String> translationMemoryIds) {
-    this.translationMemoryIds = translationMemoryIds;
+    this.translationMemoryIds = ids("translationMemoryIds", translationMemoryIds);
     return this;
   }
 
   /**
    * Sets the translation memories to link as {@link TranslationMemoryInfo} objects; their IDs are
    * sent.
+   *
+   * @throws NullPointerException If an entry is <code>null</code>.
    */
   public CreateStyleProfileOptions setTranslationMemoryIds(
       TranslationMemoryInfo first, TranslationMemoryInfo... more) {
     this.translationMemoryIds =
-        idsOf(first, more, TranslationMemoryInfo::getTranslationMemoryId, "translation memories");
+        idsOf(first, more, TranslationMemoryInfo::getTranslationMemoryId, "translationMemoryIds");
     return this;
   }
 
@@ -132,21 +149,27 @@ public class CreateStyleProfileOptions extends BaseRequestOptions {
     return glossaryPriorityOrderEnabled;
   }
 
+  private static @Nullable List<String> ids(String name, @Nullable List<String> ids) {
+    if (ids == null) {
+      return null;
+    }
+    for (String id : ids) {
+      Objects.requireNonNull(id, name);
+    }
+    return new ArrayList<>(ids);
+  }
+
   // The separate first parameter keeps a zero-argument call off the object overloads.
-  private static <T> List<String> idsOf(
-      T first, T[] more, Function<T, String> getId, String description) {
+  private static <T> List<String> idsOf(T first, T[] more, Function<T, String> getId, String name) {
     List<String> ids = new ArrayList<>();
-    ids.add(idOf(first, getId, description));
+    ids.add(idOf(first, getId, name));
     for (T item : more) {
-      ids.add(idOf(item, getId, description));
+      ids.add(idOf(item, getId, name));
     }
     return ids;
   }
 
-  private static <T> String idOf(@Nullable T item, Function<T, String> getId, String description) {
-    if (item == null) {
-      throw new IllegalArgumentException(description + " must not contain null");
-    }
-    return getId.apply(item);
+  private static <T> String idOf(@Nullable T item, Function<T, String> getId, String name) {
+    return getId.apply(Objects.requireNonNull(item, name));
   }
 }

@@ -5,9 +5,10 @@ package com.deepl.api;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import org.jetbrains.annotations.Nullable;
 
-/** Checks the resource IDs of the translation options; every failure is an argument error. */
+/** Checks the resource IDs of the translation options. */
 final class ResourceIds {
   private ResourceIds() {}
 
@@ -27,13 +28,16 @@ final class ResourceIds {
     return id;
   }
 
-  /** A copy of the glossary IDs: null leaves the option unset, an empty entry is rejected. */
+  /**
+   * A copy of the glossary IDs: null leaves the option unset, a null or empty entry is rejected.
+   */
   static @Nullable List<String> list(@Nullable List<String> ids) {
     if (ids == null) {
       return null;
     }
     for (String id : ids) {
-      if (id != null && id.isEmpty()) {
+      Objects.requireNonNull(id, "glossaryIds");
+      if (id.isEmpty()) {
         throw new IllegalArgumentException("glossaryIds must not contain an empty ID");
       }
     }

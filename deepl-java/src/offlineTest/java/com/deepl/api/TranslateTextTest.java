@@ -318,20 +318,6 @@ class TranslateTextTest {
   }
 
   @Test
-  void rejectsANullStyleProfile() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> new TextTranslationOptions().setStyleProfile((StyleProfile) null));
-  }
-
-  @Test
-  void rejectsANullGlossary() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> new TextTranslationOptions().setGlossary((IGlossary) null));
-  }
-
-  @Test
   void sendsTranslationMemoryAndThreshold() throws Exception {
     expectBody(
         JsonBody.of(

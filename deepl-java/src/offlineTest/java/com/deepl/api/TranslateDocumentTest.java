@@ -39,11 +39,15 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class TranslateDocumentTest {
   @RegisterExtension static OfflineServer wm = new OfflineServer();
@@ -331,17 +335,45 @@ class TranslateDocumentTest {
   }
 
   @Test
-  void rejectsANullStyleProfile() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> new DocumentTranslationOptions().setStyleProfile((StyleProfile) null));
-  }
-
-  @Test
-  void rejectsANullGlossary() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> new DocumentTranslationOptions().setGlossary((IGlossary) null));
+  void unsetsAResourceOptionGivenNull() {
+    DocumentTranslationOptions document =
+        new DocumentTranslationOptions()
+            .setGlossary("g1")
+            .setGlossary((IGlossary) null)
+            .setStyleRule("s1")
+            .setStyleRule((StyleRuleInfo) null)
+            .setStyleProfile("p1")
+            .setStyleProfile((StyleProfile) null)
+            .setTranslationMemory("t1")
+            .setTranslationMemory((TranslationMemoryInfo) null)
+            .setGlossaryIds("g1")
+            .setGlossaryIds((String[]) null);
+    TextTranslationOptions text =
+        new TextTranslationOptions()
+            .setGlossary("g1")
+            .setGlossary((IGlossary) null)
+            .setStyleRule("s1")
+            .setStyleRule((StyleRuleInfo) null)
+            .setStyleProfile("p1")
+            .setStyleProfile((StyleProfile) null)
+            .setTranslationMemory("t1")
+            .setTranslationMemory((TranslationMemoryInfo) null)
+            .setGlossaryIds("g1")
+            .setGlossaryIds((String[]) null);
+    for (String id :
+        Arrays.asList(
+            document.getGlossaryId(),
+            document.getStyleId(),
+            document.getStyleProfileId(),
+            document.getTranslationMemoryId(),
+            text.getGlossaryId(),
+            text.getStyleId(),
+            text.getStyleProfileId(),
+            text.getTranslationMemoryId())) {
+      assertNull(id);
+    }
+    assertNull(document.getGlossaryIds());
+    assertNull(text.getGlossaryIds());
   }
 
   @Test
@@ -374,6 +406,24 @@ class TranslateDocumentTest {
             () -> text.setGlossaryIds(glossary))) {
       assertThrows(IllegalArgumentException.class, call);
     }
+  }
+
+  static Stream<Arguments> glossaryIdsWithANullEntry() {
+    GlossaryInfo glossary = new GlossaryInfo("g1", "n", true, "en", "de", new java.util.Date(), 1);
+    return Stream.<Executable>of(
+            () -> new DocumentTranslationOptions().setGlossaryIds(Arrays.asList("g1", null)),
+            () -> new DocumentTranslationOptions().setGlossaryIds("g1", null),
+            () -> new DocumentTranslationOptions().setGlossaryIds(glossary, (IGlossary) null),
+            () -> new TextTranslationOptions().setGlossaryIds(Arrays.asList("g1", null)),
+            () -> new TextTranslationOptions().setGlossaryIds("g1", null),
+            () -> new TextTranslationOptions().setGlossaryIds((IGlossary) null))
+        .map(Arguments::of);
+  }
+
+  @ParameterizedTest
+  @MethodSource("glossaryIdsWithANullEntry")
+  void throwsNullPointerExceptionForANullGlossaryIdsEntry(Executable call) {
+    assertEquals("glossaryIds", assertThrows(NullPointerException.class, call).getMessage());
   }
 
   @Test

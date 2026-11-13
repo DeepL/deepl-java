@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -63,15 +64,13 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
 
   /**
    * Sets the glossary to use with the translation. By default, this value is <code>null</code> and
-   * no glossary is used.
+   * no glossary is used. <code>null</code> leaves the option unset.
    *
-   * @throws IllegalArgumentException If <code>glossary</code> is <code>null</code> or has no ID.
+   * @throws IllegalArgumentException If <code>glossary</code> has no ID.
    */
-  public DocumentTranslationOptions setGlossary(IGlossary glossary) {
-    if (glossary == null) {
-      throw new IllegalArgumentException("glossary must not be null");
-    }
-    return setGlossary(ResourceIds.ofObject("glossary", glossary.getGlossaryId()));
+  public DocumentTranslationOptions setGlossary(@Nullable IGlossary glossary) {
+    return setGlossary(
+        glossary == null ? null : ResourceIds.ofObject("glossary", glossary.getGlossaryId()));
   }
 
   /**
@@ -93,6 +92,7 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
    * combined with {@link #setGlossary}.
    *
    * @throws IllegalArgumentException If an entry is empty, or a glossary has no ID.
+   * @throws NullPointerException If an entry is <code>null</code>.
    */
   public DocumentTranslationOptions setGlossaryIds(List<String> glossaryIds) {
     this.glossaryIds = ResourceIds.list(glossaryIds);
@@ -106,9 +106,10 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
    * combined with {@link #setGlossary}.
    *
    * @throws IllegalArgumentException If an entry is empty, or a glossary has no ID.
+   * @throws NullPointerException If an entry is <code>null</code>.
    */
   public DocumentTranslationOptions setGlossaryIds(String... glossaryIds) {
-    this.glossaryIds = ResourceIds.list(Arrays.asList(glossaryIds));
+    this.glossaryIds = ResourceIds.list(glossaryIds == null ? null : Arrays.asList(glossaryIds));
     return this;
   }
 
@@ -119,6 +120,7 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
    * combined with {@link #setGlossary}.
    *
    * @throws IllegalArgumentException If an entry is empty, or a glossary has no ID.
+   * @throws NullPointerException If an entry is <code>null</code>.
    */
   public DocumentTranslationOptions setGlossaryIds(IGlossary first, IGlossary... more) {
     // The separate first parameter keeps the zero-argument call setGlossaryIds() on String...
@@ -132,9 +134,7 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
   private static List<String> glossaryIdsOf(IGlossary[] glossaries) {
     List<String> ids = new ArrayList<>();
     for (IGlossary glossary : glossaries) {
-      if (glossary == null) {
-        throw new IllegalArgumentException("glossaries must not contain null");
-      }
+      Objects.requireNonNull(glossary, "glossaryIds");
       ids.add(ResourceIds.ofObject("glossary", glossary.getGlossaryId()));
     }
     return ids;
@@ -154,15 +154,13 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
 
   /**
    * Sets the style rule to use with the translation. By default, this value is <code>null</code>
-   * and no style rule is used.
+   * and no style rule is used. <code>null</code> leaves the option unset.
    *
-   * @throws IllegalArgumentException If <code>styleRule</code> is <code>null</code> or has no ID.
+   * @throws IllegalArgumentException If <code>styleRule</code> has no ID.
    */
-  public DocumentTranslationOptions setStyleRule(StyleRuleInfo styleRule) {
-    if (styleRule == null) {
-      throw new IllegalArgumentException("styleRule must not be null");
-    }
-    return setStyleRule(ResourceIds.ofObject("styleRule", styleRule.getStyleId()));
+  public DocumentTranslationOptions setStyleRule(@Nullable StyleRuleInfo styleRule) {
+    return setStyleRule(
+        styleRule == null ? null : ResourceIds.ofObject("styleRule", styleRule.getStyleId()));
   }
 
   /**
@@ -182,16 +180,16 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
 
   /**
    * Sets the style profile to use with the translation. By default, this value is <code>null
-   * </code> and no style profile is used. See {@link #setStyleProfile(String)}.
+   * </code> and no style profile is used. See {@link #setStyleProfile(String)}. <code>null</code>
+   * leaves the option unset.
    *
-   * @throws IllegalArgumentException If <code>styleProfile</code> is <code>null</code> or has no
-   *     ID.
+   * @throws IllegalArgumentException If <code>styleProfile</code> has no ID.
    */
-  public DocumentTranslationOptions setStyleProfile(StyleProfile styleProfile) {
-    if (styleProfile == null) {
-      throw new IllegalArgumentException("styleProfile must not be null");
-    }
-    return setStyleProfile(ResourceIds.ofObject("styleProfile", styleProfile.getStyleProfileId()));
+  public DocumentTranslationOptions setStyleProfile(@Nullable StyleProfile styleProfile) {
+    return setStyleProfile(
+        styleProfile == null
+            ? null
+            : ResourceIds.ofObject("styleProfile", styleProfile.getStyleProfileId()));
   }
 
   /**
@@ -208,17 +206,17 @@ public class DocumentTranslationOptions extends BaseRequestOptions {
 
   /**
    * Sets the translation memory to use with the translation. By default, this value is <code>null
-   * </code> and no translation memory is used.
+   * </code> and no translation memory is used. <code>null</code> leaves the option unset.
    *
-   * @throws IllegalArgumentException If <code>translationMemory</code> is <code>null</code> or has
-   *     no ID.
+   * @throws IllegalArgumentException If <code>translationMemory</code> has no ID.
    */
-  public DocumentTranslationOptions setTranslationMemory(TranslationMemoryInfo translationMemory) {
-    if (translationMemory == null) {
-      throw new IllegalArgumentException("translationMemory must not be null");
-    }
+  public DocumentTranslationOptions setTranslationMemory(
+      @Nullable TranslationMemoryInfo translationMemory) {
     return setTranslationMemory(
-        ResourceIds.ofObject("translationMemory", translationMemory.getTranslationMemoryId()));
+        translationMemory == null
+            ? null
+            : ResourceIds.ofObject(
+                "translationMemory", translationMemory.getTranslationMemoryId()));
   }
 
   /**

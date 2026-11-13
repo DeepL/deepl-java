@@ -8,6 +8,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Options to control text translation behaviour. These options may be provided to {@link
@@ -70,15 +72,10 @@ public class TextTranslationOptions extends BaseRequestOptions {
 
   /**
    * Sets the glossary to use with the translation. By default, this value is <code>null</code> and
-   * no glossary is used.
-   *
-   * @throws IllegalArgumentException If <code>glossary</code> is <code>null</code>.
+   * no glossary is used. <code>null</code> leaves the option unset.
    */
-  public TextTranslationOptions setGlossary(IGlossary glossary) {
-    if (glossary == null) {
-      throw new IllegalArgumentException("glossary must not be null");
-    }
-    return setGlossary(glossary.getGlossaryId());
+  public TextTranslationOptions setGlossary(@Nullable IGlossary glossary) {
+    return setGlossary(glossary == null ? null : glossary.getGlossaryId());
   }
 
   /**
@@ -96,6 +93,7 @@ public class TextTranslationOptions extends BaseRequestOptions {
    * and no glossaries are used. This option cannot be combined with {@link #setGlossary}.
    *
    * @throws IllegalArgumentException If an entry is empty, or a glossary has no ID.
+   * @throws NullPointerException If an entry is <code>null</code>.
    */
   public TextTranslationOptions setGlossaryIds(List<String> glossaryIds) {
     this.glossaryIds = ResourceIds.list(glossaryIds);
@@ -108,9 +106,10 @@ public class TextTranslationOptions extends BaseRequestOptions {
    * and no glossaries are used. This option cannot be combined with {@link #setGlossary}.
    *
    * @throws IllegalArgumentException If an entry is empty, or a glossary has no ID.
+   * @throws NullPointerException If an entry is <code>null</code>.
    */
   public TextTranslationOptions setGlossaryIds(String... glossaryIds) {
-    this.glossaryIds = ResourceIds.list(Arrays.asList(glossaryIds));
+    this.glossaryIds = ResourceIds.list(glossaryIds == null ? null : Arrays.asList(glossaryIds));
     return this;
   }
 
@@ -121,6 +120,7 @@ public class TextTranslationOptions extends BaseRequestOptions {
    * list, pass the glossary IDs to {@link #setGlossaryIds(List)}.
    *
    * @throws IllegalArgumentException If an entry is empty, or a glossary has no ID.
+   * @throws NullPointerException If an entry is <code>null</code>.
    */
   public TextTranslationOptions setGlossaryIds(IGlossary first, IGlossary... more) {
     // The separate first parameter keeps the zero-argument call setGlossaryIds() on String...
@@ -134,9 +134,7 @@ public class TextTranslationOptions extends BaseRequestOptions {
   private static List<String> glossaryIdsOf(IGlossary[] glossaries) {
     List<String> ids = new ArrayList<>();
     for (IGlossary glossary : glossaries) {
-      if (glossary == null) {
-        throw new IllegalArgumentException("glossaries must not contain null");
-      }
+      Objects.requireNonNull(glossary, "glossaryIds");
       ids.add(ResourceIds.ofObject("glossary", glossary.getGlossaryId()));
     }
     return ids;
@@ -153,13 +151,10 @@ public class TextTranslationOptions extends BaseRequestOptions {
 
   /**
    * Sets the style rule to use with the translation. By default, this value is <code>null</code>
-   * and no style rule is used.
+   * and no style rule is used. <code>null</code> leaves the option unset.
    */
-  public TextTranslationOptions setStyleRule(StyleRuleInfo styleRule) {
-    if (styleRule == null) {
-      throw new IllegalArgumentException("styleRule must not be null");
-    }
-    return setStyleRule(styleRule.getStyleId());
+  public TextTranslationOptions setStyleRule(@Nullable StyleRuleInfo styleRule) {
+    return setStyleRule(styleRule == null ? null : styleRule.getStyleId());
   }
 
   /**
@@ -176,13 +171,11 @@ public class TextTranslationOptions extends BaseRequestOptions {
 
   /**
    * Sets the style profile to use with the translation. By default, this value is <code>null
-   * </code> and no style profile is used. See {@link #setStyleProfile(String)}.
+   * </code> and no style profile is used. See {@link #setStyleProfile(String)}. <code>null</code>
+   * leaves the option unset.
    */
-  public TextTranslationOptions setStyleProfile(StyleProfile styleProfile) {
-    if (styleProfile == null) {
-      throw new IllegalArgumentException("styleProfile must not be null");
-    }
-    return setStyleProfile(styleProfile.getStyleProfileId());
+  public TextTranslationOptions setStyleProfile(@Nullable StyleProfile styleProfile) {
+    return setStyleProfile(styleProfile == null ? null : styleProfile.getStyleProfileId());
   }
 
   /**
@@ -196,13 +189,12 @@ public class TextTranslationOptions extends BaseRequestOptions {
 
   /**
    * Sets the translation memory to use with the translation. By default, this value is <code>null
-   * </code> and no translation memory is used.
+   * </code> and no translation memory is used. <code>null</code> leaves the option unset.
    */
-  public TextTranslationOptions setTranslationMemory(TranslationMemoryInfo translationMemory) {
-    if (translationMemory == null) {
-      throw new IllegalArgumentException("translationMemory must not be null");
-    }
-    return setTranslationMemory(translationMemory.getTranslationMemoryId());
+  public TextTranslationOptions setTranslationMemory(
+      @Nullable TranslationMemoryInfo translationMemory) {
+    return setTranslationMemory(
+        translationMemory == null ? null : translationMemory.getTranslationMemoryId());
   }
 
   /**
