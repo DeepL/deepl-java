@@ -4016,10 +4016,10 @@ public class DeepLClient {
    * @param outputFile File to write the exported translation memory to.
    * @return {@link TranslationMemoryJob} object for the completed export.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
-   * @throws TranslationMemoryJobException If the output path is occupied or its directory does not
-   *     exist (checked before the export job is created), writing the file fails, the export fails,
-   *     or any error occurs while communicating with the DeepL API. A local file failure carries
-   *     the {@link IOException} as its cause.
+   * @throws TranslationMemoryJobException If the output path is occupied, its directory does not
+   *     exist or the file cannot be created there (checked before the export job is created),
+   *     writing the file fails, the export fails, or any error occurs while communicating with the
+   *     DeepL API. A local file failure carries the {@link IOException} as its cause.
    */
   public TranslationMemoryJob exportTranslationMemoryToFilepath(
       String translationMemoryId, File outputFile)
@@ -4038,10 +4038,11 @@ public class DeepLClient {
    *     timeout.
    * @return {@link TranslationMemoryJob} object for the completed export.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
-   * @throws TranslationMemoryJobException If the output path is occupied or its directory does not
-   *     exist (checked before the export job is created), writing the file fails, the timeout is
-   *     exceeded, the export fails, or any error occurs while communicating with the DeepL API. A
-   *     local file failure carries the {@link IOException} as its cause.
+   * @throws TranslationMemoryJobException If the output path is occupied, its directory does not
+   *     exist or the file cannot be created there (checked before the export job is created),
+   *     writing the file fails, the timeout is exceeded, the export fails, or any error occurs
+   *     while communicating with the DeepL API. A local file failure carries the {@link
+   *     IOException} as its cause.
    * @see DeepLClient#exportTranslationMemoryToFilepath(String, File)
    */
   public TranslationMemoryJob exportTranslationMemoryToFilepath(
@@ -4243,6 +4244,13 @@ public class DeepLClient {
     if (directory == null || !directory.isDirectory()) {
       throw translationMemoryJobError(
           new FileNotFoundException("Directory of output path does not exist"), null, null);
+    }
+    // Creating and deleting the file proves it can be written, e.g. not in a read-only directory.
+    try {
+      Files.createFile(outputFile.toPath());
+      Files.delete(outputFile.toPath());
+    } catch (IOException exception) {
+      throw translationMemoryJobError(exception, null, null);
     }
   }
 

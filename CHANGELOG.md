@@ -122,7 +122,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `importTranslationMemoryFromFilepath()` and
   `exportTranslationMemoryToFilepath()` throw `DeepLException`, with the
   `IOException` as its cause, for local file failures: an unreadable input file,
-  an occupied output path, a missing output directory, or a failed write. They
+  an occupied output path, a missing output directory, an output file that
+  cannot be created (checked before the export job is created), or a failed
+  write. They
   no longer declare `IOException`; catch `DeepLException` instead and inspect
   `getCause()`.
 - `translateDocument(File, File, ...)` and `translateDocumentUpload(File, ...)`

@@ -1456,9 +1456,10 @@ class Example {  // Continuing class Example from above
 ```
 
 As with import, the timeout is optional; omit it to wait indefinitely. The output
-path is checked before the export job is created: if a file already exists there
-or its directory does not exist, a `TranslationMemoryJobException` without job
-ID is thrown. Every later failure, including an API error, a failed job, an
+path is checked before the export job is created: if a file already exists there,
+its directory does not exist or the file cannot be created there (for example in
+a read-only directory), a `TranslationMemoryJobException` without job ID is
+thrown. Every later failure, including an API error, a failed job, an
 exceeded timeout, the download or writing the file, throws a
 `TranslationMemoryJobException` carrying the job ID and, once the job status
 was fetched, the last fetched job (`getJob()`). The underlying error, such as

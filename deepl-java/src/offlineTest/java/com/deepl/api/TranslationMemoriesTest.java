@@ -699,6 +699,22 @@ class TranslationMemoriesTest {
   }
 
   @Test
+  void checksThatTheExportOutputFileCanBeCreatedBeforeCreatingTheExportJob() {
+    StringBuilder name = new StringBuilder();
+    for (int i = 0; i < 300; i++) {
+      name.append('x');
+    }
+    File uncreatable = tempDir.resolve(name.toString()).toFile();
+    TranslationMemoryJobException thrown =
+        assertThrows(
+            TranslationMemoryJobException.class,
+            () -> client.exportTranslationMemoryToFilepath("tm1", uncreatable));
+    assertTrue(thrown.getCause() instanceof IOException, thrown.toString());
+    assertNull(thrown.getJobId());
+    wm.verify(0, postRequestedFor(urlPathMatching("/v3/translation_memories/.*")));
+  }
+
+  @Test
   void wrapsANullTranslationMemoryObjectWhenExporting() {
     TranslationMemoryInfo none = null;
     File output = tempDir.resolve("export.tmx").toFile();
