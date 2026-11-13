@@ -1023,4 +1023,15 @@ class TranslationMemoriesTest {
     assertFalse(thrown.getShouldRetry());
     wm.verify(1, postRequestedFor(urlEqualTo("/v3/translation_memories/tm1/export")));
   }
+
+  @Test
+  void doesNotRetryAnExportCreationAfterAConnectionReset() {
+    wm.stubFor(
+        post("/v3/translation_memories/tm1/export")
+            .willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)));
+    ConnectionException thrown =
+        assertThrows(ConnectionException.class, () -> client.createTranslationMemoryExport("tm1"));
+    assertFalse(thrown.getShouldRetry());
+    wm.verify(1, postRequestedFor(urlEqualTo("/v3/translation_memories/tm1/export")));
+  }
 }

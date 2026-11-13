@@ -30,8 +30,10 @@ public class DeepLAdminClientOptions {
   /**
    * Set the maximum number of failed attempts that {@link DeepLAdminClient} will retry, per
    * request. By default, 5 retries are made. Note: only errors due to transient conditions are
-   * retried. Developer key creation is retried only after HTTP 429, a DNS resolution failure, a
-   * refused connection or a connect timeout, as the API cannot have processed the request then.
+   * retried. Developer key creation is retried only after HTTP 429 or a failure while connecting
+   * (for example a DNS resolution failure, a refused connection, an unreachable host or network, or
+   * a connect timeout), but not after a TLS or proxy failure, as the API cannot have processed the
+   * request then.
    */
   public DeepLAdminClientOptions setMaxRetries(int maxRetries) {
     this.maxRetries = maxRetries;

@@ -10,13 +10,19 @@ import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.time.*;
 import java.util.*;
+import javax.net.ssl.SSLException;
 import org.apache.http.ConnectionClosedException;
+import org.apache.http.HttpClientConnection;
+import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
+import org.apache.http.HttpRequest;
 import org.apache.http.MalformedChunkCodingException;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.ConnectTimeoutException;
@@ -31,6 +37,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.impl.conn.DefaultRoutePlanner;
 import org.apache.http.protocol.HttpContext;
+import org.apache.http.protocol.HttpRequestExecutor;
 import org.apache.http.ssl.SSLContexts;
 import org.apache.http.util.EntityUtils;
 import org.jetbrains.annotations.*;
@@ -79,7 +86,8 @@ class HttpClientWrapper {
   /**
    * Sends a POST request without a body that must not be repeated if the server may have processed
    * it, such as creating a resource. It is retried only when the request was not sent: after HTTP
-   * 429, a DNS resolution failure, a refused connection or a connect timeout.
+   * 429 or a failure while connecting (for example a DNS resolution failure, a refused connection,
+   * an unreachable host or network, or a connect timeout), but not after a TLS or proxy failure.
    */
   public HttpResponse sendRequestRetryingOnlyUnprocessed(String relativeUrl)
       throws InterruptedException, DeepLException {
@@ -101,8 +109,9 @@ class HttpClientWrapper {
 
   /**
    * Sends a JSON POST request that must not be repeated if the server may have processed it, such
-   * as creating a resource. It is retried only when the request was not sent: after HTTP 429, a DNS
-   * resolution failure, a refused connection or a connect timeout.
+   * as creating a resource. It is retried only when the request was not sent: after HTTP 429 or a
+   * failure while connecting (for example a DNS resolution failure, a refused connection, an
+   * unreachable host or network, or a connect timeout), but not after a TLS or proxy failure.
    */
   public HttpResponse sendJsonRequestRetryingOnlyUnprocessed(String relativeUrl, String jsonBody)
       throws InterruptedException, DeepLException {
@@ -174,7 +183,10 @@ class HttpClientWrapper {
     // Like HttpURLConnection, honor the JVM's proxy settings unless a proxy was configured.
     // Automatic retries are disabled so that only the backoff loop retries, up to maxRetries.
     HttpClientBuilder builder =
-        HttpClients.custom().useSystemProperties().disableAutomaticRetries();
+        HttpClients.custom()
+            .useSystemProperties()
+            .disableAutomaticRetries()
+            .setRequestExecutor(new RequestWriteTrackingExecutor());
     try {
       if (proxy != null) {
         configureApacheProxy(builder, proxy);
@@ -182,6 +194,7 @@ class HttpClientWrapper {
     } catch (RuntimeException e) {
       throw toConnectionException(e);
     }
+    HttpClientContext context = HttpClientContext.create();
     try (CloseableHttpClient httpClient = builder.build()) {
       // Without an entity, the request has Content-Length: 0 and no Content-Type.
       HttpEntityEnclosingRequestBase request =
@@ -212,7 +225,7 @@ class HttpClientWrapper {
       }
 
       // Execute the request
-      org.apache.http.HttpResponse response = httpClient.execute(request);
+      org.apache.http.HttpResponse response = httpClient.execute(request, context);
 
       // The body is read here so that a failure while reading it is retried like any other.
       byte[] body =
@@ -225,19 +238,26 @@ class HttpClientWrapper {
           retryOnlyUnprocessed);
     } catch (RuntimeException | IOException e) {
       ConnectionException failure = toConnectionException(e);
+      boolean notSent =
+          context.getAttribute(REQUEST_WRITE_STARTED) == null && isUnsentConnectFailure(e);
       throw new ConnectionException(
-          failure.getMessage(), failure.getShouldRetry(), e, isApacheUnsentFailure(e));
+          failure.getMessage(), failure.getShouldRetry() || notSent, e, notSent);
     }
   }
 
-  // Failures of an Apache request after which the server cannot have received it. Unlike
-  // isUnsentFailure, this excludes SocketTimeoutException: Apache reports a read timeout as one
-  // too, and a connect timeout as ConnectTimeoutException.
-  private static boolean isApacheUnsentFailure(Exception e) {
-    return e instanceof ConnectException
-        || e instanceof NoRouteToHostException
-        || e instanceof UnknownHostException
-        || e instanceof ConnectTimeoutException;
+  private static final String REQUEST_WRITE_STARTED = "com.deepl.api.requestWriteStarted";
+
+  /** Marks the context when the request starts being written; a proxy CONNECT does not count. */
+  private static class RequestWriteTrackingExecutor extends HttpRequestExecutor {
+    @Override
+    protected org.apache.http.HttpResponse doSendRequest(
+        HttpRequest request, HttpClientConnection conn, HttpContext context)
+        throws IOException, HttpException {
+      if (!"CONNECT".equals(request.getRequestLine().getMethod())) {
+        context.setAttribute(REQUEST_WRITE_STARTED, Boolean.TRUE);
+      }
+      return super.doSendRequest(request, conn, context);
+    }
   }
 
   /** Applies the configured proxy to the Apache client the way HttpURLConnection applies it. */
@@ -566,13 +586,14 @@ class HttpClientWrapper {
         }
       }
 
-      // Connect separately: a DNS, refused or timed-out connect means nothing was sent yet.
+      // Connect separately: a failure here comes before any request byte is written.
       try {
         connection.connect();
       } catch (IOException e) {
         ConnectionException failure = toConnectionException(e);
+        boolean notSent = isUnsentConnectFailure(e);
         throw new ConnectionException(
-            failure.getMessage(), failure.getShouldRetry(), e, isUnsentFailure(e));
+            failure.getMessage(), failure.getShouldRetry() || notSent, e, notSent);
       }
 
       if (content != null) {
@@ -644,7 +665,22 @@ class HttpClientWrapper {
         exception.getMessage(), shouldRetry, cause, exception.getRequestNotSent());
   }
 
-  // Failures of the connect step after which the server cannot have received the request.
+  // A failure while connecting (TCP connect, proxy tunnel, TLS handshake) comes before any request
+  // byte is written, so the request was not sent. TLS and proxy failures are never retried.
+  private static boolean isUnsentConnectFailure(Exception e) {
+    if (!(e instanceof IOException)
+        || e instanceof SSLException
+        || e instanceof ClientProtocolException) {
+      return false;
+    }
+    // HttpURLConnection reports a refused proxy tunnel, and the JDK a SOCKS failure, only by
+    // message.
+    String message = e.getMessage();
+    return message == null
+        || !(message.startsWith("Unable to tunnel through proxy") || message.contains("SOCKS"));
+  }
+
+  // Connect, DNS and timeout failures, which are transient.
   private static boolean isUnsentFailure(Exception e) {
     return e instanceof SocketTimeoutException
         || e instanceof ConnectException

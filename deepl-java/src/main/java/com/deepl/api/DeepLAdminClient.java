@@ -391,8 +391,9 @@ public class DeepLAdminClient {
 
   /**
    * Creates a developer key in the organization. The request is retried only when the API cannot
-   * have processed it (HTTP 429, a DNS resolution failure, a refused connection or a connect
-   * timeout), so that a lost response cannot lead to several keys being created. For the same
+   * have processed it (HTTP 429 or a failure while connecting, such as a DNS resolution failure, a
+   * refused connection, an unreachable host or network or a connect timeout; not a TLS or proxy
+   * failure), so that a lost response cannot lead to several keys being created. For the same
    * reason the request is sent in streaming mode, so it does not follow HTTP redirects: a redirect
    * fails with a {@link ConnectionException}.
    *

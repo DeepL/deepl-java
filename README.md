@@ -1720,8 +1720,9 @@ Create a `DeepLAdminClient` with your admin key. It uses the
 `DeepLAdminClientOptions` object to configure the timeout, retries, proxy,
 headers, server URL and app info, as for `DeepLClient`, see
 [Configuration](#configuration). Developer key creation is retried only after
-HTTP 429, a DNS resolution failure, a refused connection or a connect timeout,
-when the API cannot have processed the request, so that a lost response cannot create several keys. For the same
+HTTP 429 or a failure while connecting (for example a DNS resolution failure, a
+refused connection, an unreachable host or network, or a connect timeout), but
+not after a TLS or proxy failure, when the API cannot have processed the request, so that a lost response cannot create several keys. For the same
 reason, this request is sent in streaming mode, so it does not follow HTTP
 redirects: a redirect fails with a `ConnectionException`.
 
@@ -1898,8 +1899,8 @@ mid-read); the client has already retried these up to the configured
 maximum number of retries, except for requests that create a resource, which
 are retried only when the request was not sent (see `setMaxRetries()`). For
 these requests and the document upload, `getShouldRetry()` returns `true` only
-if the request was not sent (HTTP 429, DNS failure, refused connection, connect
-timeout) or the response body was cut off mid-read. After HTTP 5xx, a read
+if the request was not sent (HTTP 429 or a failure while connecting; not a TLS
+or proxy failure) or the response body was cut off mid-read. After HTTP 5xx, a read
 timeout, a connection reset or a broken pipe it returns `false`: the server may
 have created the resource, so a retry could create it twice.
 
@@ -1949,8 +1950,9 @@ The available options setters are:
   Requests that create a resource (glossary, multilingual glossary, spoken
   terms, style profile, style rule, custom instruction, translation memory
   import or export job) and the document upload are retried only when the
-  request was not sent: after HTTP 429, a DNS resolution failure, a refused
-  connection or a connect timeout. They are sent in streaming mode and do not
+  request was not sent: after HTTP 429 or a failure while connecting (for
+  example a DNS resolution failure, a refused connection, an unreachable host or
+  network, or a connect timeout), but not after a TLS or proxy failure. They are sent in streaming mode and do not
   follow HTTP redirects.
   A document or translation memory export download is retried only while
   nothing has been written to the output yet. Every request, including `PATCH` requests, is sent at most `maxRetries + 1`

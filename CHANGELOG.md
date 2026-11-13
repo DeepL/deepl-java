@@ -60,14 +60,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** for requests that create a resource (including
   `DeepLAdminClient.createDeveloperKey()`) and the document upload,
   `getShouldRetry()` of the thrown exception is `true` only if the request was
-  not sent (HTTP 429, a DNS resolution failure, a refused connection or a
-  connect timeout) or the response body was cut off mid-read. After HTTP 5xx, a
+  not sent (HTTP 429 or a failure while connecting, such as a DNS resolution
+  failure, a refused connection, an unreachable host or network or a connect
+  timeout; not a TLS or proxy failure) or the response body was cut off
+  mid-read. After HTTP 5xx, a
   read timeout, a connection reset or a broken pipe it is now `false`, because
   the server may have created the resource. A `DocumentTranslationException`
   from a failed upload in `translateDocument()` reports the same value.
 - **Breaking:** requests that create a resource are retried only when the
-  request was not sent: after HTTP 429, a DNS resolution failure, a refused
-  connection or a connect timeout. A server error (HTTP 5xx), a timeout while
+  request was not sent: after HTTP 429 or a failure while connecting, such as
+  a DNS resolution failure, a refused connection, an unreachable host or
+  network or a connect timeout; not a TLS or proxy failure. A server error (HTTP 5xx), a timeout while
   reading the response or a connection reset after sending raises the error
   without a retry, so that a lost response cannot create the resource twice.
   This applies to `createGlossary()`, `createGlossaryFromCsv()`,
@@ -79,6 +82,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `translateDocumentUpload()` and `translateDocument()`. These requests are
   sent in streaming mode, so they do not follow HTTP redirects. Retry such
   errors yourself only after checking that the resource was not created.
+- **Breaking:** a failure while connecting, before the request is written, is
+  retried whatever its exception class, for every request: for example
+  `Network is unreachable`, a reset during the TLS handshake, or a timeout
+  while connecting a `PATCH` request or the export job creation. This includes
+  `DeepLAdminClient.createDeveloperKey()`, which before raised such a failure
+  at once with `getShouldRetry()` `false`. TLS failures and a proxy that
+  refuses the tunnel are not retried.
 - The `DeepLClient` and `DeepLAdminClient` constructors throw
   `IllegalArgumentException` if the server URL set with `setServerUrl()` is not
   an absolute `http` or `https` URL with a host, instead of failing on the first

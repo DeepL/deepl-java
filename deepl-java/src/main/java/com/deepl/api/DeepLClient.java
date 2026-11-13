@@ -330,8 +330,9 @@ public class DeepLClient {
    * Translate specified document content from source language to target language and store the
    * translated document content to specified stream.
    *
-   * <p>The upload is retried only when the request was not sent: after HTTP 429, a DNS resolution
-   * failure, a refused connection or a connect timeout.
+   * <p>The upload is retried only when the request was not sent: after HTTP 429 or a failure while
+   * connecting (for example a DNS resolution failure, a refused connection, an unreachable host or
+   * network, or a connect timeout), but not after a TLS or proxy failure.
    *
    * @param inputFile File to upload to be translated.
    * @param outputFile File to download translated document to.
@@ -395,8 +396,9 @@ public class DeepLClient {
    * translated document content to specified stream. On return, input stream will be at end of
    * stream and neither stream will be closed.
    *
-   * <p>The upload is retried only when the request was not sent: after HTTP 429, a DNS resolution
-   * failure, a refused connection or a connect timeout.
+   * <p>The upload is retried only when the request was not sent: after HTTP 429 or a failure while
+   * connecting (for example a DNS resolution failure, a refused connection, an unreachable host or
+   * network, or a connect timeout), but not after a TLS or proxy failure.
    *
    * @param inputStream Stream containing file to upload to be translated.
    * @param fileName Name of the input file. The file extension is used to determine file type.
@@ -461,8 +463,9 @@ public class DeepLClient {
    * language. See the <a href= "https://www.deepl.com/docs-api/translating-documents/">DeepL API
    * documentation</a> for the currently supported document types.
    *
-   * <p>The upload is retried only when the request was not sent: after HTTP 429, a DNS resolution
-   * failure, a refused connection or a connect timeout.
+   * <p>The upload is retried only when the request was not sent: after HTTP 429 or a failure while
+   * connecting (for example a DNS resolution failure, a refused connection, an unreachable host or
+   * network, or a connect timeout), but not after a TLS or proxy failure.
    *
    * @param inputFile File containing document to be translated.
    * @param sourceLang Language code of the input language, or <code>null</code> to use
@@ -510,8 +513,9 @@ public class DeepLClient {
    * language. See the <a href= "https://www.deepl.com/docs-api/translating-documents/">DeepL API
    * documentation</a> for the currently supported document types.
    *
-   * <p>The upload is retried only when the request was not sent: after HTTP 429, a DNS resolution
-   * failure, a refused connection or a connect timeout.
+   * <p>The upload is retried only when the request was not sent: after HTTP 429 or a failure while
+   * connecting (for example a DNS resolution failure, a refused connection, an unreachable host or
+   * network, or a connect timeout), but not after a TLS or proxy failure.
    *
    * @param inputStream Stream containing document to be translated. On return, input stream will be
    *     at end of stream and will not be closed.
@@ -690,8 +694,9 @@ public class DeepLClient {
    * translations to override translations for specific terms (words). The glossary source and
    * target languages must match the languages of translations for which it will be used.
    *
-   * <p>The create request is retried only when the request was not sent: after HTTP 429, a DNS
-   * resolution failure, a refused connection or a connect timeout.
+   * <p>The create request is retried only when the request was not sent: after HTTP 429 or a
+   * failure while connecting (for example a DNS resolution failure, a refused connection, an
+   * unreachable host or network, or a connect timeout), but not after a TLS or proxy failure.
    *
    * @param name User-defined name to assign to the glossary; must not be empty.
    * @param sourceLang Language code of the source terms language.
@@ -718,8 +723,9 @@ public class DeepLClient {
    * translations to override translations for specific terms (words). The glossary source and
    * target languages must match the languages of translations for which it will be used.
    *
-   * <p>The create request is retried only when the request was not sent: after HTTP 429, a DNS
-   * resolution failure, a refused connection or a connect timeout.
+   * <p>The create request is retried only when the request was not sent: after HTTP 429 or a
+   * failure while connecting (for example a DNS resolution failure, a refused connection, an
+   * unreachable host or network, or a connect timeout), but not after a TLS or proxy failure.
    *
    * @param name User-defined name to assign to the glossary; must not be empty.
    * @param sourceLang Language code of the source terms language.
@@ -746,8 +752,9 @@ public class DeepLClient {
    * translations to override translations for specific terms (words). The glossary source and
    * target languages must match the languages of translations for which it will be used.
    *
-   * <p>The create request is retried only when the request was not sent: after HTTP 429, a DNS
-   * resolution failure, a refused connection or a connect timeout.
+   * <p>The create request is retried only when the request was not sent: after HTTP 429 or a
+   * failure while connecting (for example a DNS resolution failure, a refused connection, an
+   * unreachable host or network, or a connect timeout), but not after a TLS or proxy failure.
    *
    * @param name User-defined name to assign to the glossary; must not be empty.
    * @param sourceLang Language code of the source terms language.
@@ -1369,8 +1376,9 @@ public class DeepLClient {
    * to override translations for specific terms (words). The glossary must contain a glossary
    * dictionary that matches the languages of translations for which it will be used.
    *
-   * <p>The create request is retried only when the request was not sent: after HTTP 429, a DNS
-   * resolution failure, a refused connection or a connect timeout.
+   * <p>The create request is retried only when the request was not sent: after HTTP 429 or a
+   * failure while connecting (for example a DNS resolution failure, a refused connection, an
+   * unreachable host or network, or a connect timeout), but not after a TLS or proxy failure.
    *
    * @param name User-defined name to assign to the glossary; must not be empty.
    * @param glossaryDicts {@link MultilingualGlossaryDictionaryInfo} The dictionaries of the
@@ -1436,8 +1444,9 @@ public class DeepLClient {
    * to override translations for specific terms (words). The glossary must contain a glossary
    * dictionary that matches the languages of translations for which it will be used.
    *
-   * <p>The create request is retried only when the request was not sent: after HTTP 429, a DNS
-   * resolution failure, a refused connection or a connect timeout.
+   * <p>The create request is retried only when the request was not sent: after HTTP 429 or a
+   * failure while connecting (for example a DNS resolution failure, a refused connection, an
+   * unreachable host or network, or a connect timeout), but not after a TLS or proxy failure.
    *
    * @param name User-defined name to assign to the glossary; must not be empty.
    * @param sourceLanguageCode Language code of the source terms language.
@@ -1491,8 +1500,9 @@ public class DeepLClient {
    * to override translations for specific terms (words). The glossary must contain a glossary
    * dictionary that matches the languages of translations for which it will be used.
    *
-   * <p>The create request is retried only when the request was not sent: after HTTP 429, a DNS
-   * resolution failure, a refused connection or a connect timeout.
+   * <p>The create request is retried only when the request was not sent: after HTTP 429 or a
+   * failure while connecting (for example a DNS resolution failure, a refused connection, an
+   * unreachable host or network, or a connect timeout), but not after a TLS or proxy failure.
    *
    * @param name User-defined name to assign to the glossary; must not be empty.
    * @param sourceLanguageCode Language code of the source terms language.
@@ -2688,8 +2698,9 @@ public class DeepLClient {
    * Creates a Spoken Terms collection with the given term lists and returns a {@link SpokenTerms}
    * object with details about the new collection.
    *
-   * <p>The create request is retried only when the request was not sent: after HTTP 429, a DNS
-   * resolution failure, a refused connection or a connect timeout.
+   * <p>The create request is retried only when the request was not sent: after HTTP 429 or a
+   * failure while connecting (for example a DNS resolution failure, a refused connection, an
+   * unreachable host or network, or a connect timeout), but not after a TLS or proxy failure.
    *
    * @param name User-defined name of the collection.
    * @param termLists Term lists of the collection, one {@link SpokenTermsEntries} per language.
@@ -3043,8 +3054,9 @@ public class DeepLClient {
    * Creates a style profile and returns a {@link StyleProfile} object with details about it. If any
    * of the given component IDs cannot be used, the request fails and no style profile is created.
    *
-   * <p>The create request is retried only when the request was not sent: after HTTP 429, a DNS
-   * resolution failure, a refused connection or a connect timeout.
+   * <p>The create request is retried only when the request was not sent: after HTTP 429 or a
+   * failure while connecting (for example a DNS resolution failure, a refused connection, an
+   * unreachable host or network, or a connect timeout), but not after a TLS or proxy failure.
    *
    * @param name Name of the style profile.
    * @param options Optional description, industry and linked components, or <code>null</code>.
@@ -3454,8 +3466,9 @@ public class DeepLClient {
    * DeepLClient#importTranslationMemoryFromFilepath(File, ImportTranslationMemoryOptions)} to do
    * all three steps at once.
    *
-   * <p>The create request is retried only when the request was not sent: after HTTP 429, a DNS
-   * resolution failure, a refused connection or a connect timeout.
+   * <p>The create request is retried only when the request was not sent: after HTTP 429 or a
+   * failure while connecting (for example a DNS resolution failure, a refused connection, an
+   * unreachable host or network, or a connect timeout), but not after a TLS or proxy failure.
    *
    * @param fileName Name of the TMX file to import, for example "legal.tmx".
    * @param contentLength Size of the TMX file in bytes.
@@ -3613,8 +3626,9 @@ public class DeepLClient {
    * exported TMX file. Use {@link DeepLClient#exportTranslationMemoryToFilepath(String, File)} to
    * do both steps and write the file at once.
    *
-   * <p>The create request is retried only when the request was not sent: after HTTP 429, a DNS
-   * resolution failure, a refused connection or a connect timeout.
+   * <p>The create request is retried only when the request was not sent: after HTTP 429 or a
+   * failure while connecting (for example a DNS resolution failure, a refused connection, an
+   * unreachable host or network, or a connect timeout), but not after a TLS or proxy failure.
    *
    * @param translationMemoryId ID of the translation memory to export.
    * @return {@link TranslationMemoryExport} object with the job ID, and whether the API reused a
@@ -3846,8 +3860,9 @@ public class DeepLClient {
    * Imports a TMX file as a new translation memory: creates the import job, uploads the file, and
    * waits for processing to finish.
    *
-   * <p>The create request is retried only when the request was not sent: after HTTP 429, a DNS
-   * resolution failure, a refused connection or a connect timeout.
+   * <p>The create request is retried only when the request was not sent: after HTTP 429 or a
+   * failure while connecting (for example a DNS resolution failure, a refused connection, an
+   * unreachable host or network, or a connect timeout), but not after a TLS or proxy failure.
    *
    * @param inputFile TMX file to import.
    * @param displayName Optional name for the resulting translation memory, defaults to the file
@@ -3906,8 +3921,9 @@ public class DeepLClient {
    * Imports a TMX file as a new translation memory: creates the import job, uploads the file, and
    * waits for processing to finish.
    *
-   * <p>The create request is retried only when the request was not sent: after HTTP 429, a DNS
-   * resolution failure, a refused connection or a connect timeout.
+   * <p>The create request is retried only when the request was not sent: after HTTP 429 or a
+   * failure while connecting (for example a DNS resolution failure, a refused connection, an
+   * unreachable host or network, or a connect timeout), but not after a TLS or proxy failure.
    *
    * @param inputFile TMX file to import.
    * @param options Options for the import (display name, content type, timeout, extra body
@@ -4401,8 +4417,9 @@ public class DeepLClient {
    * Creates a new style rule with the specified details and returns a {@link StyleRuleInfo} object
    * with details about the newly created style rule.
    *
-   * <p>The create request is retried only when the request was not sent: after HTTP 429, a DNS
-   * resolution failure, a refused connection or a connect timeout.
+   * <p>The create request is retried only when the request was not sent: after HTTP 429 or a
+   * failure while connecting (for example a DNS resolution failure, a refused connection, an
+   * unreachable host or network, or a connect timeout), but not after a TLS or proxy failure.
    *
    * @param name User-defined name for the style rule.
    * @param language Language code for the style rule (e.g. "en", "de").
@@ -4639,8 +4656,9 @@ public class DeepLClient {
    * Creates a new custom instruction for the style rule with the specified ID and returns the
    * created {@link CustomInstruction} object.
    *
-   * <p>The create request is retried only when the request was not sent: after HTTP 429, a DNS
-   * resolution failure, a refused connection or a connect timeout.
+   * <p>The create request is retried only when the request was not sent: after HTTP 429 or a
+   * failure while connecting (for example a DNS resolution failure, a refused connection, an
+   * unreachable host or network, or a connect timeout), but not after a TLS or proxy failure.
    *
    * @param styleId ID of the style rule to add the custom instruction to.
    * @param label Label for the custom instruction.

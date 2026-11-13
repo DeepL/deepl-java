@@ -12,13 +12,19 @@ import static com.github.tomakehurst.wiremock.client.WireMock.patch;
 import static com.github.tomakehurst.wiremock.client.WireMock.patchRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
+import java.io.BufferedReader;
 import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.ServerSocket;
@@ -26,11 +32,25 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLContextSpi;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSessionContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -220,6 +240,218 @@ class HttpClientTest {
         assertThrows(ConnectionException.class, () -> new DeepLClient("k", options).getUsage());
     assertTrue(thrown.getCause() instanceof UnknownHostException, thrown.toString());
     assertTrue(thrown.getShouldRetry(), "a failed DNS lookup is retried");
+  }
+
+  private interface ClientCall {
+    void run(DeepLClient client) throws Exception;
+  }
+
+  private static final MultilingualGlossaryDictionaryEntries DICTIONARY =
+      new MultilingualGlossaryDictionaryEntries(
+          "en", "de", new GlossaryEntries(Collections.singletonMap("a", "b")));
+  private static final ClientCall CREATE_GLOSSARY =
+      c -> c.createMultilingualGlossary("n", Collections.singletonList(DICTIONARY));
+  private static final ClientCall CREATE_EXPORT = c -> c.createTranslationMemoryExport("tm1");
+
+  /** Fails the TLS step of every connection with the given error, after the TCP connect. */
+  private static SSLSocketFactory failingTls(IOException failure) {
+    return new SSLSocketFactory() {
+      @Override
+      public Socket createSocket(Socket socket, String host, int port, boolean autoClose)
+          throws IOException {
+        socket.close();
+        throw failure;
+      }
+
+      @Override
+      public Socket createSocket(String host, int port) throws IOException {
+        throw failure;
+      }
+
+      @Override
+      public Socket createSocket(String host, int port, InetAddress local, int localPort)
+          throws IOException {
+        throw failure;
+      }
+
+      @Override
+      public Socket createSocket(InetAddress host, int port) throws IOException {
+        throw failure;
+      }
+
+      @Override
+      public Socket createSocket(InetAddress host, int port, InetAddress local, int localPort)
+          throws IOException {
+        throw failure;
+      }
+
+      @Override
+      public String[] getDefaultCipherSuites() {
+        return new String[0];
+      }
+
+      @Override
+      public String[] getSupportedCipherSuites() {
+        return new String[0];
+      }
+    };
+  }
+
+  /** A TLS context with the given factory: Apache HttpClient reads the JVM default context. */
+  private static SSLContext contextOf(SSLSocketFactory factory) {
+    return new SSLContext(
+        new SSLContextSpi() {
+          @Override
+          protected void engineInit(KeyManager[] km, TrustManager[] tm, SecureRandom random) {}
+
+          @Override
+          protected SSLSocketFactory engineGetSocketFactory() {
+            return factory;
+          }
+
+          @Override
+          protected SSLServerSocketFactory engineGetServerSocketFactory() {
+            throw new UnsupportedOperationException();
+          }
+
+          @Override
+          protected SSLEngine engineCreateSSLEngine() {
+            throw new UnsupportedOperationException();
+          }
+
+          @Override
+          protected SSLEngine engineCreateSSLEngine(String host, int port) {
+            throw new UnsupportedOperationException();
+          }
+
+          @Override
+          protected SSLSessionContext engineGetServerSessionContext() {
+            throw new UnsupportedOperationException();
+          }
+
+          @Override
+          protected SSLSessionContext engineGetClientSessionContext() {
+            throw new UnsupportedOperationException();
+          }
+        },
+        null,
+        "TLS") {};
+  }
+
+  /**
+   * Runs the call with maxRetries 1 against a local listener that accepts every TCP connection
+   * while the TLS step fails with the given error; counts the accepted connections.
+   */
+  private static ConnectionException failWhileConnecting(
+      IOException failure, int expectedConnections, AtomicInteger connections, ClientCall call)
+      throws Exception {
+    SSLSocketFactory previousFactory = HttpsURLConnection.getDefaultSSLSocketFactory();
+    SSLContext previousContext = SSLContext.getDefault();
+    SSLSocketFactory failing = failingTls(failure);
+    try (ServerSocket server = new ServerSocket(0)) {
+      Thread acceptor =
+          new Thread(
+              () -> {
+                try {
+                  while (true) {
+                    server.accept().close();
+                    connections.incrementAndGet();
+                  }
+                } catch (IOException closed) {
+                  // the server socket was closed at the end of the test
+                }
+              });
+      acceptor.start();
+      HttpsURLConnection.setDefaultSSLSocketFactory(failing);
+      SSLContext.setDefault(contextOf(failing));
+      DeepLClientOptions options = new DeepLClientOptions();
+      options
+          .setServerUrl("https://127.0.0.1:" + server.getLocalPort())
+          .setProxy(Proxy.NO_PROXY)
+          .setMaxRetries(1);
+      DeepLClient failingClient = new DeepLClient("k", options);
+      ConnectionException thrown =
+          assertThrows(ConnectionException.class, () -> call.run(failingClient));
+      // The listener may count the last connection after the client gave up.
+      long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+      while (connections.get() < expectedConnections && System.nanoTime() < deadline) {
+        Thread.sleep(10);
+      }
+      return thrown;
+    } finally {
+      HttpsURLConnection.setDefaultSSLSocketFactory(previousFactory);
+      SSLContext.setDefault(previousContext);
+    }
+  }
+
+  /**
+   * Runs the call through a local HTTP proxy that refuses every CONNECT with 403. Apache returns
+   * the proxy's answer as the response, so its failure is an HTTP error, not a ConnectionException.
+   */
+  private static DeepLException failThroughRefusingProxy(ClientCall call) throws Exception {
+    try (ServerSocket proxy = new ServerSocket(0)) {
+      Thread responder =
+          new Thread(
+              () -> {
+                try {
+                  while (true) {
+                    try (Socket socket = proxy.accept()) {
+                      BufferedReader request =
+                          new BufferedReader(
+                              new InputStreamReader(
+                                  socket.getInputStream(), StandardCharsets.US_ASCII));
+                      String line;
+                      do {
+                        line = request.readLine();
+                      } while (line != null && !line.isEmpty());
+                      socket
+                          .getOutputStream()
+                          .write(
+                              "HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\n\r\n"
+                                  .getBytes(StandardCharsets.US_ASCII));
+                    }
+                  }
+                } catch (IOException closed) {
+                  // the server socket was closed at the end of the test
+                }
+              });
+      responder.start();
+      DeepLClientOptions options = new DeepLClientOptions();
+      options
+          .setServerUrl("https://example.invalid")
+          .setProxy(
+              new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", proxy.getLocalPort())))
+          .setMaxRetries(1);
+      DeepLClient proxied = new DeepLClient("k", options);
+      return assertThrows(DeepLException.class, () -> call.run(proxied));
+    }
+  }
+
+  // An error that no exception-class check knows, raised after the TCP connection was made and
+  // before any request byte is written: the request was not sent.
+  @Test
+  void retriesAFailureWhileConnectingForCreatesAndOtherRequests() throws Exception {
+    for (ClientCall call : Arrays.asList(CREATE_GLOSSARY, CREATE_EXPORT, DeepLClient::getUsage)) {
+      SocketException unreachable = new SocketException("Network is unreachable");
+      AtomicInteger connections = new AtomicInteger();
+      ConnectionException thrown = failWhileConnecting(unreachable, 2, connections, call);
+      assertSame(unreachable, thrown.getCause());
+      assertTrue(thrown.getShouldRetry());
+      assertEquals(2, connections.get(), "a failure while connecting is retried");
+    }
+  }
+
+  @Test
+  void doesNotRetryACreateAfterATlsOrProxyFailureWhileConnecting() throws Exception {
+    for (ClientCall call : Arrays.asList(CREATE_GLOSSARY, CREATE_EXPORT)) {
+      SSLHandshakeException handshake = new SSLHandshakeException("handshake failed");
+      ConnectionException thrown = failWhileConnecting(handshake, 1, new AtomicInteger(), call);
+      assertSame(handshake, thrown.getCause());
+      assertFalse(thrown.getShouldRetry(), "a TLS failure is not retried");
+
+      DeepLException refused = failThroughRefusingProxy(call);
+      assertFalse(refused.getShouldRetry(), "a refused proxy tunnel is not retried");
+    }
   }
 
   @Test

@@ -32,10 +32,10 @@ public class DeepLException extends Exception {
    * configured maximum number of retries.
    *
    * <p>For a request that creates a resource, and for the document upload, this is <code>true
-   * </code> only if the request was not sent (HTTP 429, a DNS resolution failure, a refused
-   * connection or a connect timeout) or the response body was cut off mid-read. After HTTP 5xx, a
-   * read timeout, a connection reset or a broken pipe it is <code>false</code>, because the server
-   * may have created the resource and a retry could create it twice.
+   * </code> only if the request was not sent (HTTP 429 or a failure while connecting, before any
+   * request byte was written; not a TLS or proxy failure) or the response body was cut off
+   * mid-read. After HTTP 5xx, a read timeout, a connection reset or a broken pipe it is <code>false
+   * </code>, because the server may have created the resource and a retry could create it twice.
    */
   public boolean getShouldRetry() {
     return httpStatusCode != null
