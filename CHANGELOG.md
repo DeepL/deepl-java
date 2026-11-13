@@ -57,6 +57,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DocumentTranslationOptions.setGlossary()` throw `IllegalArgumentException`
   for a `null` glossary object instead of `NullPointerException`, like the
   setters that take a style rule, style profile or translation memory object.
+- **Breaking:** `DocumentTranslationOptions.setGlossary()`, `setStyleRule()`,
+  `setStyleProfile()` and `setTranslationMemory()` throw
+  `IllegalArgumentException` for an empty ID and for an object without ID; an
+  empty ID was sent and an object without ID silently left the option unset.
+  `setGlossaryIds()` of `DocumentTranslationOptions` and
+  `TextTranslationOptions` throws it for an empty entry or a glossary object
+  without ID, which were sent before. A `null` ID still leaves the option
+  unset.
 - **Breaking:** for requests that create a resource (including
   `DeepLAdminClient.createDeveloperKey()`) and the document upload,
   `getShouldRetry()` of the thrown exception is `true` only if the request was

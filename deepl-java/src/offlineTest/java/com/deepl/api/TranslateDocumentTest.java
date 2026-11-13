@@ -42,6 +42,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.api.io.TempDir;
 
 class TranslateDocumentTest {
@@ -341,6 +342,38 @@ class TranslateDocumentTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> new DocumentTranslationOptions().setGlossary((IGlossary) null));
+  }
+
+  @Test
+  void rejectsAnEmptyIdAnObjectWithoutIdAndAnEmptyGlossaryIdsEntry() {
+    DocumentTranslationOptions document = new DocumentTranslationOptions();
+    TextTranslationOptions text = new TextTranslationOptions();
+    GlossaryInfo glossary = new GlossaryInfo(null, "n", true, "en", "de", new java.util.Date(), 1);
+    StyleRuleInfo rule =
+        new StyleRuleInfo(
+            null, "n", new java.util.Date(), new java.util.Date(), "de", 1, null, null);
+    StyleProfile profile =
+        new StyleProfile("", "n", null, null, null, null, null, false, null, null);
+    TranslationMemoryInfo memory =
+        new TranslationMemoryInfo(null, "n", "en", Arrays.asList("de"), 1);
+    for (Executable call :
+        Arrays.<Executable>asList(
+            () -> document.setGlossary(""),
+            () -> document.setGlossary(glossary),
+            () -> document.setStyleRule(""),
+            () -> document.setStyleRule(rule),
+            () -> document.setStyleProfile(""),
+            () -> document.setStyleProfile(profile),
+            () -> document.setTranslationMemory(""),
+            () -> document.setTranslationMemory(memory),
+            () -> document.setGlossaryIds(Arrays.asList("g1", "")),
+            () -> document.setGlossaryIds("g1", ""),
+            () -> document.setGlossaryIds(glossary),
+            () -> text.setGlossaryIds(Arrays.asList("g1", "")),
+            () -> text.setGlossaryIds("g1", ""),
+            () -> text.setGlossaryIds(glossary))) {
+      assertThrows(IllegalArgumentException.class, call);
+    }
   }
 
   @Test

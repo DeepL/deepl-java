@@ -94,9 +94,11 @@ public class TextTranslationOptions extends BaseRequestOptions {
    * Sets the list of glossary IDs to use with the translation, up to a maximum of 5. Glossaries are
    * applied in the order provided (first match wins). By default, this value is <code>null</code>
    * and no glossaries are used. This option cannot be combined with {@link #setGlossary}.
+   *
+   * @throws IllegalArgumentException If an entry is empty, or a glossary has no ID.
    */
   public TextTranslationOptions setGlossaryIds(List<String> glossaryIds) {
-    this.glossaryIds = glossaryIds;
+    this.glossaryIds = ResourceIds.list(glossaryIds);
     return this;
   }
 
@@ -104,9 +106,11 @@ public class TextTranslationOptions extends BaseRequestOptions {
    * Sets the list of glossary IDs to use with the translation, up to a maximum of 5. Glossaries are
    * applied in the order provided (first match wins). By default, this value is <code>null</code>
    * and no glossaries are used. This option cannot be combined with {@link #setGlossary}.
+   *
+   * @throws IllegalArgumentException If an entry is empty, or a glossary has no ID.
    */
   public TextTranslationOptions setGlossaryIds(String... glossaryIds) {
-    this.glossaryIds = Arrays.asList(glossaryIds);
+    this.glossaryIds = ResourceIds.list(Arrays.asList(glossaryIds));
     return this;
   }
 
@@ -115,6 +119,8 @@ public class TextTranslationOptions extends BaseRequestOptions {
    * applied in the order provided (first match wins). By default, this value is <code>null</code>
    * and no glossaries are used. This option cannot be combined with {@link #setGlossary}. To pass a
    * list, pass the glossary IDs to {@link #setGlossaryIds(List)}.
+   *
+   * @throws IllegalArgumentException If an entry is empty, or a glossary has no ID.
    */
   public TextTranslationOptions setGlossaryIds(IGlossary first, IGlossary... more) {
     // The separate first parameter keeps the zero-argument call setGlossaryIds() on String...
@@ -131,7 +137,7 @@ public class TextTranslationOptions extends BaseRequestOptions {
       if (glossary == null) {
         throw new IllegalArgumentException("glossaries must not contain null");
       }
-      ids.add(glossary.getGlossaryId());
+      ids.add(ResourceIds.ofObject("glossary", glossary.getGlossaryId()));
     }
     return ids;
   }

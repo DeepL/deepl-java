@@ -187,7 +187,8 @@ a `TextTranslationOptions`, with the following setters:
   `IGlossary` objects (`GlossaryInfo`/`MultilingualGlossaryInfo`; for a list of
   glossary objects, pass their IDs as a list of strings).
   Glossaries are applied in the order provided (first match wins). This option
-  cannot be combined with `setGlossary()`.
+  cannot be combined with `setGlossary()`. An empty entry, or a glossary object
+  without ID, throws `IllegalArgumentException`.
 - `setStyleRule()`: specifies a style rule to use with translation, as a string
   containing the ID of the style rule, or a `StyleRuleInfo` object.
 - `setStyleProfile()`: specifies a style profile to use with translation, as a
@@ -406,11 +407,14 @@ arguments, `translateDocument()` accepts an optional
   in [Text translation options](#text-translation-options).
 - `setGlossary()`: same as
   in [Text translation options](#text-translation-options), but requires a
-  source language.
+  source language. An empty ID, or an object without ID, throws
+  `IllegalArgumentException`, as in `setStyleRule()`, `setStyleProfile()` and
+  `setTranslationMemory()`; `null` leaves the option unset.
 - `setGlossaryIds()`: same as
   in [Text translation options](#text-translation-options). Specifies multiple
   glossaries (up to 5) to use with document translation, as glossary IDs or
-  `IGlossary` objects. Requires a source language.
+  `IGlossary` objects. Requires a source language. An empty entry, or a
+  glossary object without ID, throws `IllegalArgumentException`.
 - `setStyleRule()`: same as
   in [Text translation options](#text-translation-options), taking a style rule
   ID or a `StyleRuleInfo` object.
