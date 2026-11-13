@@ -83,13 +83,15 @@ for more information.
 
 To translate text, call `translateText()`. The first argument is a string
 containing the text you want to translate, or an iterable of strings if you want
-to translate multiple texts.
+to translate multiple texts. A `null` text, list or list entry throws a
+`NullPointerException`, an empty text an `IllegalArgumentException`, before any
+request is sent.
 
 `sourceLang` and `targetLang` specify the source and target language codes
 respectively. The `sourceLang` is optional, if it is `null` the source language
-will be auto-detected. The `targetLang` is required: `null` or an empty string
-throws an `IllegalArgumentException`, as does an empty `sourceLang`, before any
-request is sent.
+will be auto-detected. The `targetLang` is required: an empty string throws an
+`IllegalArgumentException`, as does an empty `sourceLang`, and `null` a
+`NullPointerException`, before any request is sent.
 
 Language codes are **case-insensitive** strings according to ISO 639-1, for
 example `'de'`, `'fr'`, `'ja''`. Some target languages also include the regional

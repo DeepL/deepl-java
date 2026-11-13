@@ -19,10 +19,14 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.function.ThrowingConsumer;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 class TranslateTextTest {
@@ -720,22 +724,32 @@ class TranslateTextTest {
     assertThrows(IllegalArgumentException.class, () -> client.translateText("Hello", "", "de"));
   }
 
-  @Test
-  void throwsIllegalArgumentWhenTheTargetLanguageIsNull() {
-    String none = null;
-    assertThrows(IllegalArgumentException.class, () -> client.translateText("Hello", null, none));
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> client.translateText(Arrays.asList("Hello"), null, none));
-    Language noLanguage = null;
-    assertThrows(
-        IllegalArgumentException.class, () -> client.translateText("Hello", null, noLanguage));
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> client.translateText(Arrays.asList("Hello"), null, noLanguage));
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> client.translateText("Hello", null, noLanguage, null));
+  private static Arguments nullRow(String name, ThrowingConsumer<DeepLClient> call) {
+    return Arguments.of(name, call);
+  }
+
+  static Stream<Arguments> nullTextsAndTargetLanguages() {
+    return Stream.of(
+        nullRow("targetLang", c -> c.translateText("Hello", null, (String) null)),
+        nullRow("targetLang", c -> c.translateText(Arrays.asList("Hello"), null, (String) null)),
+        nullRow("targetLang", c -> c.translateText("Hello", null, (Language) null)),
+        nullRow("targetLang", c -> c.translateText(Arrays.asList("Hello"), null, (Language) null)),
+        nullRow("targetLang", c -> c.translateText("Hello", null, (Language) null, null)),
+        nullRow("text", c -> c.translateText((String) null, null, "de")),
+        nullRow("text", c -> c.translateText(Arrays.asList("a", null), null, "de")),
+        nullRow("texts", c -> c.translateText((List<String>) null, null, "de")),
+        nullRow("text", c -> c.rephraseText((String) null, null, null)),
+        nullRow("texts", c -> c.correctText((List<String>) null, null, null)));
+  }
+
+  @ParameterizedTest(name = "{index}: {0}")
+  @MethodSource("nullTextsAndTargetLanguages")
+  void throwsNullPointerExceptionNamingANullTextOrTargetLanguage(
+      String name, ThrowingConsumer<DeepLClient> call) {
+    NullPointerException thrown =
+        assertThrows(NullPointerException.class, () -> call.accept(client));
+    assertEquals(name, thrown.getMessage());
+    assertTrue(wm.getAllServeEvents().isEmpty());
   }
 
   @Test

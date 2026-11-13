@@ -131,12 +131,14 @@ public class DeepLClient {
   /**
    * Translate specified text from source language into target language.
    *
-   * @param text Text to translate; must not be empty.
+   * @param text Text to translate; must not be <code>null</code> or empty.
    * @param sourceLang Language code of the input language, or <code>null</code> to use
    *     auto-detection.
    * @param targetLang Language code of the desired output language.
    * @param options Options influencing translation.
    * @return Text translated into specified target language, and detected source language.
+   * @throws NullPointerException If the text or targetLang is <code>null</code>; checked before any
+   *     request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
@@ -200,12 +202,15 @@ public class DeepLClient {
   /**
    * Translate specified texts from source language into target language.
    *
-   * @param texts List of texts to translate; each text must not be empty.
+   * @param texts List of texts to translate; neither the list nor a text may be <code>null</code>
+   *     or empty.
    * @param sourceLang Language code of the input language, or <code>null</code> to use
    *     auto-detection.
    * @param targetLang Language code of the desired output language.
    * @param options Options influencing translation.
    * @return List of texts translated into specified target language, and detected source language.
+   * @throws NullPointerException If the list, a text or targetLang is <code>null</code>; checked
+   *     before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
@@ -351,6 +356,8 @@ public class DeepLClient {
    * @return Status when document translation completed, this allows the number of billed characters
    *     to be queried.
    * @throws IllegalArgumentException If the input file does not exist; checked before any request.
+   * @throws NullPointerException If targetLang is <code>null</code>; checked before any request,
+   *     not wrapped.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DocumentTranslationException If the target or source language is empty (before any
    *     request, without document handle), the output path is occupied, a local file cannot be read
@@ -417,6 +424,8 @@ public class DeepLClient {
    * @param options Options influencing translation.
    * @return Status when document translation completed, this allows the number of billed characters
    *     to be queried.
+   * @throws NullPointerException If targetLang is <code>null</code>; checked before any request,
+   *     not wrapped.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DocumentTranslationException If the target or source language is empty (before any
    *     request, without document handle), or any error occurs while communicating with the DeepL
@@ -481,6 +490,7 @@ public class DeepLClient {
    * @param options Options influencing translation.
    * @return Handle associated with the in-progress document translation.
    * @throws IllegalArgumentException If the input file does not exist; checked before any request.
+   * @throws NullPointerException If targetLang is <code>null</code>; checked before any request.
    * @throws IOException If the input file cannot be read.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
@@ -532,6 +542,7 @@ public class DeepLClient {
    * @param targetLang Language code of the desired output language.
    * @param options Options influencing translation.
    * @return Handle associated with the in-progress document translation.
+   * @throws NullPointerException If targetLang is <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
@@ -1168,7 +1179,9 @@ public class DeepLClient {
 
   /** Copies the texts to send, rejecting empty ones. */
   private static List<String> validatedTexts(List<String> texts) {
+    Objects.requireNonNull(texts, "texts");
     for (String text : texts) {
+      Objects.requireNonNull(text, "text");
       if (text.isEmpty()) throw new IllegalArgumentException("text must not be empty");
     }
     return new ArrayList<>(texts);
@@ -1201,24 +1214,23 @@ public class DeepLClient {
    * @param sourceLang Language code of the input language, or <code>null</code> to use
    *     auto-detection.
    * @param targetLang Language code of the desired output language; must not be <code>null</code>.
-   * @throws IllegalArgumentException If either language code is invalid.
+   * @throws IllegalArgumentException If either language code is empty.
+   * @throws NullPointerException If targetLang is <code>null</code>.
    */
   protected static void checkValidLanguages(@Nullable String sourceLang, String targetLang)
       throws IllegalArgumentException {
+    Objects.requireNonNull(targetLang, "targetLang");
     if (sourceLang != null && sourceLang.isEmpty()) {
       throw new IllegalArgumentException("sourceLang must be null or non-empty");
     }
-    if (targetLang == null || targetLang.isEmpty()) {
+    if (targetLang.isEmpty()) {
       throw new IllegalArgumentException("targetLang must not be empty");
     }
   }
 
   /** Returns the code of the target language object, which must not be null. */
-  private static String targetLanguageCode(Language targetLang) throws IllegalArgumentException {
-    if (targetLang == null) {
-      throw new IllegalArgumentException("targetLang must not be null");
-    }
-    return targetLang.getCode();
+  private static String targetLanguageCode(Language targetLang) {
+    return Objects.requireNonNull(targetLang, "targetLang").getCode();
   }
 
   /** Creates a glossary with given details. */
@@ -1294,6 +1306,7 @@ public class DeepLClient {
    * @param targetLang Optional language code the improved text should be in, e.g. "EN-US".
    * @param options Optional {@link TextRephraseOptions}, may be <code>null</code>.
    * @throws IllegalArgumentException If text is empty.
+   * @throws NullPointerException If text is <code>null</code>; checked before any request.
    * @throws DeepLException If the request fails or the response contains no improvement.
    */
   public WriteResult rephraseText(
@@ -1312,6 +1325,8 @@ public class DeepLClient {
    * @param options Optional {@link TextRephraseOptions}, may be <code>null</code>.
    * @return One {@link WriteResult} per input text, in the same order.
    * @throws IllegalArgumentException If a text is empty.
+   * @throws NullPointerException If the list or a text is <code>null</code>; checked before any
+   *     request.
    * @throws DeepLException If the request fails or the response does not contain one improvement
    *     per input text.
    */
@@ -1330,6 +1345,7 @@ public class DeepLClient {
    * @param targetLang Optional language code the corrected text should be in, e.g. "EN-US".
    * @param options Optional {@link CorrectTextOptions}, may be <code>null</code>.
    * @throws IllegalArgumentException If text is empty.
+   * @throws NullPointerException If text is <code>null</code>; checked before any request.
    * @throws DeepLException If the request fails or the response contains no correction.
    */
   public WriteResult correctText(
@@ -1348,6 +1364,8 @@ public class DeepLClient {
    * @param options Optional {@link CorrectTextOptions}, may be <code>null</code>.
    * @return One {@link WriteResult} per input text, in the same order.
    * @throws IllegalArgumentException If a text is empty.
+   * @throws NullPointerException If the list or a text is <code>null</code>; checked before any
+   *     request.
    * @throws DeepLException If the request fails or the response does not contain one correction per
    *     input text.
    */

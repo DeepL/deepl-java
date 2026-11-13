@@ -21,10 +21,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `createMultilingualGlossaryFromCsv()` and `updateMultilingualGlossary()`
   throw `IllegalArgumentException` for an empty or `null` dictionary language
   code, before any request; the code was sent to the API before.
-- **Breaking:** `translateText()` (including the overloads that take
-  `Language` objects) and `translateDocumentUpload()` throw
-  `IllegalArgumentException` for a `null` target language, before any request,
-  instead of `NullPointerException`.
 - **Breaking:** `importTranslationMemoryFromFilepath()` and
   `exportTranslationMemoryToFilepath()` wrap every failure in the new
   `TranslationMemoryJobException` (a `DeepLException`), whose `getJobId()`
@@ -114,6 +110,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `CreateStyleProfileOptions` and `UpdateStyleProfileOptions`, throws
   `NullPointerException`; a `null` ID was sent and a `null` object threw
   `IllegalArgumentException`.
+- **Breaking:** `translateDocument()` throws a `null` target language as
+  `NullPointerException` before any request; it was wrapped in a
+  `DocumentTranslationException`.
 - `updateMultilingualGlossaryName()` (all overloads) throws `InterruptedException`
   unwrapped when the thread is interrupted, like the other `DeepLClient`
   methods, instead of a `DeepLException`, and declares it. Callers must catch or
