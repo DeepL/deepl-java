@@ -51,12 +51,13 @@ public class TranslatorOptions {
   /**
    * Set the HTTP proxy to use for HTTP requests, as a URL such as {@code
    * http://proxy.example.com:3128}. The port defaults to 80. Only <code>http</code> proxy URLs
-   * without credentials are supported; use {@link #setProxy(Proxy)} for other proxies.
+   * without credentials are supported; use {@link #setProxy(Proxy)} for other proxies. <code>null
+   * </code> clears the proxy, so the JVM proxy settings apply.
    *
    * @throws IllegalArgumentException If the URL is not a valid HTTP proxy URL.
    */
-  public TranslatorOptions setProxyUrl(String proxyUrl) {
-    this.proxy = ProxyUrl.parse(proxyUrl);
+  public TranslatorOptions setProxyUrl(@Nullable String proxyUrl) {
+    this.proxy = proxyUrl == null ? null : ProxyUrl.parse(proxyUrl);
     return this;
   }
 

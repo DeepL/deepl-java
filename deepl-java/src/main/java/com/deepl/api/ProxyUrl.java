@@ -13,9 +13,6 @@ final class ProxyUrl {
   private ProxyUrl() {}
 
   static Proxy parse(String proxyUrl) {
-    if (proxyUrl == null) {
-      throw new IllegalArgumentException("proxyUrl cannot be null");
-    }
     URI uri;
     try {
       uri = new URI(proxyUrl.trim());

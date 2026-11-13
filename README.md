@@ -1723,7 +1723,7 @@ translation; developer keys cannot access the Admin API.
 
 Create a `DeepLAdminClient` with your admin key. It uses the
 `https://api.deepl.com` server by default. You can pass a
-`DeepLAdminClientOptions` object to configure the timeout, retries, proxy,
+`DeepLAdminClientOptions` object (or `null` for the defaults) to configure the timeout, retries, proxy,
 headers, server URL and app info, as for `DeepLClient`, see
 [Configuration](#configuration). Developer key creation is retried only after
 HTTP 429 or a failure while connecting (for example a DNS resolution failure, a
@@ -1932,8 +1932,8 @@ please manually identify your Application in the `User-Agent` header.
 
 ### Configuration
 
-The `DeepLClient` constructor accepts `DeepLClientOptions` as a second argument,
-for example:
+The `DeepLClient` constructor accepts `DeepLClientOptions` as a second argument
+(`null` means the default options), for example:
 
 ```java
 class Example {  // Continuing class Example from above
@@ -1970,7 +1970,7 @@ The available options setters are:
   apply.
 - `setProxyUrl()`: the same as an HTTP proxy URL such as
   `"http://proxy.example.com:3128"` (port 80 if omitted; credentials in the
-  URL are not supported).
+  URL are not supported). `null` clears the proxy.
 - `setHeaders()`: additional HTTP headers to attach to all requests. A header
   with the same name as one the library sets, matched in any casing, replaces
   it, including `Authorization` and `User-Agent`; `Content-Type`,

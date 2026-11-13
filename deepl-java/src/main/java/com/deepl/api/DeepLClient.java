@@ -52,7 +52,8 @@ public class DeepLClient {
    *
    * @param authKey DeepL Authentication Key as found in your <a
    *     href="https://www.deepl.com/pro-account/">DeepL account</a>.
-   * @throws IllegalArgumentException If authKey is invalid.
+   * @throws IllegalArgumentException If authKey is empty or blank.
+   * @throws NullPointerException If authKey is <code>null</code>.
    */
   public DeepLClient(String authKey) throws IllegalArgumentException {
     this(authKey, new DeepLClientOptions());
@@ -66,13 +67,20 @@ public class DeepLClient {
    *
    * @param authKey DeepL Authentication Key as found in your <a
    *     href="https://www.deepl.com/pro-account/">DeepL account</a>.
-   * @param options Additional options controlling Client behaviour.
-   * @throws IllegalArgumentException If authKey is invalid, or if the server URL set in the options
-   *     is not an absolute <code>http</code> or <code>https</code> URL with a host.
+   * @param options Additional options controlling client behaviour, or <code>null</code> for the
+   *     default options.
+   * @throws IllegalArgumentException If authKey is empty or blank, or if the server URL set in the
+   *     options is not an absolute <code>http</code> or <code>https</code> URL with a host.
+   * @throws NullPointerException If authKey is <code>null</code>.
    */
-  public DeepLClient(String authKey, DeepLClientOptions options) throws IllegalArgumentException {
-    if (authKey == null || authKey.trim().isEmpty()) {
-      throw new IllegalArgumentException("authKey cannot be null or empty");
+  public DeepLClient(String authKey, @Nullable DeepLClientOptions options)
+      throws IllegalArgumentException {
+    Objects.requireNonNull(authKey, "authKey");
+    if (authKey.trim().isEmpty()) {
+      throw new IllegalArgumentException("authKey must not be empty");
+    }
+    if (options == null) {
+      options = new DeepLClientOptions();
     }
 
     String sanitizedAuthKey = authKey.trim();

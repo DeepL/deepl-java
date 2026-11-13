@@ -56,8 +56,6 @@ class AdminClientTest {
   void rejectsAnEmptyAdminKey() {
     assertThrows(IllegalArgumentException.class, () -> new DeepLAdminClient(""));
     assertThrows(IllegalArgumentException.class, () -> new DeepLAdminClient(" "));
-    assertThrows(
-        IllegalArgumentException.class, () -> new DeepLAdminClient(OfflineClient.ADMIN_KEY, null));
   }
 
   @Test

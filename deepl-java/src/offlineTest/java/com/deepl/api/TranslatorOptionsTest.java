@@ -10,6 +10,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -173,10 +174,36 @@ class TranslatorOptionsTest {
   }
 
   @Test
-  void throwsIllegalArgumentWhenTheAuthKeyIsEmptyOrNull() {
-    assertThrows(IllegalArgumentException.class, () -> new DeepLClient(null));
+  void throwsIllegalArgumentWhenTheAuthKeyIsEmpty() {
     assertThrows(IllegalArgumentException.class, () -> new DeepLClient(""));
     assertThrows(IllegalArgumentException.class, () -> new DeepLClient(" \n"));
+  }
+
+  @Test
+  void throwsNullPointerExceptionNamingANullKey() {
+    assertEquals(
+        "authKey",
+        assertThrows(NullPointerException.class, () -> new DeepLClient(null)).getMessage());
+    assertEquals(
+        "adminKey",
+        assertThrows(NullPointerException.class, () -> new DeepLAdminClient(null)).getMessage());
+  }
+
+  @Test
+  void usesTheDefaultOptionsWhenTheOptionsAreNull() {
+    assertDoesNotThrow(() -> new DeepLClient("k", null));
+    assertDoesNotThrow(() -> new DeepLAdminClient("k", null));
+  }
+
+  @Test
+  void clearsTheProxyWhenTheProxyUrlIsNull() {
+    assertNull(
+        new DeepLClientOptions().setProxyUrl("http://proxy:3128").setProxyUrl(null).getProxy());
+    assertNull(
+        new DeepLAdminClientOptions()
+            .setProxyUrl("http://proxy:3128")
+            .setProxyUrl(null)
+            .getProxy());
   }
 
   @Test

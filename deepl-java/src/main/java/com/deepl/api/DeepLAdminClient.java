@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -38,18 +39,20 @@ public class DeepLAdminClient {
    * <p>Note: This function does not establish a connection to the DeepL API.
    *
    * @param adminKey Admin API key as found in your DeepL account.
-   * @param options Additional options controlling client behaviour.
-   * @throws IllegalArgumentException If adminKey is null or blank, if options is null, or if the
-   *     server URL set in the options is not an absolute <code>http</code> or <code>https</code>
-   *     URL with a host.
+   * @param options Additional options controlling client behaviour, or <code>null</code> for the
+   *     default options.
+   * @throws IllegalArgumentException If adminKey is empty or blank, or if the server URL set in the
+   *     options is not an absolute <code>http</code> or <code>https</code> URL with a host.
+   * @throws NullPointerException If adminKey is <code>null</code>.
    */
-  public DeepLAdminClient(String adminKey, DeepLAdminClientOptions options)
+  public DeepLAdminClient(String adminKey, @Nullable DeepLAdminClientOptions options)
       throws IllegalArgumentException {
-    if (options == null) {
-      throw new IllegalArgumentException("options cannot be null");
+    Objects.requireNonNull(adminKey, "adminKey");
+    if (adminKey.trim().isEmpty()) {
+      throw new IllegalArgumentException("adminKey must not be empty");
     }
-    if (adminKey == null || adminKey.trim().isEmpty()) {
-      throw new IllegalArgumentException("adminKey cannot be null or empty");
+    if (options == null) {
+      options = new DeepLAdminClientOptions();
     }
     String sanitizedAdminKey = adminKey.trim();
     String serverUrl = options.getServerUrl() != null ? options.getServerUrl() : DEEPL_SERVER_URL;

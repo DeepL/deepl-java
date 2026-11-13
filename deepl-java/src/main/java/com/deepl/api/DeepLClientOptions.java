@@ -6,6 +6,7 @@ package com.deepl.api;
 import java.net.Proxy;
 import java.time.Duration;
 import java.util.Map;
+import org.jetbrains.annotations.Nullable;
 
 /** {@inheritDoc} */
 public class DeepLClientOptions extends TranslatorOptions {
@@ -32,7 +33,7 @@ public class DeepLClientOptions extends TranslatorOptions {
 
   /** {@inheritDoc} */
   @Override
-  public DeepLClientOptions setProxyUrl(String proxyUrl) {
+  public DeepLClientOptions setProxyUrl(@Nullable String proxyUrl) {
     super.setProxyUrl(proxyUrl);
     return this;
   }

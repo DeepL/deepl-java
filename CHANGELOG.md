@@ -100,6 +100,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   request with a `ConnectionException`. An empty string is rejected too; to use
   the default server, do not call `setServerUrl()` (for example when an
   environment variable for it is unset or empty).
+- **Breaking:** `new DeepLClient(authKey, null)` and
+  `new DeepLAdminClient(adminKey, null)` use the default options, as the
+  one-argument constructors do; they threw `NullPointerException` and
+  `IllegalArgumentException`. `setProxyUrl(null)` of `DeepLClientOptions` and
+  `DeepLAdminClientOptions` clears the proxy, so the JVM proxy settings apply;
+  it threw `IllegalArgumentException`. A `null` key throws
+  `NullPointerException` instead of `IllegalArgumentException`; an empty or
+  blank key still throws `IllegalArgumentException`.
 - `updateMultilingualGlossaryName()` (all overloads) throws `InterruptedException`
   unwrapped when the thread is interrupted, like the other `DeepLClient`
   methods, instead of a `DeepLException`, and declares it. Callers must catch or
