@@ -415,9 +415,6 @@ class StyleRulesTest {
         () -> client.updateStyleRuleConfiguredRules("", rules, null));
     assertThrows(
         IllegalArgumentException.class,
-        () -> client.updateStyleRuleConfiguredRules("s1", null, null));
-    assertThrows(
-        IllegalArgumentException.class,
         () -> client.createStyleRuleCustomInstruction("", "L", "P", null));
     assertThrows(
         IllegalArgumentException.class,

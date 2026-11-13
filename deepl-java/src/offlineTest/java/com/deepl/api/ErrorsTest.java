@@ -10,6 +10,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.File;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.stream.Stream;
@@ -154,6 +156,64 @@ class ErrorsTest {
   @ParameterizedTest(name = "{index}: {0}")
   @MethodSource("nullIdsNamesAndObjects")
   void throwsNullPointerExceptionNamingANullIdNameOrObject(
+      String name, ThrowingConsumer<DeepLClient> call) {
+    assertEquals(
+        name, assertThrows(NullPointerException.class, () -> call.accept(translator)).getMessage());
+    assertTrue(wm.getAllServeEvents().isEmpty());
+  }
+
+  static Stream<Arguments> nullResourceContents() {
+    GlossaryEntries entries = new GlossaryEntries(Collections.singletonMap("a", "b"));
+    MultilingualGlossaryDictionaryEntries dict =
+        new MultilingualGlossaryDictionaryEntries("en", "de", entries);
+    SpokenTermsEntries terms = new SpokenTermsEntries("en", Collections.singletonList("a"));
+    return Stream.of(
+        nullRow("sourceLang", c -> c.createGlossary("n", null, "de", entries)),
+        nullRow("entries", c -> c.createGlossary("n", "en", "de", (GlossaryEntries) null)),
+        nullRow("csvContent", c -> c.createGlossaryFromCsv("n", "en", "de", (String) null)),
+        nullRow("csvFile", c -> c.createGlossaryFromCsv("n", "en", "de", (File) null)),
+        nullRow("glossaryDicts", c -> c.createMultilingualGlossary("n", null)),
+        nullRow("glossaryDicts", c -> c.createMultilingualGlossary("n", Arrays.asList(dict, null))),
+        nullRow(
+            "entries",
+            c -> c.replaceMultilingualGlossaryDictionary("g1", "en", "de", (GlossaryEntries) null)),
+        nullRow(
+            "glossaryDict",
+            c ->
+                c.getMultilingualGlossaryDictionaryEntries(
+                    "g1", (MultilingualGlossaryDictionaryInfo) null)),
+        nullRow(
+            "dictionaries",
+            c ->
+                c.updateMultilingualGlossary(
+                    "g1",
+                    new UpdateMultilingualGlossaryOptions()
+                        .setDictionaries(Arrays.asList(dict, null)))),
+        nullRow(
+            "csvContent", c -> c.createMultilingualGlossaryFromCsv("n", "en", "de", (String) null)),
+        nullRow("name", c -> c.createSpokenTerms(null, Collections.singletonList(terms))),
+        nullRow("termLists", c -> c.createSpokenTerms("n", null)),
+        nullRow("entries", c -> c.replaceSpokenTermsList("st1", (SpokenTermsEntries) null)),
+        nullRow(
+            "entries",
+            c ->
+                c.replaceSpokenTermsList(
+                    "st1", new SpokenTermsEntries("en", Arrays.asList("a", null)))),
+        nullRow(
+            "customInstructions",
+            c -> c.createStyleRule("n", "en", null, Arrays.asList((CustomInstruction) null), null)),
+        nullRow(
+            "label",
+            c ->
+                c.createStyleRule(
+                    "n", "en", null, Arrays.asList(new CustomInstruction(null, "P", null)), null)),
+        nullRow("configuredRules", c -> c.updateStyleRuleConfiguredRules("s1", null, null)),
+        nullRow("name", c -> c.createStyleProfile(null)));
+  }
+
+  @ParameterizedTest(name = "{index}: {0}")
+  @MethodSource("nullResourceContents")
+  void throwsNullPointerExceptionNamingANullResourceContent(
       String name, ThrowingConsumer<DeepLClient> call) {
     assertEquals(
         name, assertThrows(NullPointerException.class, () -> call.accept(translator)).getMessage());

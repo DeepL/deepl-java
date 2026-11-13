@@ -750,6 +750,8 @@ public class DeepLClient {
    * @param targetLang Language code of the target terms language.
    * @param entries Glossary entries to add to the glossary; must not be empty.
    * @return {@link GlossaryInfo} object with details about the newly created glossary.
+   * @throws NullPointerException If name, sourceLang, targetLang or entries is <code>null</code>;
+   *     checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If name or entries is empty.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
@@ -758,6 +760,9 @@ public class DeepLClient {
       String name, String sourceLang, String targetLang, GlossaryEntries entries)
       throws DeepLException, InterruptedException {
     validateParameter("name", name);
+    Objects.requireNonNull(sourceLang, "sourceLang");
+    Objects.requireNonNull(targetLang, "targetLang");
+    Objects.requireNonNull(entries, "entries");
     if (entries.isEmpty()) {
       throw new IllegalArgumentException("Parameter entries must not be empty");
     }
@@ -779,6 +784,8 @@ public class DeepLClient {
    * @param targetLang Language code of the target terms language.
    * @param csvFile File containing CSV content for glossary.
    * @return {@link GlossaryInfo} object with details about the newly created glossary.
+   * @throws NullPointerException If name, sourceLang, targetLang or csvFile is <code>null</code>;
+   *     checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If name is empty.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
@@ -787,6 +794,7 @@ public class DeepLClient {
   public GlossaryInfo createGlossaryFromCsv(
       String name, String sourceLang, String targetLang, File csvFile)
       throws DeepLException, InterruptedException, IOException {
+    Objects.requireNonNull(csvFile, "csvFile");
     try (FileInputStream stream = new FileInputStream(csvFile)) {
       String csvContent = StreamUtil.readStream(stream);
       return createGlossaryFromCsv(name, sourceLang, targetLang, csvContent);
@@ -808,6 +816,8 @@ public class DeepLClient {
    * @param targetLang Language code of the target terms language.
    * @param csvContent String containing CSV content.
    * @return {@link GlossaryInfo} object with details about the newly created glossary.
+   * @throws NullPointerException If name, sourceLang, targetLang or csvContent is <code>null</code>
+   *     ; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If name is empty.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
@@ -815,6 +825,7 @@ public class DeepLClient {
   public GlossaryInfo createGlossaryFromCsv(
       String name, String sourceLang, String targetLang, String csvContent)
       throws DeepLException, InterruptedException {
+    Objects.requireNonNull(csvContent, "csvContent");
     return createGlossaryInternal(name, sourceLang, targetLang, "csv", csvContent);
   }
 
@@ -1277,6 +1288,8 @@ public class DeepLClient {
       String name, String sourceLang, String targetLang, String entriesFormat, String entries)
       throws DeepLException, InterruptedException {
     validateParameter("name", name);
+    Objects.requireNonNull(sourceLang, "sourceLang");
+    Objects.requireNonNull(targetLang, "targetLang");
     Map<String, Object> requestData = new LinkedHashMap<>();
     requestData.put("name", name);
     requestData.put("source_lang", sourceLang);
@@ -1448,6 +1461,8 @@ public class DeepLClient {
    * @param glossaryDicts {@link MultilingualGlossaryDictionaryInfo} The dictionaries of the
    *     glossary
    * @return {@link MultilingualGlossaryInfo} object with details about the newly created glossary.
+   * @throws NullPointerException If name or glossaryDicts is <code>null</code> or contains <code>
+   *     null</code>, or a dictionary's entries are <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -1467,6 +1482,8 @@ public class DeepLClient {
    * @param glossaryDicts The dictionaries of the glossary.
    * @param options Options for the request, or <code>null</code>.
    * @return {@link MultilingualGlossaryInfo} object with details about the newly created glossary.
+   * @throws NullPointerException If name or glossaryDicts is <code>null</code> or contains <code>
+   *     null</code>, or a dictionary's entries are <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -1478,11 +1495,14 @@ public class DeepLClient {
       @Nullable CreateMultilingualGlossaryOptions options)
       throws DeepLException, IllegalArgumentException, InterruptedException {
     validateParameter("name", name);
+    Objects.requireNonNull(glossaryDicts, "glossaryDicts");
     if (glossaryDicts.isEmpty()) {
       throw new IllegalArgumentException("Parameter dictionaries must not be empty");
     }
     List<Map<String, Object>> dictionaries = new ArrayList<>();
     for (MultilingualGlossaryDictionaryEntries dictionary : glossaryDicts) {
+      Objects.requireNonNull(dictionary, "glossaryDicts");
+      Objects.requireNonNull(dictionary.getEntries(), "entries");
       if (dictionary.getEntries().isEmpty()) {
         throw new IllegalArgumentException("Parameter entries must not be empty");
       }
@@ -1490,7 +1510,7 @@ public class DeepLClient {
           createGlossaryDictionaryData(
               dictionary.getSourceLanguageCode(),
               dictionary.getTargetLanguageCode(),
-              dictionary.getEntries().toTsv(),
+              entriesTsv(dictionary.getEntries()),
               "tsv"));
     }
     HttpResponse response =
@@ -1518,6 +1538,8 @@ public class DeepLClient {
    * @param csvFile String containing CSV content.
    * @return {@link MultilingualGlossaryInfo} object with details about the newly created glossary.
    * @throws IllegalArgumentException If any argument is invalid.
+   * @throws NullPointerException If name, sourceLanguageCode, targetLanguageCode or csvFile is
+   *     <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
    *     DeepLException} or a derived class will be thrown.
@@ -1540,6 +1562,8 @@ public class DeepLClient {
    * @param csvContent String containing CSV content.
    * @param options Options for the request, or <code>null</code>.
    * @return {@link MultilingualGlossaryInfo} object with details about the newly created glossary.
+   * @throws NullPointerException If name, sourceLanguageCode, targetLanguageCode or csvContent is
+   *     <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -1574,6 +1598,8 @@ public class DeepLClient {
    * @param csvFile String containing CSV content.
    * @return {@link MultilingualGlossaryInfo} object with details about the newly created glossary.
    * @throws IllegalArgumentException If any argument is invalid.
+   * @throws NullPointerException If name, sourceLanguageCode, targetLanguageCode or csvFile is
+   *     <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
    *     DeepLException} or a derived class will be thrown.
@@ -1597,6 +1623,8 @@ public class DeepLClient {
    * @param csvFile File containing CSV content.
    * @param options Options for the request, or <code>null</code>.
    * @return {@link MultilingualGlossaryInfo} object with details about the newly created glossary.
+   * @throws NullPointerException If name, sourceLanguageCode, targetLanguageCode or csvFile is
+   *     <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -1610,6 +1638,7 @@ public class DeepLClient {
       File csvFile,
       @Nullable CreateMultilingualGlossaryOptions options)
       throws DeepLException, IllegalArgumentException, InterruptedException, IOException {
+    Objects.requireNonNull(csvFile, "csvFile");
     try (FileInputStream stream = new FileInputStream(csvFile)) {
       String csvContent = StreamUtil.readStream(stream);
       return createGlossaryFromCsvInternal(
@@ -1710,6 +1739,7 @@ public class DeepLClient {
   public MultilingualGlossaryDictionaryEntries getMultilingualGlossaryDictionaryEntries(
       String glossaryId, MultilingualGlossaryDictionaryInfo glossaryDict)
       throws DeepLException, IllegalArgumentException, InterruptedException {
+    Objects.requireNonNull(glossaryDict, "glossaryDict");
     return getMultilingualGlossaryDictionaryEntries(
         glossaryId, glossaryDict.getSourceLanguageCode(), glossaryDict.getTargetLanguageCode());
   }
@@ -1751,6 +1781,7 @@ public class DeepLClient {
   public MultilingualGlossaryDictionaryEntries getMultilingualGlossaryDictionaryEntries(
       MultilingualGlossaryInfo glossary, MultilingualGlossaryDictionaryInfo glossaryDict)
       throws DeepLException, IllegalArgumentException, InterruptedException {
+    Objects.requireNonNull(glossaryDict, "glossaryDict");
     return getMultilingualGlossaryDictionaryEntries(
         multilingualGlossaryId(glossary),
         glossaryDict.getSourceLanguageCode(),
@@ -1769,6 +1800,8 @@ public class DeepLClient {
    * @param entries The source-target entry pairs in the new glossary dictionary.
    * @return {@link MultilingualGlossaryDictionaryInfo} object with details about the newly replaced
    *     glossary dictionary.
+   * @throws NullPointerException If glossaryId, sourceLanguageCode, targetLanguageCode or entries
+   *     is <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -1781,7 +1814,7 @@ public class DeepLClient {
       GlossaryEntries entries)
       throws DeepLException, IllegalArgumentException, InterruptedException {
     return replaceGlossaryDictionaryInternal(
-        glossaryId, sourceLanguageCode, targetLanguageCode, entries.toTsv(), "tsv", null);
+        glossaryId, sourceLanguageCode, targetLanguageCode, entriesTsv(entries), "tsv", null);
   }
 
   /**
@@ -1796,6 +1829,8 @@ public class DeepLClient {
    *     exists.
    * @return {@link MultilingualGlossaryDictionaryInfo} object with details about the newly replaced
    *     glossary dictionary.
+   * @throws NullPointerException If glossaryId or glossaryDict is <code>null</code>; checked before
+   *     any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -1817,6 +1852,8 @@ public class DeepLClient {
    * @param options Options for the request, or <code>null</code>.
    * @return {@link MultilingualGlossaryDictionaryInfo} object with details about the newly replaced
    *     glossary dictionary.
+   * @throws NullPointerException If glossaryId or glossaryDict is <code>null</code>; checked before
+   *     any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -1827,11 +1864,12 @@ public class DeepLClient {
       MultilingualGlossaryDictionaryEntries glossaryDict,
       @Nullable ReplaceMultilingualGlossaryDictionaryOptions options)
       throws DeepLException, IllegalArgumentException, InterruptedException {
+    Objects.requireNonNull(glossaryDict, "glossaryDict");
     return replaceGlossaryDictionaryInternal(
         glossaryId,
         glossaryDict.getSourceLanguageCode(),
         glossaryDict.getTargetLanguageCode(),
-        glossaryDict.getEntries().toTsv(),
+        entriesTsv(glossaryDict.getEntries()),
         "tsv",
         options);
   }
@@ -1846,6 +1884,8 @@ public class DeepLClient {
    * @param options Options for the request, or <code>null</code>.
    * @return {@link MultilingualGlossaryDictionaryInfo} object with details about the newly replaced
    *     glossary dictionary.
+   * @throws NullPointerException If glossary or glossaryDict is <code>null</code>; checked before
+   *     any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -1871,6 +1911,8 @@ public class DeepLClient {
    *     exists.
    * @return {@link MultilingualGlossaryDictionaryInfo} object with details about the newly replaced
    *     glossary dictionary.
+   * @throws NullPointerException If glossary or glossaryDict is <code>null</code>; checked before
+   *     any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -1894,6 +1936,8 @@ public class DeepLClient {
    * @param entries The source-target entry pairs in the new glossary dictionary.
    * @return {@link MultilingualGlossaryDictionaryInfo} object with details about the newly replaced
    *     glossary dictionary.
+   * @throws NullPointerException If glossary, sourceLanguageCode, targetLanguageCode or entries is
+   *     <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -1909,7 +1953,7 @@ public class DeepLClient {
         multilingualGlossaryId(glossary),
         sourceLanguageCode,
         targetLanguageCode,
-        entries.toTsv(),
+        entriesTsv(entries),
         "tsv",
         null);
   }
@@ -1926,6 +1970,8 @@ public class DeepLClient {
    * @param csvFile File containing CSV content.
    * @return {@link MultilingualGlossaryDictionaryInfo} object with details about the newly replaced
    *     glossary dictionary.
+   * @throws NullPointerException If glossaryId, sourceLanguageCode, targetLanguageCode or csvFile
+   *     is <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -1951,6 +1997,8 @@ public class DeepLClient {
    * @param csvContent String containing CSV content.
    * @return {@link MultilingualGlossaryDictionaryInfo} object with details about the newly replaced
    *     glossary dictionary.
+   * @throws NullPointerException If glossaryId, sourceLanguageCode, targetLanguageCode or
+   *     csvContent is <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -1975,6 +2023,8 @@ public class DeepLClient {
    * @param options Options for the request, or <code>null</code>.
    * @return {@link MultilingualGlossaryDictionaryInfo} object with details about the newly replaced
    *     glossary dictionary.
+   * @throws NullPointerException If glossaryId, sourceLanguageCode, targetLanguageCode or csvFile
+   *     is <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -1988,6 +2038,7 @@ public class DeepLClient {
       File csvFile,
       @Nullable ReplaceMultilingualGlossaryDictionaryOptions options)
       throws DeepLException, IllegalArgumentException, InterruptedException, IOException {
+    Objects.requireNonNull(csvFile, "csvFile");
     try (FileInputStream stream = new FileInputStream(csvFile)) {
       String csvContent = StreamUtil.readStream(stream);
       return replaceGlossaryDictionaryInternal(
@@ -2005,6 +2056,8 @@ public class DeepLClient {
    * @param csvFile File containing CSV content.
    * @return {@link MultilingualGlossaryDictionaryInfo} object with details about the newly replaced
    *     glossary dictionary.
+   * @throws NullPointerException If glossary, sourceLanguageCode, targetLanguageCode or csvFile is
+   *     <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -2033,6 +2086,8 @@ public class DeepLClient {
    * @param options Options for the request, or <code>null</code>.
    * @return {@link MultilingualGlossaryDictionaryInfo} object with details about the newly replaced
    *     glossary dictionary.
+   * @throws NullPointerException If glossary, sourceLanguageCode, targetLanguageCode or csvFile is
+   *     <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -2062,6 +2117,8 @@ public class DeepLClient {
    * @param options Options for the request, or <code>null</code>.
    * @return {@link MultilingualGlossaryDictionaryInfo} object with details about the newly replaced
    *     glossary dictionary.
+   * @throws NullPointerException If glossaryId, sourceLanguageCode, targetLanguageCode or
+   *     csvContent is <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -2088,6 +2145,8 @@ public class DeepLClient {
    * @param csvContent String containing CSV content.
    * @return {@link MultilingualGlossaryDictionaryInfo} object with details about the newly replaced
    *     glossary dictionary.
+   * @throws NullPointerException If glossary, sourceLanguageCode, targetLanguageCode or csvContent
+   *     is <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -2115,6 +2174,8 @@ public class DeepLClient {
    * @param options Options for the request, or <code>null</code>.
    * @return {@link MultilingualGlossaryDictionaryInfo} object with details about the newly replaced
    *     glossary dictionary.
+   * @throws NullPointerException If glossary, sourceLanguageCode, targetLanguageCode or csvContent
+   *     is <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -2148,6 +2209,8 @@ public class DeepLClient {
    * @param entries The source-target entry pairs in the new glossary dictionary.
    * @return {@link MultilingualGlossaryInfo} object with details about the glossary with the newly
    *     updated glossary dictionary.
+   * @throws NullPointerException If glossaryId, sourceLanguageCode, targetLanguageCode or entries
+   *     is <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -2160,7 +2223,7 @@ public class DeepLClient {
       GlossaryEntries entries)
       throws DeepLException, IllegalArgumentException, InterruptedException {
     return updateGlossaryDictionaryInternal(
-        glossaryId, sourceLanguageCode, targetLanguageCode, entries.toTsv(), "tsv", null);
+        glossaryId, sourceLanguageCode, targetLanguageCode, entriesTsv(entries), "tsv", null);
   }
 
   /**
@@ -2175,6 +2238,8 @@ public class DeepLClient {
    * @param entries The source-target entry pairs in the new glossary dictionary.
    * @return {@link MultilingualGlossaryInfo} object with details about the glossary with the newly
    *     updated glossary dictionary.
+   * @throws NullPointerException If glossary, sourceLanguageCode, targetLanguageCode or entries is
+   *     <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -2190,7 +2255,7 @@ public class DeepLClient {
         multilingualGlossaryId(glossary),
         sourceLanguageCode,
         targetLanguageCode,
-        entries.toTsv(),
+        entriesTsv(entries),
         "tsv",
         null);
   }
@@ -2206,6 +2271,8 @@ public class DeepLClient {
    * @param glossaryDict The glossary dictionary to be created/updated
    * @return {@link MultilingualGlossaryInfo} object with details about the glossary with the newly
    *     updated glossary dictionary.
+   * @throws NullPointerException If glossaryId or glossaryDict is <code>null</code>; checked before
+   *     any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -2228,6 +2295,8 @@ public class DeepLClient {
    *     are read.
    * @return {@link MultilingualGlossaryInfo} object with details about the glossary with the newly
    *     updated glossary dictionary.
+   * @throws NullPointerException If glossaryId or glossaryDict is <code>null</code>; checked before
+   *     any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -2238,11 +2307,12 @@ public class DeepLClient {
       MultilingualGlossaryDictionaryEntries glossaryDict,
       @Nullable BaseRequestOptions options)
       throws DeepLException, IllegalArgumentException, InterruptedException {
+    Objects.requireNonNull(glossaryDict, "glossaryDict");
     return updateGlossaryDictionaryInternal(
         glossaryId,
         glossaryDict.getSourceLanguageCode(),
         glossaryDict.getTargetLanguageCode(),
-        glossaryDict.getEntries().toTsv(),
+        entriesTsv(glossaryDict.getEntries()),
         "tsv",
         options);
   }
@@ -2258,6 +2328,8 @@ public class DeepLClient {
    *     are read.
    * @return {@link MultilingualGlossaryInfo} object with details about the glossary with the newly
    *     updated glossary dictionary.
+   * @throws NullPointerException If glossary or glossaryDict is <code>null</code>; checked before
+   *     any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -2280,6 +2352,8 @@ public class DeepLClient {
    * @param glossaryDict The glossary dictionary to be created/updated
    * @return {@link MultilingualGlossaryInfo} object with details about the glossary with the newly
    *     updated glossary dictionary.
+   * @throws NullPointerException If glossary or glossaryDict is <code>null</code>; checked before
+   *     any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -2399,11 +2473,12 @@ public class DeepLClient {
     if (options != null && options.getDictionaries() != null) {
       List<Map<String, Object>> dictionaries = new ArrayList<>();
       for (MultilingualGlossaryDictionaryEntries dictionary : options.getDictionaries()) {
+        Objects.requireNonNull(dictionary, "dictionaries");
         dictionaries.add(
             createGlossaryDictionaryData(
                 dictionary.getSourceLanguageCode(),
                 dictionary.getTargetLanguageCode(),
-                dictionary.getEntries().toTsv(),
+                entriesTsv(dictionary.getEntries()),
                 "tsv"));
       }
       requestData.put("dictionaries", dictionaries);
@@ -2445,6 +2520,8 @@ public class DeepLClient {
    * @param csvFile {@link File} containing CSV content.
    * @return {@link MultilingualGlossaryInfo} object with details about the glossary with the newly
    *     updated glossary dictionary.
+   * @throws NullPointerException If glossaryId, sourceLanguageCode, targetLanguageCode or csvFile
+   *     is <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -2470,6 +2547,8 @@ public class DeepLClient {
    * @param csvContent String containing CSV content.
    * @return {@link MultilingualGlossaryInfo} object with details about the glossary with the newly
    *     updated glossary dictionary.
+   * @throws NullPointerException If glossaryId, sourceLanguageCode, targetLanguageCode or
+   *     csvContent is <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -2495,6 +2574,8 @@ public class DeepLClient {
    *     are read.
    * @return {@link MultilingualGlossaryInfo} object with details about the glossary with the newly
    *     updated glossary dictionary.
+   * @throws NullPointerException If glossaryId, sourceLanguageCode, targetLanguageCode or csvFile
+   *     is <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -2508,6 +2589,7 @@ public class DeepLClient {
       File csvFile,
       @Nullable BaseRequestOptions options)
       throws DeepLException, IllegalArgumentException, InterruptedException, IOException {
+    Objects.requireNonNull(csvFile, "csvFile");
     try (FileInputStream stream = new FileInputStream(csvFile)) {
       String csvContent = StreamUtil.readStream(stream);
       return updateGlossaryDictionaryInternal(
@@ -2525,6 +2607,8 @@ public class DeepLClient {
    * @param csvFile File containing CSV content.
    * @return {@link MultilingualGlossaryInfo} object with details about the glossary with the newly
    *     updated glossary dictionary.
+   * @throws NullPointerException If glossary, sourceLanguageCode, targetLanguageCode or csvFile is
+   *     <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -2554,6 +2638,8 @@ public class DeepLClient {
    *     are read.
    * @return {@link MultilingualGlossaryInfo} object with details about the glossary with the newly
    *     updated glossary dictionary.
+   * @throws NullPointerException If glossary, sourceLanguageCode, targetLanguageCode or csvFile is
+   *     <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -2584,6 +2670,8 @@ public class DeepLClient {
    *     are read.
    * @return {@link MultilingualGlossaryInfo} object with details about the glossary with the newly
    *     updated glossary dictionary.
+   * @throws NullPointerException If glossaryId, sourceLanguageCode, targetLanguageCode or
+   *     csvContent is <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -2610,6 +2698,8 @@ public class DeepLClient {
    * @param csvContent String containing CSV content.
    * @return {@link MultilingualGlossaryInfo} object with details about the glossary with the newly
    *     updated glossary dictionary.
+   * @throws NullPointerException If glossary, sourceLanguageCode, targetLanguageCode or csvContent
+   *     is <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -2638,6 +2728,8 @@ public class DeepLClient {
    *     are read.
    * @return {@link MultilingualGlossaryInfo} object with details about the glossary with the newly
    *     updated glossary dictionary.
+   * @throws NullPointerException If glossary, sourceLanguageCode, targetLanguageCode or csvContent
+   *     is <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws IllegalArgumentException If any argument is invalid.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
@@ -2719,6 +2811,7 @@ public class DeepLClient {
   public void deleteMultilingualGlossaryDictionary(
       String glossaryId, MultilingualGlossaryDictionaryInfo glossaryDict)
       throws DeepLException, InterruptedException, IllegalArgumentException {
+    Objects.requireNonNull(glossaryDict, "glossaryDict");
     deleteMultilingualGlossaryDictionary(
         glossaryId, glossaryDict.getSourceLanguageCode(), glossaryDict.getTargetLanguageCode());
   }
@@ -2756,6 +2849,7 @@ public class DeepLClient {
   public void deleteMultilingualGlossaryDictionary(
       MultilingualGlossaryInfo glossary, MultilingualGlossaryDictionaryInfo glossaryDict)
       throws DeepLException, InterruptedException, IllegalArgumentException {
+    Objects.requireNonNull(glossaryDict, "glossaryDict");
     deleteMultilingualGlossaryDictionary(
         multilingualGlossaryId(glossary),
         glossaryDict.getSourceLanguageCode(),
@@ -2775,6 +2869,9 @@ public class DeepLClient {
    * @param options Additional options, or <code>null</code>; see {@link CreateSpokenTermsOptions}.
    * @return {@link SpokenTerms} object with details about the new collection.
    * @throws IllegalArgumentException If a term is invalid, as checked for glossary terms.
+   * @throws NullPointerException If name or termLists is <code>null</code> or contains <code>null
+   *     </code>, or a term list's terms are or contain <code>null</code>; checked before any
+   *     request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
    *     DeepLException} or a derived class will be thrown.
@@ -2782,6 +2879,7 @@ public class DeepLClient {
   public SpokenTerms createSpokenTerms(
       String name, List<SpokenTermsEntries> termLists, @Nullable CreateSpokenTermsOptions options)
       throws DeepLException, InterruptedException {
+    Objects.requireNonNull(name, "name");
     Map<String, Object> requestData = new LinkedHashMap<>();
     requestData.put("name", name);
     requestData.put("term_lists", createSpokenTermsListsData(termLists));
@@ -2933,6 +3031,8 @@ public class DeepLClient {
    * @return {@link SpokenTermsList} object with details about the new term list.
    * @throws NotFoundException If no collection with the given ID is found.
    * @throws IllegalArgumentException If a term is invalid, as checked for glossary terms.
+   * @throws NullPointerException If spokenTermsId or entries is <code>null</code>, or the terms are
+   *     or contain <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
@@ -3130,11 +3230,14 @@ public class DeepLClient {
    * @param options Optional description, industry and linked components, or <code>null</code>.
    *     Fields left <code>null</code> are not sent.
    * @return {@link StyleProfile} object with details about the new style profile.
+   * @throws NullPointerException If name is <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
   public StyleProfile createStyleProfile(String name, @Nullable CreateStyleProfileOptions options)
       throws DeepLException, InterruptedException {
+    Objects.requireNonNull(name, "name");
+
     HttpResponse response =
         httpClientWrapper.sendJsonRequestRetryingOnlyUnprocessed(
             "/v3/style_profiles", createStyleProfileBody(name, options));
@@ -4462,9 +4565,12 @@ public class DeepLClient {
    * term is trimmed and then checked like a glossary term: a term containing a newline would split.
    */
   private static Map<String, Object> createSpokenTermsListData(SpokenTermsEntries entries) {
+    Objects.requireNonNull(entries, "entries");
     validateParameter("lang", entries.getLang());
+    Objects.requireNonNull(entries.getEntries(), "entries");
     List<String> terms = new ArrayList<>();
     for (String term : entries.getEntries()) {
+      Objects.requireNonNull(term, "entries");
       String trimmed = trimWhitespace(term);
       GlossaryEntries.validateGlossaryTerm(trimmed);
       terms.add(trimmed);
@@ -4490,8 +4596,10 @@ public class DeepLClient {
 
   private static List<Map<String, Object>> createSpokenTermsListsData(
       List<SpokenTermsEntries> termLists) {
+    Objects.requireNonNull(termLists, "termLists");
     List<Map<String, Object>> data = new ArrayList<>();
     for (SpokenTermsEntries entries : termLists) {
+      Objects.requireNonNull(entries, "termLists");
       data.add(createSpokenTermsListData(entries));
     }
     return data;
@@ -4515,6 +4623,9 @@ public class DeepLClient {
    * @param options Options for the request, or <code>null</code>; its extra body parameters are
    *     added to the request last.
    * @return {@link StyleRuleInfo} object with details about the newly created style rule.
+   * @throws NullPointerException If name or language is <code>null</code>, or customInstructions
+   *     contains <code>null</code> or an instruction with a <code>null</code> label or prompt;
+   *     checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
@@ -4529,6 +4640,9 @@ public class DeepLClient {
     validateParameter("language", language);
     if (customInstructions != null) {
       for (CustomInstruction instruction : customInstructions) {
+        Objects.requireNonNull(instruction, "customInstructions");
+        Objects.requireNonNull(instruction.getLabel(), "label");
+        Objects.requireNonNull(instruction.getPrompt(), "prompt");
         validateOptionalLanguage("sourceLanguage", instruction.getSourceLanguage());
       }
     }
@@ -4691,6 +4805,8 @@ public class DeepLClient {
    *     added to the request body as further top-level keys.
    * @return {@link StyleRuleInfo} object with updated details about the style rule.
    * @throws NotFoundException If no style rule with the given ID is found.
+   * @throws NullPointerException If styleId or configuredRules is <code>null</code>; checked before
+   *     any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
@@ -4700,9 +4816,8 @@ public class DeepLClient {
       @Nullable UpdateStyleRuleConfiguredRulesOptions options)
       throws DeepLException, InterruptedException, NotFoundException {
     String relativeUrl = styleRulePath(styleId);
-    if (configuredRules == null) {
-      throw new IllegalArgumentException("configuredRules must not be null");
-    }
+    Objects.requireNonNull(configuredRules, "configuredRules");
+
     return sendStyleRuleConfiguredRules(
         relativeUrl, jsonBodyWithExtraParameters(new LinkedHashMap<>(configuredRules), options));
   }
@@ -5267,6 +5382,7 @@ public class DeepLClient {
       @Nullable CreateMultilingualGlossaryOptions options)
       throws DeepLException, InterruptedException {
     validateParameter("name", name);
+    Objects.requireNonNull(entries, "csvContent");
     List<Map<String, Object>> dictionaries = new ArrayList<>();
     dictionaries.add(
         createGlossaryDictionaryData(sourceLanguageCode, targetLanguageCode, entries, "csv"));
@@ -5349,6 +5465,10 @@ public class DeepLClient {
     } catch (UnsupportedEncodingException exception) {
       throw new DeepLException("Error while URL-encoding request", exception);
     }
+  }
+
+  private static String entriesTsv(GlossaryEntries entries) {
+    return Objects.requireNonNull(entries, "entries").toTsv();
   }
 
   /** Creates the JSON object of one glossary dictionary. */

@@ -127,6 +127,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   without its ID still throws `IllegalArgumentException`. `getGlossary()`,
   `getGlossaryEntries()` and `deleteGlossary()` throw `NullPointerException`
   for a `null` glossary ID instead of requesting `/v2/glossaries/null`.
+- **Breaking:** `createGlossary()` and `createGlossaryFromCsv()` throw
+  `NullPointerException` for a `null` source or target language or CSV
+  content, `createSpokenTerms()` and `createStyleProfile()` for a `null` name,
+  and `createStyleRule()` for a `null` custom instruction or one with a `null`
+  label or prompt; these were left out of the request before.
+  `updateStyleRuleConfiguredRules()` throws `NullPointerException` for `null`
+  configured rules instead of `IllegalArgumentException`.
 - `updateMultilingualGlossaryName()` (all overloads) throws `InterruptedException`
   unwrapped when the thread is interrupted, like the other `DeepLClient`
   methods, instead of a `DeepLException`, and declares it. Callers must catch or

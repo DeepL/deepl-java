@@ -533,11 +533,13 @@ new terms the same way.
 
 The create functions and `updateMultilingualGlossaryName()` throw an
 `IllegalArgumentException` for an empty glossary name, and the create functions
-for a dictionary with no entries, before any request is sent. Every function
-that takes a `MultilingualGlossaryInfo` object throws a `NullPointerException`
-for a `null` object, before any request is sent. The create functions and
-`updateMultilingualGlossary()` also throw an `IllegalArgumentException` for an
-empty dictionary language code and a `NullPointerException` for a `null` one.
+for a dictionary with no entries; a `null` name, dictionary list, dictionary or
+entries throws `NullPointerException`; both before any request is sent. Every
+function that takes a `MultilingualGlossaryInfo` object throws a
+`NullPointerException` for a `null` object, before any request is sent. The
+create functions and `updateMultilingualGlossary()` also throw an
+`IllegalArgumentException` for an empty dictionary language code and a
+`NullPointerException` for a `null` one.
 
 You can also create a glossary using a glossary downloaded from the DeepL
 website by using `createMultilingualGlossaryFromCsv()` with either a CSV file,
@@ -968,7 +970,9 @@ them. The last argument is a `CreateStyleRuleOptions` object or `null`; its
 instruction's source language is optional; `null` leaves it unset and an empty
 string throws an `IllegalArgumentException` before any request is sent. The same
 holds for `createStyleRuleCustomInstruction()` and
-`updateStyleRuleCustomInstruction()`.
+`updateStyleRuleCustomInstruction()`. A `null` custom instruction, or one with a
+`null` label or prompt, throws `NullPointerException` before any request is
+sent.
 
 ```java
 class Example {  // Continuing class Example from above
