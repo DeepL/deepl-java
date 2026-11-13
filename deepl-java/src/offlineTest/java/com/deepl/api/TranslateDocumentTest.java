@@ -713,13 +713,35 @@ class TranslateDocumentTest {
   @Test
   void throwsIllegalArgumentWhenTheTargetLanguageIsNull() throws Exception {
     File input = writeInput("example.txt", "a");
-    File output = tempDir.resolve("out.txt").toFile();
     String none = null;
     assertThrows(
         IllegalArgumentException.class, () -> client.translateDocumentUpload(input, "en", none));
-    assertThrows(
-        IllegalArgumentException.class, () -> client.translateDocument(input, output, "en", none));
+  }
+
+  @Test
+  void wrapsEmptyLanguageCodesOfTranslateDocumentBeforeAnyRequest() throws Exception {
+    File input = writeInput("example.txt", "a");
+    File output = tempDir.resolve("out.txt").toFile();
+    ByteArrayOutputStream stream = new ByteArrayOutputStream();
+    for (String[] languages : new String[][] {{"en", ""}, {"", "de"}}) {
+      for (Executable call :
+          Arrays.<Executable>asList(
+              () -> client.translateDocument(input, output, languages[0], languages[1]),
+              () ->
+                  client.translateDocument(
+                      new ByteArrayInputStream(new byte[] {'a'}),
+                      "example.txt",
+                      stream,
+                      languages[0],
+                      languages[1]))) {
+        DocumentTranslationException thrown =
+            assertThrows(DocumentTranslationException.class, call);
+        assertTrue(thrown.getCause() instanceof IllegalArgumentException, thrown.toString());
+        assertNull(thrown.getHandle());
+      }
+    }
     assertFalse(output.exists());
+    assertTrue(wm.getAllServeEvents().isEmpty());
   }
 
   @Test

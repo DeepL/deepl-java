@@ -342,11 +342,11 @@ public class DeepLClient {
    * @param options Options influencing translation.
    * @return Status when document translation completed, this allows the number of billed characters
    *     to be queried.
-   * @throws IllegalArgumentException If the input file does not exist, the target language is
-   *     <code>null</code> or empty, or the source language is empty; checked before any request.
+   * @throws IllegalArgumentException If the input file does not exist; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
-   * @throws DocumentTranslationException If the output path is occupied, a local file cannot be
-   *     read or written, or any error occurs while communicating with the DeepL API. The exception
+   * @throws DocumentTranslationException If the target or source language is empty (before any
+   *     request, without document handle), the output path is occupied, a local file cannot be read
+   *     or written, or any error occurs while communicating with the DeepL API. The exception
    *     includes the document handle that may be used to retrieve the document.
    */
   public DocumentStatus translateDocument(
@@ -357,7 +357,7 @@ public class DeepLClient {
       @Nullable DocumentTranslationOptions options)
       throws DocumentTranslationException, InterruptedException {
     checkDocumentInputFile(inputFile);
-    checkValidLanguages(sourceLang, targetLang);
+    checkDocumentLanguages(sourceLang, targetLang);
     // Checked before the try block: its handler deletes the output file.
     if (outputFile.exists()) {
       throw new DocumentTranslationException(
@@ -409,10 +409,9 @@ public class DeepLClient {
    * @param options Options influencing translation.
    * @return Status when document translation completed, this allows the number of billed characters
    *     to be queried.
-   * @throws IllegalArgumentException If the target language is <code>null</code> or empty, or the
-   *     source language is empty; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
-   * @throws DocumentTranslationException If any error occurs while communicating with the DeepL
+   * @throws DocumentTranslationException If the target or source language is empty (before any
+   *     request, without document handle), or any error occurs while communicating with the DeepL
    *     API. The exception includes the document handle that may be used to retrieve the document.
    */
   public DocumentStatus translateDocument(
@@ -423,7 +422,7 @@ public class DeepLClient {
       String targetLang,
       @Nullable DocumentTranslationOptions options)
       throws DocumentTranslationException, InterruptedException {
-    checkValidLanguages(sourceLang, targetLang);
+    checkDocumentLanguages(sourceLang, targetLang);
     DocumentHandle handle = null;
     try {
       handle = translateDocumentUpload(inputStream, fileName, sourceLang, targetLang, options);
@@ -4279,6 +4278,20 @@ public class DeepLClient {
       sink[0] = job;
     }
     return job;
+  }
+
+  /**
+   * translateDocument wraps the language errors of its upload, like every failure but a missing
+   * file.
+   */
+  private static void checkDocumentLanguages(@Nullable String sourceLang, String targetLang)
+      throws DocumentTranslationException {
+    try {
+      checkValidLanguages(sourceLang, targetLang);
+    } catch (IllegalArgumentException exception) {
+      throw new DocumentTranslationException(
+          "Error occurred during document translation: " + exception.getMessage(), exception, null);
+    }
   }
 
   /** A missing input file is an argument error, raised before any request. */

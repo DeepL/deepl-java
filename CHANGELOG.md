@@ -22,12 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   throw `IllegalArgumentException` for an empty or `null` dictionary language
   code, before any request; the code was sent to the API before.
 - **Breaking:** `translateText()` (including the overloads that take
-  `Language` objects), `translateDocument()` and `translateDocumentUpload()`
-  throw `IllegalArgumentException` for a `null` target language, before any
-  request, instead of `NullPointerException`.
-  `translateDocument()` also throws an empty target or source language as
-  `IllegalArgumentException` before any request; it was wrapped in a
-  `DocumentTranslationException` before.
+  `Language` objects) and `translateDocumentUpload()` throw
+  `IllegalArgumentException` for a `null` target language, before any request,
+  instead of `NullPointerException`.
 - **Breaking:** `importTranslationMemoryFromFilepath()` and
   `exportTranslationMemoryToFilepath()` wrap every failure in the new
   `TranslationMemoryJobException` (a `DeepLException`), whose `getJobId()`

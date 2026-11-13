@@ -367,9 +367,10 @@ class Example {  // Continuing class Example from above
 A missing input file throws an `IllegalArgumentException`, from both
 `translateDocument()` and `translateDocumentUpload()`. Every other failure of
 `translateDocument()` is thrown as a `DocumentTranslationException`, including
-local file failures, which carry the `IOException` as their cause: if a file
-already exists at the output path, that file is left unchanged, and if the input
-file cannot be read or the output file cannot be created, no request is sent.
+an empty target or source language (checked before any request) and local file
+failures, which carry the `IOException` as their cause: if a file already exists
+at the output path, that file is left unchanged, and if the input file cannot be
+read or the output file cannot be created, no request is sent.
 `getHttpStatusCode()` and `getShouldRetry()` report those of the underlying
 `DeepLException`, if any. If the thread is interrupted, `translateDocument()`
 throws the `InterruptedException` itself, not wrapped.
