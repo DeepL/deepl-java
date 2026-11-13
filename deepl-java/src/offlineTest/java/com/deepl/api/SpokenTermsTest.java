@@ -174,8 +174,8 @@ class SpokenTermsTest {
   }
 
   @Test
-  void rejectsAnEmptyOrNullLanguageBeforeSendingAnyRequest() {
-    for (String bad : new String[] {"", null}) {
+  void rejectsAnEmptyLanguageBeforeSendingAnyRequest() {
+    for (String bad : new String[] {""}) {
       SpokenTermsEntries entries = new SpokenTermsEntries(bad, Collections.singletonList("a"));
       List<SpokenTermsEntries> termLists = Collections.singletonList(entries);
       assertThrows(IllegalArgumentException.class, () -> client.createSpokenTerms("n", termLists));

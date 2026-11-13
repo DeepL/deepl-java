@@ -298,11 +298,11 @@ class StyleRulesTest {
   }
 
   @Test
-  void throwsIllegalArgumentForNullOrIdlessObjects() {
+  void throwsNullPointerExceptionForNullObjectsAndIllegalArgumentForIdlessOnes() {
     CustomInstruction noId = new CustomInstruction("L", "P", null);
-    assertThrows(IllegalArgumentException.class, () -> client.getStyleRule((StyleRuleInfo) null));
+    assertThrows(NullPointerException.class, () -> client.getStyleRule((StyleRuleInfo) null));
     assertThrows(
-        IllegalArgumentException.class,
+        NullPointerException.class,
         () -> client.deleteStyleRuleCustomInstruction("s1", (CustomInstruction) null));
     assertThrows(
         IllegalArgumentException.class, () -> client.getStyleRuleCustomInstruction("s1", noId));

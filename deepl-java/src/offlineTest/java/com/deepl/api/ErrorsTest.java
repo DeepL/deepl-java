@@ -10,10 +10,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Collections;
+import java.util.Date;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.function.ThrowingConsumer;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 @SuppressWarnings("deprecation")
@@ -118,5 +124,63 @@ class ErrorsTest {
         assertThrows(NotFoundException.class, () -> translator.getGlossary("g1"));
     assertEquals(NotFoundException.class, thrown.getClass());
     assertEquals("Not found", thrown.getMessage());
+  }
+
+  private static Arguments nullRow(String name, ThrowingConsumer<DeepLClient> call) {
+    return Arguments.of(name, call);
+  }
+
+  static Stream<Arguments> nullIdsNamesAndObjects() {
+    return Stream.of(
+        nullRow("glossaryId", c -> c.getMultilingualGlossary((String) null)),
+        nullRow("name", c -> c.updateMultilingualGlossaryName("g1", null)),
+        nullRow(
+            "sourceLanguageCode", c -> c.deleteMultilingualGlossaryDictionary("g1", null, "de")),
+        nullRow("lang", c -> c.getSpokenTermsEntries("st1", null)),
+        nullRow("resource", c -> c.getLanguagesForResource((String) null)),
+        nullRow("resource", c -> c.getLanguagesForResource((LanguageResourceName) null)),
+        nullRow("glossary", c -> c.getMultilingualGlossary((MultilingualGlossaryInfo) null)),
+        nullRow("spokenTerms", c -> c.getSpokenTerms((SpokenTerms) null)),
+        nullRow("styleProfile", c -> c.getStyleProfile((StyleProfile) null)),
+        nullRow("styleRule", c -> c.getStyleRule((StyleRuleInfo) null)),
+        nullRow(
+            "instruction", c -> c.getStyleRuleCustomInstruction("s1", (CustomInstruction) null)),
+        nullRow("translationMemory", c -> c.getTranslationMemory((TranslationMemoryInfo) null)),
+        nullRow("job", c -> c.getTranslationMemoryJob((TranslationMemoryJob) null)),
+        nullRow("glossaryId", c -> c.getGlossary(null)),
+        nullRow("glossary", c -> c.deleteGlossary((GlossaryInfo) null)));
+  }
+
+  @ParameterizedTest(name = "{index}: {0}")
+  @MethodSource("nullIdsNamesAndObjects")
+  void throwsNullPointerExceptionNamingANullIdNameOrObject(
+      String name, ThrowingConsumer<DeepLClient> call) {
+    assertEquals(
+        name, assertThrows(NullPointerException.class, () -> call.accept(translator)).getMessage());
+    assertTrue(wm.getAllServeEvents().isEmpty());
+  }
+
+  static Stream<Arguments> objectsWithoutId() {
+    Date now = new Date();
+    return Stream.<ThrowingConsumer<DeepLClient>>of(
+            c ->
+                c.getMultilingualGlossary(
+                    new MultilingualGlossaryInfo(null, "n", now, Collections.emptyList())),
+            c -> c.getSpokenTerms(new SpokenTerms(null, "n", now, Collections.emptyList())),
+            c ->
+                c.getStyleProfile(
+                    new StyleProfile(null, "n", null, null, null, null, null, false, now, now)),
+            c -> c.getStyleRule(new StyleRuleInfo(null, "n", now, now, "de", 1, null, null)),
+            c ->
+                c.getTranslationMemory(
+                    new TranslationMemoryInfo(null, "n", "en", Collections.singletonList("de"), 1)))
+        .map(Arguments::of);
+  }
+
+  @ParameterizedTest
+  @MethodSource("objectsWithoutId")
+  void throwsIllegalArgumentForAResourceObjectWithoutId(ThrowingConsumer<DeepLClient> call) {
+    assertThrows(IllegalArgumentException.class, () -> call.accept(translator));
+    assertTrue(wm.getAllServeEvents().isEmpty());
   }
 }

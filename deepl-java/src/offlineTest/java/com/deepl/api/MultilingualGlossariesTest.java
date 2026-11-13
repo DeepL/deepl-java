@@ -700,9 +700,9 @@ class MultilingualGlossariesTest {
   }
 
   @Test
-  void throwsIllegalArgumentForAnEmptyOrNullDictionaryLanguageBeforeAnyRequest() {
+  void throwsIllegalArgumentForAnEmptyDictionaryLanguageBeforeAnyRequest() {
     GlossaryEntries entries = entries("a", "b");
-    for (String bad : new String[] {"", null}) {
+    for (String bad : new String[] {""}) {
       List<MultilingualGlossaryDictionaryEntries> noSource =
           Collections.singletonList(new MultilingualGlossaryDictionaryEntries(bad, "de", entries));
       List<MultilingualGlossaryDictionaryEntries> noTarget =
@@ -731,74 +731,71 @@ class MultilingualGlossariesTest {
   }
 
   @Test
-  void throwsIllegalArgumentForANullGlossaryObject() {
+  void throwsNullPointerExceptionForANullGlossaryObject() {
     MultilingualGlossaryInfo none = null;
     MultilingualGlossaryDictionaryInfo dict = new MultilingualGlossaryDictionaryInfo("en", "de", 1);
     MultilingualGlossaryDictionaryEntries dictEntries =
         new MultilingualGlossaryDictionaryEntries("en", "de", entries("a", "b"));
     File csv = tempDir.resolve("entries.csv").toFile();
-    assertThrows(IllegalArgumentException.class, () -> client.getMultilingualGlossary(none));
+    assertThrows(NullPointerException.class, () -> client.getMultilingualGlossary(none));
     assertThrows(
-        IllegalArgumentException.class,
+        NullPointerException.class,
         () -> client.getMultilingualGlossaryDictionaryEntries(none, "en", "de"));
     assertThrows(
-        IllegalArgumentException.class,
+        NullPointerException.class,
         () -> client.getMultilingualGlossaryDictionaryEntries(none, dict));
     assertThrows(
-        IllegalArgumentException.class,
+        NullPointerException.class,
         () -> client.replaceMultilingualGlossaryDictionary(none, dictEntries, null));
     assertThrows(
-        IllegalArgumentException.class,
+        NullPointerException.class,
         () -> client.replaceMultilingualGlossaryDictionary(none, dictEntries));
     assertThrows(
-        IllegalArgumentException.class,
+        NullPointerException.class,
         () -> client.replaceMultilingualGlossaryDictionary(none, "en", "de", entries("a", "b")));
     assertThrows(
-        IllegalArgumentException.class,
+        NullPointerException.class,
         () -> client.replaceMultilingualGlossaryDictionaryFromCsv(none, "en", "de", csv));
     assertThrows(
-        IllegalArgumentException.class,
+        NullPointerException.class,
         () -> client.replaceMultilingualGlossaryDictionaryFromCsv(none, "en", "de", csv, null));
     assertThrows(
-        IllegalArgumentException.class,
+        NullPointerException.class,
         () -> client.replaceMultilingualGlossaryDictionaryFromCsv(none, "en", "de", "a,b"));
     assertThrows(
-        IllegalArgumentException.class,
+        NullPointerException.class,
         () -> client.replaceMultilingualGlossaryDictionaryFromCsv(none, "en", "de", "a,b", null));
     assertThrows(
-        IllegalArgumentException.class,
+        NullPointerException.class,
         () -> client.updateMultilingualGlossaryDictionary(none, "en", "de", entries("a", "b")));
     assertThrows(
-        IllegalArgumentException.class,
+        NullPointerException.class,
         () -> client.updateMultilingualGlossaryDictionary(none, dictEntries, null));
     assertThrows(
-        IllegalArgumentException.class,
+        NullPointerException.class,
         () -> client.updateMultilingualGlossaryDictionary(none, dictEntries));
     assertThrows(
-        IllegalArgumentException.class, () -> client.updateMultilingualGlossaryName(none, "n"));
+        NullPointerException.class, () -> client.updateMultilingualGlossaryName(none, "n"));
     assertThrows(
-        IllegalArgumentException.class,
-        () -> client.updateMultilingualGlossaryName(none, "n", null));
+        NullPointerException.class, () -> client.updateMultilingualGlossaryName(none, "n", null));
+    assertThrows(NullPointerException.class, () -> client.updateMultilingualGlossary(none, null));
     assertThrows(
-        IllegalArgumentException.class, () -> client.updateMultilingualGlossary(none, null));
-    assertThrows(
-        IllegalArgumentException.class,
+        NullPointerException.class,
         () -> client.updateMultilingualGlossaryDictionaryFromCsv(none, "en", "de", csv));
     assertThrows(
-        IllegalArgumentException.class,
+        NullPointerException.class,
         () -> client.updateMultilingualGlossaryDictionaryFromCsv(none, "en", "de", csv, null));
     assertThrows(
-        IllegalArgumentException.class,
+        NullPointerException.class,
         () -> client.updateMultilingualGlossaryDictionaryFromCsv(none, "en", "de", "a,b"));
     assertThrows(
-        IllegalArgumentException.class,
+        NullPointerException.class,
         () -> client.updateMultilingualGlossaryDictionaryFromCsv(none, "en", "de", "a,b", null));
-    assertThrows(IllegalArgumentException.class, () -> client.deleteMultilingualGlossary(none));
+    assertThrows(NullPointerException.class, () -> client.deleteMultilingualGlossary(none));
     assertThrows(
-        IllegalArgumentException.class,
+        NullPointerException.class,
         () -> client.deleteMultilingualGlossaryDictionary(none, "en", "de"));
     assertThrows(
-        IllegalArgumentException.class,
-        () -> client.deleteMultilingualGlossaryDictionary(none, dict));
+        NullPointerException.class, () -> client.deleteMultilingualGlossaryDictionary(none, dict));
   }
 }

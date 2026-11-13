@@ -14,13 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** the Spoken Terms functions that take a language
   (`createSpokenTerms()`, `updateSpokenTerms()` and `replaceSpokenTermsList()`
   through the term lists, `getSpokenTermsEntries()`,
-  `deleteSpokenTermsList()`) throw `IllegalArgumentException` for an empty or
-  `null` language code, before any request; the code was sent to the API
-  before.
+  `deleteSpokenTermsList()`) throw `IllegalArgumentException` for an empty
+  language code and `NullPointerException` for a `null` one, before any
+  request; the code was sent to the API before.
 - **Breaking:** `createMultilingualGlossary()`,
   `createMultilingualGlossaryFromCsv()` and `updateMultilingualGlossary()`
-  throw `IllegalArgumentException` for an empty or `null` dictionary language
-  code, before any request; the code was sent to the API before.
+  throw `IllegalArgumentException` for an empty dictionary language code and
+  `NullPointerException` for a `null` one, before any request; the code was
+  sent to the API before.
 - **Breaking:** `importTranslationMemoryFromFilepath()` and
   `exportTranslationMemoryToFilepath()` wrap every failure in the new
   `TranslationMemoryJobException` (a `DeepLException`), whose `getJobId()`
@@ -28,24 +29,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `getJob()` returns the last fetched `TranslationMemoryJob` (for example the
   failed, expired or timed-out job), or `null` before the first status
   request. Before, API errors, a failed job and an exceeded timeout were
-  thrown unwrapped and local file errors as a plain `DeepLException`. The underlying error is the cause;
-  `getHttpStatusCode()` and `getShouldRetry()` are taken from it. A missing
-  input file still throws `IllegalArgumentException`. A `null`
-  `TranslationMemoryInfo` or an empty ID passed to
-  `exportTranslationMemoryToFilepath()` is wrapped as well, without job ID. Code that catches
-  `DeepLException` keeps working; code that catches a subclass such as
-  `AuthorizationException` must inspect `getCause()`.
+  thrown unwrapped and local file errors as a plain `DeepLException`. The
+  underlying error is the cause; `getHttpStatusCode()` and `getShouldRetry()`
+  are taken from it. A missing input file still throws
+  `IllegalArgumentException`. An empty ID, or a `TranslationMemoryInfo`
+  without ID, passed to `exportTranslationMemoryToFilepath()` is wrapped as
+  well, without job ID; a `null` one throws `NullPointerException`, not
+  wrapped. Code that catches `DeepLException` keeps working; code that catches
+  a subclass such as `AuthorizationException` must inspect `getCause()`.
 - **Breaking:** `createGlossary()`, `createGlossaryFromCsv()`,
   `createMultilingualGlossaryFromCsv()` and `updateMultilingualGlossaryName()`
   throw `IllegalArgumentException` for an empty name before sending a request;
   the API rejected it with a `DeepLException` before. `createGlossary()` and
   `createMultilingualGlossary()` also throw `IllegalArgumentException` for empty
   `GlossaryEntries` (in any dictionary) instead of sending them.
-- **Breaking:** the multilingual glossary functions that take a
-  `MultilingualGlossaryInfo` object throw `IllegalArgumentException` for a
-  `null` object, before any request, instead of `NullPointerException`, like
-  the functions that take a translation memory, Spoken Terms, style profile or
-  style rule object.
 - **Breaking:** `DocumentTranslationOptions.setGlossary()`, `setStyleRule()`,
   `setStyleProfile()` and `setTranslationMemory()` throw
   `IllegalArgumentException` for an empty ID and for an object without ID; an
@@ -119,6 +116,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `translateDocument()` and `translateDocumentUpload()` throws
   `NullPointerException`; a missing one still throws
   `IllegalArgumentException`.
+- **Breaking:** a `null` resource ID, name, language code or other required
+  string argument of the multilingual glossary, Spoken Terms, style rule,
+  style profile, translation memory and `getLanguagesForResource()` functions
+  throws `NullPointerException` instead of `IllegalArgumentException`, before
+  any request; an empty one still throws `IllegalArgumentException`. A `null`
+  translation memory, translation memory job or import, Spoken Terms, style
+  profile, style rule or custom instruction object throws
+  `NullPointerException` instead of `IllegalArgumentException`; an object
+  without its ID still throws `IllegalArgumentException`. `getGlossary()`,
+  `getGlossaryEntries()` and `deleteGlossary()` throw `NullPointerException`
+  for a `null` glossary ID instead of requesting `/v2/glossaries/null`.
 - `updateMultilingualGlossaryName()` (all overloads) throws `InterruptedException`
   unwrapped when the thread is interrupted, like the other `DeepLClient`
   methods, instead of a `DeepLException`, and declares it. Callers must catch or

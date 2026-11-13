@@ -14,6 +14,7 @@ import java.net.HttpURLConnection;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.*;
+import java.util.function.Function;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -828,6 +829,8 @@ public class DeepLClient {
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
   public GlossaryInfo getGlossary(String glossaryId) throws DeepLException, InterruptedException {
+    Objects.requireNonNull(glossaryId, "glossaryId");
+
     String relativeUrl = String.format("/v2/glossaries/%s", glossaryId);
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
     checkResponse(response, false);
@@ -861,6 +864,8 @@ public class DeepLClient {
    */
   public GlossaryEntries getGlossaryEntries(GlossaryInfo glossary)
       throws DeepLException, InterruptedException {
+    Objects.requireNonNull(glossary, "glossary");
+
     return getGlossaryEntries(glossary.getGlossaryId());
   }
 
@@ -875,6 +880,8 @@ public class DeepLClient {
    */
   public GlossaryEntries getGlossaryEntries(String glossaryId)
       throws DeepLException, InterruptedException {
+    Objects.requireNonNull(glossaryId, "glossaryId");
+
     String relativeUrl = String.format("/v2/glossaries/%s/entries", glossaryId);
     HttpResponse response = httpClientWrapper.sendGetRequestWithBackoff(relativeUrl);
     checkResponse(response, false);
@@ -889,6 +896,8 @@ public class DeepLClient {
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
   public void deleteGlossary(GlossaryInfo glossary) throws DeepLException, InterruptedException {
+    Objects.requireNonNull(glossary, "glossary");
+
     deleteGlossary(glossary.getGlossaryId());
   }
 
@@ -900,6 +909,8 @@ public class DeepLClient {
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
   public void deleteGlossary(String glossaryId) throws DeepLException, InterruptedException {
+    Objects.requireNonNull(glossaryId, "glossaryId");
+
     String relativeUrl = String.format("/v2/glossaries/%s", glossaryId);
     HttpResponse response = httpClientWrapper.sendDeleteRequestWithBackoff(relativeUrl);
     checkResponse(response, false);
@@ -1632,7 +1643,8 @@ public class DeepLClient {
    * @param glossary {@link MultilingualGlossaryInfo} object of the glossary to retrieve.
    * @return {@link MultilingualGlossaryInfo} object with details about the specified glossary.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
-   * @throws IllegalArgumentException If glossary is null.
+   * @throws IllegalArgumentException If glossary has no ID.
+   * @throws NullPointerException If glossary is <code>null</code>.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
   public MultilingualGlossaryInfo getMultilingualGlossary(MultilingualGlossaryInfo glossary)
@@ -2664,7 +2676,8 @@ public class DeepLClient {
    * Deletes the specified glossary.
    *
    * @param glossary {@link MultilingualGlossaryInfo} object corresponding to glossary to delete.
-   * @throws IllegalArgumentException If glossary is null.
+   * @throws IllegalArgumentException If glossary has no ID.
+   * @throws NullPointerException If glossary is <code>null</code>.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
    *     DeepLException} or a derived class will be thrown.
    */
@@ -2716,7 +2729,8 @@ public class DeepLClient {
    * @param glossary The glossary that contains the glossary dictionary to delete.
    * @param sourceLanguageCode Source language code of the glossary dictionary to be deleted.
    * @param targetLanguageCode Target language code of the glossary dictionary to be deleted.
-   * @throws IllegalArgumentException If glossary is null.
+   * @throws IllegalArgumentException If glossary has no ID.
+   * @throws NullPointerException If glossary is <code>null</code>.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
    *     DeepLException} or a derived class will be thrown.
    */
@@ -2734,7 +2748,8 @@ public class DeepLClient {
    * @param glossaryDict {@link MultilingualGlossaryDictionaryInfo} object corresponding to glossary
    *     dictionary to delete.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
-   * @throws IllegalArgumentException If glossary is null.
+   * @throws IllegalArgumentException If glossary has no ID.
+   * @throws NullPointerException If glossary is <code>null</code>.
    * @throws DeepLException If any error occurs while communicating with the DeepL API, a {@link
    *     DeepLException} or a derived class will be thrown.
    */
@@ -3142,7 +3157,8 @@ public class DeepLClient {
    *
    * @param styleProfileId ID of the style profile to retrieve.
    * @return {@link StyleProfile} object with details about the style profile.
-   * @throws IllegalArgumentException If the ID is <code>null</code> or empty.
+   * @throws IllegalArgumentException If the ID is empty.
+   * @throws NullPointerException If the ID is <code>null</code>.
    * @throws NotFoundException If no style profile with the given ID is found.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
@@ -3175,7 +3191,8 @@ public class DeepLClient {
    * @param styleProfileId ID of the style profile to update.
    * @param options Fields to change, including the new name, or <code>null</code>.
    * @return {@link StyleProfile} object with details about the updated style profile.
-   * @throws IllegalArgumentException If the ID is <code>null</code> or empty.
+   * @throws IllegalArgumentException If the ID is empty.
+   * @throws NullPointerException If the ID is <code>null</code>.
    * @throws NotFoundException If no style profile with the given ID is found.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
@@ -3230,7 +3247,8 @@ public class DeepLClient {
    * Deletes the style profile with the given ID.
    *
    * @param styleProfileId ID of the style profile to delete.
-   * @throws IllegalArgumentException If the ID is <code>null</code> or empty.
+   * @throws IllegalArgumentException If the ID is empty.
+   * @throws NullPointerException If the ID is <code>null</code>.
    * @throws NotFoundException If no style profile with the given ID is found.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
@@ -3262,7 +3280,8 @@ public class DeepLClient {
    * @param options Options influencing the request, or <code>null</code> to return only stable
    *     languages and features.
    * @return List of {@link LanguageSupport} objects with per-feature support information.
-   * @throws IllegalArgumentException If resource is <code>null</code> or empty.
+   * @throws IllegalArgumentException If resource is empty.
+   * @throws NullPointerException If resource is <code>null</code>.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
@@ -3303,7 +3322,8 @@ public class DeepLClient {
   public List<LanguageSupport> getLanguagesForResource(
       LanguageResourceName resource, @Nullable GetLanguagesForResourceOptions options)
       throws DeepLException, InterruptedException {
-    return getLanguagesForResource(resource.getValue(), options);
+    return getLanguagesForResource(
+        Objects.requireNonNull(resource, "resource").getValue(), options);
   }
 
   /**
@@ -3315,7 +3335,7 @@ public class DeepLClient {
    */
   public List<LanguageSupport> getLanguagesForResource(LanguageResourceName resource)
       throws DeepLException, InterruptedException {
-    return getLanguagesForResource(resource.getValue(), null);
+    return getLanguagesForResource(Objects.requireNonNull(resource, "resource").getValue(), null);
   }
 
   /**
@@ -3653,9 +3673,8 @@ public class DeepLClient {
   public void uploadTranslationMemoryFile(
       TranslationMemoryImport translationMemoryImport, byte[] fileContent, String contentType)
       throws DeepLException, InterruptedException {
-    if (translationMemoryImport == null) {
-      throw new IllegalArgumentException("translationMemoryImport must not be null");
-    }
+    Objects.requireNonNull(translationMemoryImport, "translationMemoryImport");
+
     uploadTranslationMemoryFile(translationMemoryImport.getUploadUrl(), fileContent, contentType);
   }
 
@@ -3857,6 +3876,8 @@ public class DeepLClient {
    */
   public void downloadTranslationMemoryExport(TranslationMemoryJob job, File outputFile)
       throws DeepLException, IOException, InterruptedException {
+    Objects.requireNonNull(job, "job");
+
     // Checked before the try so the cleanup below only ever deletes a file this call created:
     // otherwise the guard protecting an existing file would be what destroys it.
     if (outputFile.exists()) {
@@ -3885,9 +3906,7 @@ public class DeepLClient {
    */
   public void downloadTranslationMemoryExport(TranslationMemoryJob job, OutputStream outputStream)
       throws DeepLException, IOException, InterruptedException {
-    if (job == null) {
-      throw new IllegalArgumentException("job must not be null");
-    }
+    Objects.requireNonNull(job, "job");
     TranslationMemoryJobResult result = job.getResult();
     String downloadUrl = (result == null) ? null : result.getDownloadUrl();
     if (downloadUrl == null || downloadUrl.isEmpty()) {
@@ -4119,8 +4138,9 @@ public class DeepLClient {
 
   /**
    * Functions the same as {@link DeepLClient#exportTranslationMemoryToFilepath(String, File)} but
-   * accepts a {@link TranslationMemoryInfo} object. A <code>null</code> object is wrapped in a
-   * {@link TranslationMemoryJobException} without job ID, like every other failure.
+   * accepts a {@link TranslationMemoryInfo} object. A <code>null</code> object throws {@link
+   * NullPointerException}, not wrapped; an object without ID is wrapped in a {@link
+   * TranslationMemoryJobException} without job ID, like every other failure.
    *
    * @see DeepLClient#exportTranslationMemoryToFilepath(String, File)
    */
@@ -4133,8 +4153,9 @@ public class DeepLClient {
 
   /**
    * Functions the same as {@link DeepLClient#exportTranslationMemoryToFilepath(String, File,
-   * Duration)} but accepts a {@link TranslationMemoryInfo} object. A <code>null</code> object is
-   * wrapped in a {@link TranslationMemoryJobException} without job ID, like every other failure.
+   * Duration)} but accepts a {@link TranslationMemoryInfo} object. A <code>null</code> object
+   * throws {@link NullPointerException}, not wrapped; an object without ID is wrapped in a {@link
+   * TranslationMemoryJobException} without job ID, like every other failure.
    *
    * @see DeepLClient#exportTranslationMemoryToFilepath(String, File, Duration)
    */
@@ -4191,8 +4212,8 @@ public class DeepLClient {
   /**
    * Functions the same as {@link DeepLClient#exportTranslationMemoryToFilepath(String,
    * OutputStream, Duration)} but accepts a {@link TranslationMemoryInfo} object. A <code>null
-   * </code> object is wrapped in a {@link TranslationMemoryJobException} without job ID, like every
-   * other failure.
+   * </code> object throws {@link NullPointerException}, not wrapped; an object without ID is
+   * wrapped in a {@link TranslationMemoryJobException} without job ID, like every other failure.
    *
    * @see DeepLClient#exportTranslationMemoryToFilepath(String, OutputStream, Duration)
    */
@@ -4208,8 +4229,9 @@ public class DeepLClient {
   /**
    * Functions the same as {@link DeepLClient#exportTranslationMemoryToFilepath(String,
    * OutputStream, Duration)} but accepts a {@link TranslationMemoryInfo} object and waits
-   * indefinitely. A <code>null</code> object is wrapped in a {@link TranslationMemoryJobException}
-   * without job ID, like every other failure.
+   * indefinitely. A <code>null</code> object throws {@link NullPointerException}, not wrapped; an
+   * object without ID is wrapped in a {@link TranslationMemoryJobException} without job ID, like
+   * every other failure.
    *
    * @see DeepLClient#exportTranslationMemoryToFilepath(String, OutputStream, Duration)
    */
@@ -4231,12 +4253,9 @@ public class DeepLClient {
   }
 
   /** Extracts the ID of the given translation memory. */
-  private static String translationMemoryId(TranslationMemoryInfo translationMemory)
-      throws IllegalArgumentException {
-    if (translationMemory == null) {
-      throw new IllegalArgumentException("translationMemory must not be null");
-    }
-    return translationMemory.getTranslationMemoryId();
+  private static String translationMemoryId(TranslationMemoryInfo translationMemory) {
+    return idOf(
+        "translationMemory", translationMemory, TranslationMemoryInfo::getTranslationMemoryId);
   }
 
   /** Validates the translation memory ID and builds its URL path with the ID escaped. */
@@ -4261,12 +4280,8 @@ public class DeepLClient {
   }
 
   /** Extracts the ID of the given translation memory job. */
-  private static String translationMemoryJobId(TranslationMemoryJob job)
-      throws IllegalArgumentException {
-    if (job == null) {
-      throw new IllegalArgumentException("job must not be null");
-    }
-    return job.getJobId();
+  private static String translationMemoryJobId(TranslationMemoryJob job) {
+    return idOf("job", job, TranslationMemoryJob::getJobId);
   }
 
   /**
@@ -4364,11 +4379,8 @@ public class DeepLClient {
   }
 
   /** Extracts the ID of the given Spoken Terms collection. */
-  private static String spokenTermsId(SpokenTerms spokenTerms) throws IllegalArgumentException {
-    if (spokenTerms == null) {
-      throw new IllegalArgumentException("spokenTerms must not be null");
-    }
-    return spokenTerms.getSpokenTermsId();
+  private static String spokenTermsId(SpokenTerms spokenTerms) {
+    return idOf("spokenTerms", spokenTerms, SpokenTerms::getSpokenTermsId);
   }
 
   /** Validates the Spoken Terms collection ID and builds its URL path with the ID escaped. */
@@ -4398,11 +4410,8 @@ public class DeepLClient {
   }
 
   /** Extracts the ID of the given style profile. */
-  private static String styleProfileId(StyleProfile styleProfile) throws IllegalArgumentException {
-    if (styleProfile == null) {
-      throw new IllegalArgumentException("styleProfile must not be null");
-    }
-    return styleProfile.getStyleProfileId();
+  private static String styleProfileId(StyleProfile styleProfile) {
+    return idOf("styleProfile", styleProfile, StyleProfile::getStyleProfileId);
   }
 
   /** Validates the style profile ID and builds its URL path with the ID escaped. */
@@ -5199,20 +5208,13 @@ public class DeepLClient {
   }
 
   /** Extracts the ID of the given style rule. */
-  private static String styleRuleId(StyleRuleInfo styleRule) throws IllegalArgumentException {
-    if (styleRule == null) {
-      throw new IllegalArgumentException("styleRule must not be null");
-    }
-    return styleRule.getStyleId();
+  private static String styleRuleId(StyleRuleInfo styleRule) {
+    return idOf("styleRule", styleRule, StyleRuleInfo::getStyleId);
   }
 
   /** Extracts the ID of the given custom instruction. */
-  private static String customInstructionId(CustomInstruction instruction)
-      throws IllegalArgumentException {
-    if (instruction == null) {
-      throw new IllegalArgumentException("instruction must not be null");
-    }
-    return instruction.getId();
+  private static String customInstructionId(CustomInstruction instruction) {
+    return idOf("instruction", instruction, CustomInstruction::getId);
   }
 
   /** Validates the style rule ID and builds its URL path with the ID escaped. */
@@ -5335,12 +5337,8 @@ public class DeepLClient {
   }
 
   /** Extracts the ID of the given multilingual glossary. */
-  private static String multilingualGlossaryId(MultilingualGlossaryInfo glossary)
-      throws IllegalArgumentException {
-    if (glossary == null) {
-      throw new IllegalArgumentException("glossary must not be null");
-    }
-    return glossary.getGlossaryId();
+  private static String multilingualGlossaryId(MultilingualGlossaryInfo glossary) {
+    return idOf("glossary", glossary, MultilingualGlossaryInfo::getGlossaryId);
   }
 
   /** Validates the multilingual glossary ID and builds its URL path with the ID escaped. */
@@ -5377,9 +5375,23 @@ public class DeepLClient {
     return ApiClientHelper.createQueryString(queryParams);
   }
 
+  /**
+   * The ID of a required resource object: null is a null error, an object without ID an argument
+   * error.
+   */
+  private static <T> String idOf(String paramName, T resource, Function<T, String> getId) {
+    Objects.requireNonNull(resource, paramName);
+    String id = getId.apply(resource);
+    if (id == null) {
+      throw new IllegalArgumentException(paramName + " has no ID");
+    }
+    return id;
+  }
+
   private static void validateParameter(String paramName, String value)
       throws IllegalArgumentException {
-    if (value == null || value.isEmpty()) {
+    Objects.requireNonNull(value, paramName);
+    if (value.isEmpty()) {
       throw new IllegalArgumentException(
           String.format("Parameter %s must not be empty", paramName));
     }

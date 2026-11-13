@@ -534,10 +534,10 @@ new terms the same way.
 The create functions and `updateMultilingualGlossaryName()` throw an
 `IllegalArgumentException` for an empty glossary name, and the create functions
 for a dictionary with no entries, before any request is sent. Every function
-that takes a `MultilingualGlossaryInfo` object throws an
-`IllegalArgumentException` for a `null` object, before any request is sent. The
-create functions and `updateMultilingualGlossary()` also throw it for an empty
-or `null` dictionary language code.
+that takes a `MultilingualGlossaryInfo` object throws a `NullPointerException`
+for a `null` object, before any request is sent. The create functions and
+`updateMultilingualGlossary()` also throw an `IllegalArgumentException` for an
+empty dictionary language code and a `NullPointerException` for a `null` one.
 
 You can also create a glossary using a glossary downloaded from the DeepL
 website by using `createMultilingualGlossaryFromCsv()` with either a CSV file,
@@ -848,9 +848,10 @@ object. Each term is trimmed of leading and trailing whitespace and then
 checked like a glossary term before any request is sent: a term that is empty
 or contains a control character such as a newline throws an
 `IllegalArgumentException`. Other invalid term lists are rejected by the API
-with a `DeepLException`. An empty or `null` language code of a term list, or
-passed to `getSpokenTermsEntries()` or `deleteSpokenTermsList()`, throws an
-`IllegalArgumentException` before any request is sent.
+with a `DeepLException`. An empty language code of a term list, or passed to
+`getSpokenTermsEntries()` or `deleteSpokenTermsList()`, throws an
+`IllegalArgumentException`, a `null` one a `NullPointerException`, before any
+request is sent.
 
 #### Creating a Spoken Terms collection
 
@@ -1472,8 +1473,9 @@ thrown. Every later failure, including an API error, a failed job, an
 exceeded timeout, the download or writing the file, throws a
 `TranslationMemoryJobException` carrying the job ID and, once the job status
 was fetched, the last fetched job (`getJob()`). The underlying error, such as
-the `IOException` of a local file failure, is its cause. A `null`
-`TranslationMemoryInfo` or an empty ID is wrapped the same way, without job ID.
+the `IOException` of a local file failure, is its cause. An empty ID, or a
+`TranslationMemoryInfo` without ID, is wrapped the same way, without job ID; a
+`null` one throws `NullPointerException`, not wrapped.
 Instead of a `File`, you can pass an `OutputStream`, which is not closed:
 
 ```java

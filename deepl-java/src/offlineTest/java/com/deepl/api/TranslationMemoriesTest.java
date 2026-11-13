@@ -5,6 +5,8 @@ package com.deepl.api;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.absent;
+import static com.github.tomakehurst.wiremock.client.WireMock.anyRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
 import static com.github.tomakehurst.wiremock.client.WireMock.binaryEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.delete;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -267,15 +269,15 @@ class TranslationMemoriesTest {
   }
 
   @Test
-  void throwsIllegalArgumentWhenAnObjectArgumentIsNull() {
+  void throwsNullPointerExceptionWhenAnObjectArgumentIsNull() {
     assertThrows(
-        IllegalArgumentException.class,
+        NullPointerException.class,
         () -> client.getTranslationMemory((TranslationMemoryInfo) null));
     assertThrows(
-        IllegalArgumentException.class,
+        NullPointerException.class,
         () -> client.uploadTranslationMemoryFile((TranslationMemoryImport) null, new byte[] {1}));
     assertThrows(
-        IllegalArgumentException.class,
+        NullPointerException.class,
         () -> client.downloadTranslationMemoryExport(null, new ByteArrayOutputStream()));
   }
 
@@ -715,7 +717,7 @@ class TranslationMemoriesTest {
   }
 
   @Test
-  void wrapsANullTranslationMemoryObjectWhenExporting() {
+  void throwsANullTranslationMemoryObjectUnwrappedWhenExporting() {
     TranslationMemoryInfo none = null;
     File output = tempDir.resolve("export.tmx").toFile();
     OutputStream stream = new ByteArrayOutputStream();
@@ -725,13 +727,11 @@ class TranslationMemoriesTest {
             () -> client.exportTranslationMemoryToFilepath(none, output, Duration.ofSeconds(1)),
             () -> client.exportTranslationMemoryToFilepath(none, stream),
             () -> client.exportTranslationMemoryToFilepath(none, stream, Duration.ofSeconds(1)))) {
-      TranslationMemoryJobException thrown =
-          assertThrows(TranslationMemoryJobException.class, call);
-      assertTrue(thrown.getCause() instanceof IllegalArgumentException);
-      assertNull(thrown.getJobId());
-      assertNull(thrown.getJob());
+      assertEquals(
+          "translationMemory", assertThrows(NullPointerException.class, call).getMessage());
     }
     assertFalse(output.exists());
+    wm.verify(0, anyRequestedFor(anyUrl()));
   }
 
   @Test
@@ -972,7 +972,7 @@ class TranslationMemoriesTest {
     assertTrue(client.waitUntilTranslationMemoryJobDone(job).done());
     assertTrue(client.waitUntilTranslationMemoryJobDone(job, Duration.ofSeconds(1)).done());
     assertThrows(
-        IllegalArgumentException.class,
+        NullPointerException.class,
         () -> client.getTranslationMemoryJob((TranslationMemoryJob) null));
   }
 
