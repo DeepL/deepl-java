@@ -356,8 +356,8 @@ public class DeepLClient {
    * @return Status when document translation completed, this allows the number of billed characters
    *     to be queried.
    * @throws IllegalArgumentException If the input file does not exist; checked before any request.
-   * @throws NullPointerException If targetLang is <code>null</code>; checked before any request,
-   *     not wrapped.
+   * @throws NullPointerException If inputFile, outputFile or targetLang is <code>null</code>;
+   *     checked before any request, not wrapped.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DocumentTranslationException If the target or source language is empty (before any
    *     request, without document handle), the output path is occupied, a local file cannot be read
@@ -371,6 +371,8 @@ public class DeepLClient {
       String targetLang,
       @Nullable DocumentTranslationOptions options)
       throws DocumentTranslationException, InterruptedException {
+    Objects.requireNonNull(inputFile, "inputFile");
+    Objects.requireNonNull(outputFile, "outputFile");
     checkDocumentInputFile(inputFile);
     checkDocumentLanguages(sourceLang, targetLang);
     // Checked before the try block: its handler deletes the output file.
@@ -424,8 +426,8 @@ public class DeepLClient {
    * @param options Options influencing translation.
    * @return Status when document translation completed, this allows the number of billed characters
    *     to be queried.
-   * @throws NullPointerException If targetLang is <code>null</code>; checked before any request,
-   *     not wrapped.
+   * @throws NullPointerException If inputStream, fileName, outputStream or targetLang is <code>null
+   *     </code>; checked before any request, not wrapped.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DocumentTranslationException If the target or source language is empty (before any
    *     request, without document handle), or any error occurs while communicating with the DeepL
@@ -439,6 +441,9 @@ public class DeepLClient {
       String targetLang,
       @Nullable DocumentTranslationOptions options)
       throws DocumentTranslationException, InterruptedException {
+    Objects.requireNonNull(inputStream, "inputStream");
+    Objects.requireNonNull(fileName, "fileName");
+    Objects.requireNonNull(outputStream, "outputStream");
     checkDocumentLanguages(sourceLang, targetLang);
     DocumentHandle handle = null;
     try {
@@ -490,7 +495,8 @@ public class DeepLClient {
    * @param options Options influencing translation.
    * @return Handle associated with the in-progress document translation.
    * @throws IllegalArgumentException If the input file does not exist; checked before any request.
-   * @throws NullPointerException If targetLang is <code>null</code>; checked before any request.
+   * @throws NullPointerException If inputFile or targetLang is <code>null</code>; checked before
+   *     any request.
    * @throws IOException If the input file cannot be read.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
@@ -501,6 +507,7 @@ public class DeepLClient {
       String targetLang,
       @Nullable DocumentTranslationOptions options)
       throws DeepLException, IOException, InterruptedException {
+    Objects.requireNonNull(inputFile, "inputFile");
     checkDocumentInputFile(inputFile);
     Iterable<KeyValuePair<String, String>> params =
         createHttpParams(sourceLang, targetLang, options);
@@ -542,7 +549,8 @@ public class DeepLClient {
    * @param targetLang Language code of the desired output language.
    * @param options Options influencing translation.
    * @return Handle associated with the in-progress document translation.
-   * @throws NullPointerException If targetLang is <code>null</code>; checked before any request.
+   * @throws NullPointerException If inputStream, fileName or targetLang is <code>null</code>;
+   *     checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
@@ -553,6 +561,9 @@ public class DeepLClient {
       String targetLang,
       @Nullable DocumentTranslationOptions options)
       throws DeepLException, InterruptedException {
+    Objects.requireNonNull(inputStream, "inputStream");
+    Objects.requireNonNull(fileName, "fileName");
+
     Iterable<KeyValuePair<String, String>> params =
         createHttpParams(sourceLang, targetLang, options);
     HttpResponse response =
@@ -580,11 +591,14 @@ public class DeepLClient {
    *
    * @param handle Handle associated with document translation to check.
    * @return Status of the document translation.
+   * @throws NullPointerException If handle is <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
   public DocumentStatus translateDocumentGetStatus(DocumentHandle handle)
       throws DeepLException, InterruptedException {
+    Objects.requireNonNull(handle, "handle");
+
     ArrayList<KeyValuePair<String, String>> params = new ArrayList<>();
     params.add(new KeyValuePair<>("document_key", handle.getDocumentKey()));
     String relativeUrl =
@@ -601,6 +615,7 @@ public class DeepLClient {
    * @param handle Handle associated with document translation to wait for.
    * @return Status when document translation completed, this allows the number of billed characters
    *     to be queried.
+   * @throws NullPointerException If handle is <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted while waiting for the document
    *     translation to complete.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
@@ -619,6 +634,7 @@ public class DeepLClient {
    * @param timeout Maximum time to wait, or <code>null</code> to wait without limit.
    * @return Status when document translation completed, this allows the number of billed characters
    *     to be queried.
+   * @throws NullPointerException If handle is <code>null</code>; checked before any request.
    * @throws InterruptedException If the thread is interrupted while waiting for the document
    *     translation to complete.
    * @throws DeepLException If the document translation failed, the timeout expired, or any error
@@ -627,6 +643,8 @@ public class DeepLClient {
   public DocumentStatus translateDocumentWaitUntilDone(
       DocumentHandle handle, @Nullable Duration timeout)
       throws InterruptedException, DeepLException {
+    Objects.requireNonNull(handle, "handle");
+
     Long timeoutNanos = null;
     if (timeout != null) {
       try {
@@ -666,12 +684,17 @@ public class DeepLClient {
    *
    * @param handle Handle associated with document translation to download.
    * @param outputFile File to download translated document to.
+   * @throws NullPointerException If handle or outputFile is <code>null</code>; checked before any
+   *     request.
    * @throws IOException If the output path is occupied.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
   public void translateDocumentDownload(DocumentHandle handle, File outputFile)
       throws DeepLException, IOException, InterruptedException {
+    Objects.requireNonNull(handle, "handle");
+    Objects.requireNonNull(outputFile, "outputFile");
+
     // Checked before the try block: its handler deletes the output file.
     if (outputFile.exists()) {
       throw new IOException("File already exists at output path");
@@ -693,12 +716,17 @@ public class DeepLClient {
    *
    * @param handle Handle associated with document translation to download.
    * @param outputStream Stream to download translated document to.
+   * @throws NullPointerException If handle or outputStream is <code>null</code>; checked before any
+   *     request.
    * @throws IOException If an I/O error occurs while writing to the output stream.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while communicating with the DeepL API.
    */
   public void translateDocumentDownload(DocumentHandle handle, OutputStream outputStream)
       throws DeepLException, IOException, InterruptedException {
+    Objects.requireNonNull(handle, "handle");
+    Objects.requireNonNull(outputStream, "outputStream");
+
     ArrayList<KeyValuePair<String, String>> params = new ArrayList<>();
     params.add(new KeyValuePair<>("document_key", handle.getDocumentKey()));
     String relativeUrl =
@@ -4329,8 +4357,8 @@ public class DeepLClient {
   }
 
   /** A missing input file is an argument error, raised before any request. */
-  private static void checkDocumentInputFile(@Nullable File inputFile) {
-    if (inputFile == null || !inputFile.exists()) {
+  private static void checkDocumentInputFile(File inputFile) {
+    if (!inputFile.exists()) {
       throw new IllegalArgumentException("inputFile must be an existing file");
     }
   }

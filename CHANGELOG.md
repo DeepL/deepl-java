@@ -113,6 +113,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** `translateDocument()` throws a `null` target language as
   `NullPointerException` before any request; it was wrapped in a
   `DocumentTranslationException`.
+- **Breaking:** `translateDocument()` throws a `null` input stream, file name
+  or output stream as `NullPointerException` before any request; it was
+  wrapped in a `DocumentTranslationException`. A `null` input file of
+  `translateDocument()` and `translateDocumentUpload()` throws
+  `NullPointerException`; a missing one still throws
+  `IllegalArgumentException`.
 - `updateMultilingualGlossaryName()` (all overloads) throws `InterruptedException`
   unwrapped when the thread is interrupted, like the other `DeepLClient`
   methods, instead of a `DeepLException`, and declares it. Callers must catch or

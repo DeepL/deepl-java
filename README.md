@@ -370,8 +370,10 @@ class Example {  // Continuing class Example from above
 }
 ```
 
-A missing input file throws an `IllegalArgumentException`, from both
-`translateDocument()` and `translateDocumentUpload()`. Every other failure of
+A missing input file throws an `IllegalArgumentException`, and a `null` file,
+stream, file name or handle a `NullPointerException`, from both
+`translateDocument()` and `translateDocumentUpload()`, before any request.
+Every other failure of
 `translateDocument()` is thrown as a `DocumentTranslationException`, including
 an empty target or source language (checked before any request) and local file
 failures, which carry the `IOException` as their cause: if a file already exists

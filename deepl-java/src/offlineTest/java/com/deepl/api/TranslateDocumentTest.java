@@ -31,6 +31,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -44,6 +46,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.api.function.ThrowingConsumer;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -757,6 +760,47 @@ class TranslateDocumentTest {
     File input = tempDir.resolve("missing.txt").toFile();
     assertThrows(
         IllegalArgumentException.class, () -> client.translateDocumentUpload(input, "en", "de"));
+    assertTrue(wm.getAllServeEvents().isEmpty());
+  }
+
+  private static Arguments nullRow(String name, ThrowingConsumer<DeepLClient> call) {
+    return Arguments.of(name, call);
+  }
+
+  static Stream<Arguments> nullDocumentArguments() {
+    File input = new File("missing-input.txt");
+    File output = new File("missing-output.txt");
+    DocumentHandle handle = new DocumentHandle("d1", "k1");
+    InputStream in = new ByteArrayInputStream(new byte[] {'a'});
+    OutputStream out = new ByteArrayOutputStream();
+    return Stream.of(
+        nullRow("inputFile", c -> c.translateDocument((File) null, output, "en", "de")),
+        nullRow("outputFile", c -> c.translateDocument(input, (File) null, "en", "de")),
+        nullRow(
+            "inputStream", c -> c.translateDocument((InputStream) null, "a.txt", out, "en", "de")),
+        nullRow("fileName", c -> c.translateDocument(in, null, out, "en", "de")),
+        nullRow(
+            "outputStream", c -> c.translateDocument(in, "a.txt", (OutputStream) null, "en", "de")),
+        nullRow("inputFile", c -> c.translateDocumentUpload((File) null, "en", "de")),
+        nullRow(
+            "inputStream", c -> c.translateDocumentUpload((InputStream) null, "a.txt", "en", "de")),
+        nullRow("fileName", c -> c.translateDocumentUpload(in, null, "en", "de")),
+        nullRow("handle", c -> c.translateDocumentGetStatus(null)),
+        nullRow("handle", c -> c.translateDocumentWaitUntilDone(null, null)),
+        nullRow("handle", c -> c.translateDocumentDownload(null, out)),
+        nullRow("outputStream", c -> c.translateDocumentDownload(handle, (OutputStream) null)),
+        nullRow("handle", c -> c.translateDocumentDownload(null, output)),
+        nullRow("outputFile", c -> c.translateDocumentDownload(handle, (File) null)));
+  }
+
+  @ParameterizedTest(name = "{index}: {0}")
+  @MethodSource("nullDocumentArguments")
+  void throwsNullPointerExceptionNamingANullDocumentArgumentBeforeAnyRequest(
+      String name, ThrowingConsumer<DeepLClient> call) {
+    NullPointerException thrown =
+        assertThrows(NullPointerException.class, () -> call.accept(client));
+    assertEquals(name, thrown.getMessage());
+    assertFalse(new File("missing-output.txt").exists());
     assertTrue(wm.getAllServeEvents().isEmpty());
   }
 
