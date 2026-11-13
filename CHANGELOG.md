@@ -134,6 +134,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   label or prompt; these were left out of the request before.
   `updateStyleRuleConfiguredRules()` throws `NullPointerException` for `null`
   configured rules instead of `IllegalArgumentException`.
+- **Breaking:** `uploadTranslationMemoryFile()`,
+  `importTranslationMemoryFromFilepath()`,
+  `exportTranslationMemoryToFilepath()` and
+  `downloadTranslationMemoryExport()` throw `NullPointerException` for `null`
+  file content, input file, output file or output stream, before any request,
+  instead of `IllegalArgumentException`. A `null` translation memory ID or
+  file name of the import and export helpers is no longer wrapped in a
+  `TranslationMemoryJobException`. A missing input file still throws
+  `IllegalArgumentException`.
 - `updateMultilingualGlossaryName()` (all overloads) throws `InterruptedException`
   unwrapped when the thread is interrupted, like the other `DeepLClient`
   methods, instead of a `DeepLException`, and declares it. Callers must catch or

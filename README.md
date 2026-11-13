@@ -1374,8 +1374,9 @@ The optional timeout is the maximum time to wait for the import to finish; omit
 it to wait indefinitely. The job status is polled every 5 seconds, and the last
 wait is cut short at the timeout.
 
-A missing input file throws `IllegalArgumentException` before any request is
-sent. Every other failure, including an unreadable file, an API error, a failed
+A missing input file throws `IllegalArgumentException`, and a `null` file,
+content, file name, ID or output a `NullPointerException`, before any request is
+sent and not wrapped. Every other failure, including an unreadable file, an API error, a failed
 job or an exceeded timeout, throws a `TranslationMemoryJobException` with the
 underlying error as its cause. Once the import job was created, its
 `getJobId()` returns the job ID, so you can inspect the job or wait for it
@@ -1479,7 +1480,8 @@ exceeded timeout, the download or writing the file, throws a
 was fetched, the last fetched job (`getJob()`). The underlying error, such as
 the `IOException` of a local file failure, is its cause. An empty ID, or a
 `TranslationMemoryInfo` without ID, is wrapped the same way, without job ID; a
-`null` one throws `NullPointerException`, not wrapped.
+`null` one throws `NullPointerException`, not wrapped. A `null` ID or output
+throws `NullPointerException`, not wrapped.
 Instead of a `File`, you can pass an `OutputStream`, which is not closed:
 
 ```java

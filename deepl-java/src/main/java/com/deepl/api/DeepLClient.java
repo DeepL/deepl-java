@@ -3736,6 +3736,8 @@ public class DeepLClient {
    * @param fileContent Content of the TMX file to upload.
    * @param contentType MIME type of the file, which must match the content type declared when the
    *     import job was created.
+   * @throws NullPointerException If uploadUrl, fileContent or contentType is <code>null</code>;
+   *     checked before any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while uploading the file.
    */
@@ -3743,9 +3745,7 @@ public class DeepLClient {
       throws DeepLException, InterruptedException {
     validateParameter("uploadUrl", uploadUrl);
     validateParameter("contentType", contentType);
-    if (fileContent == null) {
-      throw new IllegalArgumentException("fileContent must not be null");
-    }
+    Objects.requireNonNull(fileContent, "fileContent");
     HttpResponse response =
         httpClientWrapper.sendAssetPutRequestWithBackoff(uploadUrl, fileContent, contentType);
     if (response.getCode() < 200 || response.getCode() >= 300) {
@@ -3973,6 +3973,8 @@ public class DeepLClient {
    *
    * @param job Completed export job carrying the download URL.
    * @param outputFile File to download the exported translation memory to.
+   * @throws NullPointerException If job or outputFile is <code>null</code>; checked before any
+   *     request.
    * @throws IOException If the output path is occupied.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If the job has no download URL, or any error occurs while downloading.
@@ -3980,6 +3982,7 @@ public class DeepLClient {
   public void downloadTranslationMemoryExport(TranslationMemoryJob job, File outputFile)
       throws DeepLException, IOException, InterruptedException {
     Objects.requireNonNull(job, "job");
+    Objects.requireNonNull(outputFile, "outputFile");
 
     // Checked before the try so the cleanup below only ever deletes a file this call created:
     // otherwise the guard protecting an existing file would be what destroys it.
@@ -4002,6 +4005,8 @@ public class DeepLClient {
    *
    * @param job Completed export job carrying the download URL.
    * @param outputStream Stream to download the exported translation memory to.
+   * @throws NullPointerException If job or outputStream is <code>null</code>; checked before any
+   *     request.
    * @throws IOException If an I/O error occurs while writing to the output stream.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If the job has no download URL, or any error occurs while downloading.
@@ -4010,6 +4015,8 @@ public class DeepLClient {
   public void downloadTranslationMemoryExport(TranslationMemoryJob job, OutputStream outputStream)
       throws DeepLException, IOException, InterruptedException {
     Objects.requireNonNull(job, "job");
+    Objects.requireNonNull(outputStream, "outputStream");
+
     TranslationMemoryJobResult result = job.getResult();
     String downloadUrl = (result == null) ? null : result.getDownloadUrl();
     if (downloadUrl == null || downloadUrl.isEmpty()) {
@@ -4045,6 +4052,8 @@ public class DeepLClient {
    * @return {@link TranslationMemoryJob} object for the completed import; its result carries the ID
    *     of the new translation memory.
    * @throws IllegalArgumentException If the input file does not exist.
+   * @throws NullPointerException If inputFile is <code>null</code>; checked before any request, not
+   *     wrapped.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws TranslationMemoryJobException If the input file cannot be read, the import fails, or
    *     any error occurs while communicating with the DeepL API.
@@ -4068,6 +4077,8 @@ public class DeepLClient {
    * @return {@link TranslationMemoryJob} object for the completed import; its result carries the ID
    *     of the new translation memory.
    * @throws IllegalArgumentException If the input file does not exist.
+   * @throws NullPointerException If inputFile is <code>null</code>; checked before any request, not
+   *     wrapped.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws TranslationMemoryJobException If the input file cannot be read, the timeout is
    *     exceeded, the import fails, or any error occurs while communicating with the DeepL API.
@@ -4106,6 +4117,8 @@ public class DeepLClient {
    * @return {@link TranslationMemoryJob} object for the completed import; its result carries the ID
    *     of the new translation memory.
    * @throws IllegalArgumentException If the input file does not exist.
+   * @throws NullPointerException If inputFile is <code>null</code>; checked before any request, not
+   *     wrapped.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws TranslationMemoryJobException If the input file cannot be read, the timeout is
    *     exceeded, the import fails, or any error occurs while communicating with the DeepL API.
@@ -4125,13 +4138,14 @@ public class DeepLClient {
    * @param fileName Name of the TMX file, for example "legal.tmx".
    * @param options Options for the import, or <code>null</code>.
    * @see DeepLClient#importTranslationMemoryFromFilepath(File, ImportTranslationMemoryOptions)
+   * @throws NullPointerException If fileContent or fileName is <code>null</code>; checked before
+   *     any request, not wrapped.
    */
   public TranslationMemoryJob importTranslationMemoryFromFilepath(
       byte[] fileContent, String fileName, @Nullable ImportTranslationMemoryOptions options)
       throws TranslationMemoryJobException, InterruptedException {
-    if (fileContent == null) {
-      throw new IllegalArgumentException("fileContent must not be null");
-    }
+    Objects.requireNonNull(fileContent, "fileContent");
+    Objects.requireNonNull(fileName, "fileName");
     CreateTranslationMemoryImportOptions createOptions = new CreateTranslationMemoryImportOptions();
     String contentType = TRANSLATION_MEMORY_FILE_CONTENT_TYPE;
     Duration timeout = null;
@@ -4191,6 +4205,8 @@ public class DeepLClient {
    * @param translationMemoryId ID of the translation memory to export.
    * @param outputFile File to write the exported translation memory to.
    * @return {@link TranslationMemoryJob} object for the completed export.
+   * @throws NullPointerException If translationMemoryId or outputFile is <code>null</code>; checked
+   *     before any request, not wrapped.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws TranslationMemoryJobException If the output path is occupied, its directory does not
    *     exist or the file cannot be created there (checked before the export job is created),
@@ -4213,6 +4229,8 @@ public class DeepLClient {
    *     indefinitely. The job status is polled every 5 seconds; the last wait is cut short at the
    *     timeout.
    * @return {@link TranslationMemoryJob} object for the completed export.
+   * @throws NullPointerException If translationMemoryId or outputFile is <code>null</code>; checked
+   *     before any request, not wrapped.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws TranslationMemoryJobException If the output path is occupied, its directory does not
    *     exist or the file cannot be created there (checked before the export job is created),
@@ -4224,6 +4242,7 @@ public class DeepLClient {
   public TranslationMemoryJob exportTranslationMemoryToFilepath(
       String translationMemoryId, File outputFile, @Nullable Duration timeout)
       throws TranslationMemoryJobException, InterruptedException {
+    Objects.requireNonNull(translationMemoryId, "translationMemoryId");
     checkExportOutputFile(outputFile);
     String jobId = null;
     TranslationMemoryJob[] lastJob = new TranslationMemoryJob[1];
@@ -4279,13 +4298,14 @@ public class DeepLClient {
    * @param timeout Maximum time to wait for the export to finish, or <code>null</code> to wait
    *     indefinitely.
    * @see DeepLClient#exportTranslationMemoryToFilepath(String, File, Duration)
+   * @throws NullPointerException If translationMemoryId or outputStream is <code>null</code>;
+   *     checked before any request, not wrapped.
    */
   public TranslationMemoryJob exportTranslationMemoryToFilepath(
       String translationMemoryId, OutputStream outputStream, @Nullable Duration timeout)
       throws TranslationMemoryJobException, InterruptedException {
-    if (outputStream == null) {
-      throw new IllegalArgumentException("outputStream must not be null");
-    }
+    Objects.requireNonNull(translationMemoryId, "translationMemoryId");
+    Objects.requireNonNull(outputStream, "outputStream");
     String jobId = null;
     TranslationMemoryJob[] lastJob = new TranslationMemoryJob[1];
     try {
@@ -4390,9 +4410,10 @@ public class DeepLClient {
   /**
    * Reads a TMX file for import; a missing file is an argument error, raised before any request.
    */
-  private static byte[] readTranslationMemoryFile(@Nullable File inputFile)
+  private static byte[] readTranslationMemoryFile(File inputFile)
       throws TranslationMemoryJobException {
-    if (inputFile == null || !inputFile.exists()) {
+    Objects.requireNonNull(inputFile, "inputFile");
+    if (!inputFile.exists()) {
       throw new IllegalArgumentException("inputFile must be an existing file");
     }
     try {
@@ -4403,11 +4424,8 @@ public class DeepLClient {
   }
 
   /** Checks the output file of an export so a bad path fails before the export job is created. */
-  private static void checkExportOutputFile(@Nullable File outputFile)
-      throws TranslationMemoryJobException {
-    if (outputFile == null) {
-      throw new IllegalArgumentException("outputFile must not be null");
-    }
+  private static void checkExportOutputFile(File outputFile) throws TranslationMemoryJobException {
+    Objects.requireNonNull(outputFile, "outputFile");
     if (outputFile.exists()) {
       throw translationMemoryJobError(
           new IOException("File already exists at output path"), null, null);

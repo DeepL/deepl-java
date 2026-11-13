@@ -41,10 +41,15 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.api.function.ThrowingConsumer;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class TranslationMemoriesTest {
   @RegisterExtension static OfflineServer wm = new OfflineServer();
@@ -289,9 +294,6 @@ class TranslationMemoriesTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> client.uploadTranslationMemoryFile("http://x", new byte[] {1}, ""));
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> client.uploadTranslationMemoryFile("http://x", null, "application/xml"));
   }
 
   @Test
@@ -666,6 +668,48 @@ class TranslationMemoriesTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> client.importTranslationMemoryFromFilepath(tempDir.resolve("missing.tmx").toFile()));
+  }
+
+  private static Arguments nullRow(String name, ThrowingConsumer<DeepLClient> call) {
+    return Arguments.of(name, call);
+  }
+
+  static Stream<Arguments> nullFileArguments() {
+    File out = new File("missing-dir/export.tmx");
+    TranslationMemoryJob job =
+        exportJob(TranslationMemoryJobResult.Status.Completed, "http://localhost:9/x");
+    return Stream.of(
+        nullRow(
+            "fileContent", c -> c.uploadTranslationMemoryFile("http://x", null, "application/xml")),
+        nullRow("inputFile", c -> c.importTranslationMemoryFromFilepath((File) null)),
+        nullRow(
+            "inputFile",
+            c ->
+                c.importTranslationMemoryFromFilepath(
+                    (File) null, (ImportTranslationMemoryOptions) null)),
+        nullRow(
+            "fileContent",
+            c -> c.importTranslationMemoryFromFilepath((byte[]) null, "m.tmx", null)),
+        nullRow("fileName", c -> c.importTranslationMemoryFromFilepath(new byte[] {1}, null, null)),
+        nullRow(
+            "translationMemoryId", c -> c.exportTranslationMemoryToFilepath((String) null, out)),
+        nullRow("outputFile", c -> c.exportTranslationMemoryToFilepath("tm1", (File) null)),
+        nullRow(
+            "translationMemoryId",
+            c -> c.exportTranslationMemoryToFilepath((String) null, new ByteArrayOutputStream())),
+        nullRow(
+            "outputStream", c -> c.exportTranslationMemoryToFilepath("tm1", (OutputStream) null)),
+        nullRow("outputFile", c -> c.downloadTranslationMemoryExport(job, (File) null)),
+        nullRow("outputStream", c -> c.downloadTranslationMemoryExport(job, (OutputStream) null)));
+  }
+
+  @ParameterizedTest(name = "{index}: {0}")
+  @MethodSource("nullFileArguments")
+  void throwsNullPointerExceptionNamingANullFileArgumentUnwrapped(
+      String name, ThrowingConsumer<DeepLClient> call) {
+    assertEquals(
+        name, assertThrows(NullPointerException.class, () -> call.accept(client)).getMessage());
+    wm.verify(0, anyRequestedFor(anyUrl()));
   }
 
   @Test
