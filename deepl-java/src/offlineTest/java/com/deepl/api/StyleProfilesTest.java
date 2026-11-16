@@ -202,6 +202,10 @@ class StyleProfilesTest {
   }
 
   static Stream<Arguments> componentIdsWithANullEntry() {
+    GlossaryInfo glossary = new GlossaryInfo("g1", "n", true, "en", "de", new Date(), 1);
+    StyleRuleInfo rule = new StyleRuleInfo("s1", "n", new Date(), new Date(), "de", 1, null, null);
+    TranslationMemoryInfo tm =
+        new TranslationMemoryInfo("t1", "n", "de", Collections.singletonList("en"), 1);
     return Stream.of(
         Arguments.of(
             "glossaryIds",
@@ -216,7 +220,22 @@ class StyleProfilesTest {
             (Executable)
                 () ->
                     new UpdateStyleProfileOptions()
-                        .setTranslationMemoryIds(Arrays.asList("t1", null))));
+                        .setTranslationMemoryIds(Arrays.asList("t1", null))),
+        Arguments.of(
+            "glossaryIds",
+            (Executable)
+                () -> new CreateStyleProfileOptions().setGlossaryIds(glossary, (IGlossary[]) null)),
+        Arguments.of(
+            "styleRuleIds",
+            (Executable)
+                () ->
+                    new CreateStyleProfileOptions().setStyleRuleIds(rule, (StyleRuleInfo[]) null)),
+        Arguments.of(
+            "translationMemoryIds",
+            (Executable)
+                () ->
+                    new UpdateStyleProfileOptions()
+                        .setTranslationMemoryIds(tm, (TranslationMemoryInfo[]) null)));
   }
 
   @ParameterizedTest

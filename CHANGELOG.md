@@ -317,6 +317,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `LanguageCode.standardize()` remain.
 
 ### Fixed
+- The overloads that take resource objects (`setGlossaryIds(IGlossary,
+  IGlossary...)` of the text, document and style profile options,
+  `setStyleRuleIds(StyleRuleInfo, StyleRuleInfo...)`,
+  `setTranslationMemoryIds(TranslationMemoryInfo, TranslationMemoryInfo...)`)
+  throw `NullPointerException` naming the option when the array of further
+  objects is `null`, as for a `null` entry; the exception had no message
+  before.
 - `DELETE` requests no longer send an empty form body with a
   `Content-Type: application/x-www-form-urlencoded` header.
 - `createTranslationMemoryExport()` sends its `POST` without a `Content-Type`

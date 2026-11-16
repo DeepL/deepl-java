@@ -120,9 +120,10 @@ public class TextTranslationOptions extends BaseRequestOptions {
    * list, pass the glossary IDs to {@link #setGlossaryIds(List)}.
    *
    * @throws IllegalArgumentException If an entry is empty, or a glossary has no ID.
-   * @throws NullPointerException If an entry is <code>null</code>.
+   * @throws NullPointerException If an entry or the array of further entries is <code>null</code>.
    */
   public TextTranslationOptions setGlossaryIds(IGlossary first, IGlossary... more) {
+    Objects.requireNonNull(more, "glossaryIds");
     // The separate first parameter keeps the zero-argument call setGlossaryIds() on String...
     IGlossary[] glossaries = new IGlossary[more.length + 1];
     glossaries[0] = first;

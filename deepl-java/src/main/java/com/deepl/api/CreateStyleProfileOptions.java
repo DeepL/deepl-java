@@ -53,7 +53,7 @@ public class CreateStyleProfileOptions extends BaseRequestOptions {
    * Sets the glossaries to link, in priority order, as {@link GlossaryInfo} or {@link
    * MultilingualGlossaryInfo} objects; their IDs are sent.
    *
-   * @throws NullPointerException If an entry is <code>null</code>.
+   * @throws NullPointerException If an entry or the array of further entries is <code>null</code>.
    */
   public CreateStyleProfileOptions setGlossaryIds(IGlossary first, IGlossary... more) {
     this.glossaryIds = idsOf(first, more, IGlossary::getGlossaryId, "glossaryIds");
@@ -73,7 +73,7 @@ public class CreateStyleProfileOptions extends BaseRequestOptions {
   /**
    * Sets the style rules to link as {@link StyleRuleInfo} objects; their IDs are sent.
    *
-   * @throws NullPointerException If an entry is <code>null</code>.
+   * @throws NullPointerException If an entry or the array of further entries is <code>null</code>.
    */
   public CreateStyleProfileOptions setStyleRuleIds(StyleRuleInfo first, StyleRuleInfo... more) {
     this.styleRuleIds = idsOf(first, more, StyleRuleInfo::getStyleId, "styleRuleIds");
@@ -96,7 +96,7 @@ public class CreateStyleProfileOptions extends BaseRequestOptions {
    * Sets the translation memories to link as {@link TranslationMemoryInfo} objects; their IDs are
    * sent.
    *
-   * @throws NullPointerException If an entry is <code>null</code>.
+   * @throws NullPointerException If an entry or the array of further entries is <code>null</code>.
    */
   public CreateStyleProfileOptions setTranslationMemoryIds(
       TranslationMemoryInfo first, TranslationMemoryInfo... more) {
@@ -161,6 +161,7 @@ public class CreateStyleProfileOptions extends BaseRequestOptions {
 
   // The separate first parameter keeps a zero-argument call off the object overloads.
   private static <T> List<String> idsOf(T first, T[] more, Function<T, String> getId, String name) {
+    Objects.requireNonNull(more, name);
     List<String> ids = new ArrayList<>();
     ids.add(idOf(first, getId, name));
     for (T item : more) {

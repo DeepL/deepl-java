@@ -417,9 +417,11 @@ class TranslateDocumentTest {
             () -> new DocumentTranslationOptions().setGlossaryIds(Arrays.asList("g1", null)),
             () -> new DocumentTranslationOptions().setGlossaryIds("g1", null),
             () -> new DocumentTranslationOptions().setGlossaryIds(glossary, (IGlossary) null),
+            () -> new DocumentTranslationOptions().setGlossaryIds(glossary, (IGlossary[]) null),
             () -> new TextTranslationOptions().setGlossaryIds(Arrays.asList("g1", null)),
             () -> new TextTranslationOptions().setGlossaryIds("g1", null),
-            () -> new TextTranslationOptions().setGlossaryIds((IGlossary) null))
+            () -> new TextTranslationOptions().setGlossaryIds((IGlossary) null),
+            () -> new TextTranslationOptions().setGlossaryIds(glossary, (IGlossary[]) null))
         .map(Arguments::of);
   }
 
