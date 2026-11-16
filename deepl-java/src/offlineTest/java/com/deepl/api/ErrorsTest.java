@@ -200,6 +200,8 @@ class ErrorsTest {
                 c.replaceSpokenTermsList(
                     "st1", new SpokenTermsEntries("en", Arrays.asList("a", null)))),
         nullRow(
+            "entries", c -> c.replaceSpokenTermsList("st1", new SpokenTermsEntries("en", null))),
+        nullRow(
             "customInstructions",
             c -> c.createStyleRule("n", "en", null, Arrays.asList((CustomInstruction) null), null)),
         nullRow(

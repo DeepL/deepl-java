@@ -855,7 +855,8 @@ or contains a control character such as a newline throws an
 with a `DeepLException`. An empty language code of a term list, or passed to
 `getSpokenTermsEntries()` or `deleteSpokenTermsList()`, throws an
 `IllegalArgumentException`, a `null` one a `NullPointerException`, before any
-request is sent.
+request is sent. A `SpokenTermsEntries` created with `null` entries throws a
+`NullPointerException`.
 
 #### Creating a Spoken Terms collection
 

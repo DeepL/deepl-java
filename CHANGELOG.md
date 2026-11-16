@@ -165,6 +165,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   for a `null` document ID or key. The document functions threw an unnamed
   `NullPointerException` for such a handle before. Migration: use the handle
   returned by `translateDocumentUpload()`.
+- **Breaking:** the `SpokenTermsEntries` constructor throws
+  `NullPointerException` for `null` entries; `createSpokenTerms()`,
+  `updateSpokenTerms()` and `replaceSpokenTermsList()` sent such a term list as
+  an empty one before. Migration: pass an empty list for an empty term list.
 - Every `DeepLClient` and `DeepLAdminClient` method throws
   `NullPointerException` naming the parameter for a `null` required argument
   or a `null` entry of a list argument, before any request, where it threw an

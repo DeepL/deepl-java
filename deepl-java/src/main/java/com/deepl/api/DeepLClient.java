@@ -4593,7 +4593,6 @@ public class DeepLClient {
   private static Map<String, Object> createSpokenTermsListData(SpokenTermsEntries entries) {
     Objects.requireNonNull(entries, "entries");
     validateParameter("lang", entries.getLang());
-    Objects.requireNonNull(entries.getEntries(), "entries");
     List<String> terms = new ArrayList<>();
     for (String term : entries.getEntries()) {
       Objects.requireNonNull(term, "entries");

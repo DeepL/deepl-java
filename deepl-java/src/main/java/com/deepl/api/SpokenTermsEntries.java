@@ -3,8 +3,8 @@
 // license that can be found in the LICENSE file.
 package com.deepl.api;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /** The terms of one language in a Spoken Terms collection. */
 public class SpokenTermsEntries {
@@ -15,11 +15,12 @@ public class SpokenTermsEntries {
    * Initializes a new {@link SpokenTermsEntries} object.
    *
    * @param lang Language code (ISO 639-1) of the terms, for example "en".
-   * @param entries Terms of the language, one term per element.
+   * @param entries Terms of the language, one term per element; must not be <code>null</code>.
+   * @throws NullPointerException If entries is <code>null</code>.
    */
   public SpokenTermsEntries(String lang, List<String> entries) {
     this.lang = lang;
-    this.entries = entries;
+    this.entries = Objects.requireNonNull(entries, "entries");
   }
 
   /** @return Language code (ISO 639-1) of the terms. */
@@ -29,7 +30,7 @@ public class SpokenTermsEntries {
 
   /** @return Terms of the language, one term per element. */
   public List<String> getEntries() {
-    return entries != null ? entries : Collections.emptyList();
+    return entries;
   }
 
   @Override
