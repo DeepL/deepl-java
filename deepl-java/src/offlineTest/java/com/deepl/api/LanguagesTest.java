@@ -134,6 +134,31 @@ class LanguagesTest {
   }
 
   @Test
+  void throwsNullPointerExceptionNamingANullIncludeEntry() {
+    GetLanguagesForResourceOptions options = new GetLanguagesForResourceOptions();
+    assertEquals(
+        "include",
+        assertThrows(
+                NullPointerException.class, () -> options.setInclude(Arrays.asList("beta", null)))
+            .getMessage());
+    assertEquals(
+        "include",
+        assertThrows(
+                NullPointerException.class, () -> options.setInclude(LanguageInclude.Beta, null))
+            .getMessage());
+  }
+
+  @Test
+  void sendsOnlyTheResourceWhenTheIncludeArrayIsNull() throws Exception {
+    expectLanguages("resource=glossary");
+    client.getLanguagesForResource(
+        "glossary",
+        new GetLanguagesForResourceOptions()
+            .setInclude(LanguageInclude.Beta)
+            .setInclude((LanguageInclude[]) null));
+  }
+
+  @Test
   void encodesTheResourceInTheQuery() throws Exception {
     wm.stubFor(get(urlEqualTo("/v3/languages?resource=a%20b%26c")).willReturn(okJson("[]")));
     client.getLanguagesForResource("a b&c");

@@ -752,6 +752,47 @@ class TranslateTextTest {
     assertTrue(wm.getAllServeEvents().isEmpty());
   }
 
+  static Stream<Arguments> nullListOptionEntries() {
+    List<String> withNull = Arrays.asList("a", null);
+    return Stream.of(
+        nullRow(
+            "customInstructions",
+            c ->
+                c.translateText(
+                    "Hello",
+                    null,
+                    "de",
+                    new TextTranslationOptions().setCustomInstructions(withNull))),
+        nullRow(
+            "splittingTags",
+            c ->
+                c.translateText(
+                    "Hello", null, "de", new TextTranslationOptions().setSplittingTags(withNull))),
+        nullRow(
+            "nonSplittingTags",
+            c ->
+                c.translateText(
+                    "Hello",
+                    null,
+                    "de",
+                    new TextTranslationOptions().setNonSplittingTags(withNull))),
+        nullRow(
+            "ignoreTags",
+            c ->
+                c.translateText(
+                    "Hello", null, "de", new TextTranslationOptions().setIgnoreTags(withNull))));
+  }
+
+  @ParameterizedTest(name = "{index}: {0}")
+  @MethodSource("nullListOptionEntries")
+  void throwsNullPointerExceptionNamingANullListOptionEntry(
+      String name, ThrowingConsumer<DeepLClient> call) {
+    NullPointerException thrown =
+        assertThrows(NullPointerException.class, () -> call.accept(client));
+    assertEquals(name, thrown.getMessage());
+    assertTrue(wm.getAllServeEvents().isEmpty());
+  }
+
   @Test
   void throwsIllegalArgumentWhenThresholdHasNoTranslationMemory() {
     IllegalArgumentException thrown =

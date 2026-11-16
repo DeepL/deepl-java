@@ -5,6 +5,7 @@ package com.deepl.api;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -19,22 +20,37 @@ public class GetLanguagesForResourceOptions {
    * @param include Include values, for example "beta" or "external", or <code>null</code> to return
    *     only stable languages and features.
    * @return This object, for convenience when chaining setters.
+   * @throws NullPointerException If an include value is <code>null</code>.
    */
   public GetLanguagesForResourceOptions setInclude(@Nullable List<String> include) {
-    this.include = include == null ? null : new ArrayList<>(include);
+    if (include == null) {
+      this.include = null;
+      return this;
+    }
+    List<String> values = new ArrayList<>();
+    for (String value : include) {
+      values.add(Objects.requireNonNull(value, "include"));
+    }
+    this.include = values;
     return this;
   }
 
   /**
    * Sets the include values, each sent as a separate <code>include</code> query parameter.
    *
-   * @param include Include values, for example {@link LanguageInclude#Beta}.
+   * @param include Include values, for example {@link LanguageInclude#Beta}, or <code>null</code>
+   *     to return only stable languages and features.
    * @return This object, for convenience when chaining setters.
+   * @throws NullPointerException If an include value is <code>null</code>.
    */
-  public GetLanguagesForResourceOptions setInclude(LanguageInclude... include) {
+  public GetLanguagesForResourceOptions setInclude(@Nullable LanguageInclude... include) {
+    if (include == null) {
+      this.include = null;
+      return this;
+    }
     List<String> values = new ArrayList<>();
     for (LanguageInclude value : include) {
-      values.add(value.getValue());
+      values.add(Objects.requireNonNull(value, "include").getValue());
     }
     this.include = values;
     return this;

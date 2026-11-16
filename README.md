@@ -234,7 +234,9 @@ a `TextTranslationOptions`, with the following setters:
   or a string (`"v1"`, `"v2"`).
 - Each of these setters given `null` leaves the option unset, the object
   setters of `setGlossary()`, `setStyleRule()`, `setStyleProfile()` and
-  `setTranslationMemory()` included.
+  `setTranslationMemory()` included. A `null` entry of the list given to
+  `setCustomInstructions()`, `setSplittingTags()`, `setNonSplittingTags()` or
+  `setIgnoreTags()` throws a `NullPointerException` before any request.
 
 The following options are only used if `setTagHandling()` is set to `'xml'`:
 
@@ -1671,7 +1673,9 @@ API resource, as a list of `LanguageSupport` objects. Pass the resource as a
 default only stable languages and features are returned; to also return beta
 languages or features relying on third-party providers, pass
 `GetLanguagesForResourceOptions` with `setInclude(LanguageInclude.Beta,
-LanguageInclude.External)` (or `setInclude(List<String>)`).
+LanguageInclude.External)` (or `setInclude(List<String>)`). A `null` include
+value throws a `NullPointerException`; `null` for the whole list or array leaves
+the option unset.
 `getCode()` returns the language code exactly as the API sends it.
 
 `getLanguageResources()` returns one `LanguageResource` per resource:

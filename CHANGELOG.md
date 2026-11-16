@@ -153,6 +153,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `NullPointerException` for a `null` app name or version; the `User-Agent`
   header ended in `null/null` (or `name/null`) before. Migration: pass both
   values.
+- **Breaking:** `translateText()` throws `NullPointerException` before any
+  request for a `null` entry of the list given to `setCustomInstructions()`,
+  `setSplittingTags()`, `setNonSplittingTags()` or `setIgnoreTags()`; a `null`
+  tag was sent as the tag `null`. `GetLanguagesForResourceOptions.setInclude()`
+  throws `NullPointerException` for a `null` include value, and
+  `setInclude((LanguageInclude[]) null)` leaves the option unset, like
+  `setInclude((List<String>) null)`; both threw an unnamed
+  `NullPointerException`. Migration: leave `null` out of the lists.
 - Every `DeepLClient` and `DeepLAdminClient` method throws
   `NullPointerException` naming the parameter for a `null` required argument
   or a `null` entry of a list argument, before any request, where it threw an

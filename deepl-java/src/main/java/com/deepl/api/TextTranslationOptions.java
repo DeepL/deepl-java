@@ -334,7 +334,8 @@ public class TextTranslationOptions extends BaseRequestOptions {
 
   /**
    * Sets the list of XML tags containing content that should not be translated. By default, this
-   * value is <code>null</code> and no tags are specified.
+   * value is <code>null</code> and no tags are specified. A <code>null</code> entry throws a {@link
+   * NullPointerException} when the request is built, before it is sent.
    */
   public TextTranslationOptions setIgnoreTags(Iterable<String> ignoreTags) {
     this.ignoreTags = ignoreTags;
@@ -353,7 +354,8 @@ public class TextTranslationOptions extends BaseRequestOptions {
 
   /**
    * Sets the list of XML tags that should not be used to split text into sentences. By default,
-   * this value is <code>null</code> and no tags are specified.
+   * this value is <code>null</code> and no tags are specified. A <code>null</code> entry throws a
+   * {@link NullPointerException} when the request is built, before it is sent.
    */
   public TextTranslationOptions setNonSplittingTags(Iterable<String> nonSplittingTags) {
     this.nonSplittingTags = nonSplittingTags;
@@ -373,7 +375,8 @@ public class TextTranslationOptions extends BaseRequestOptions {
 
   /**
    * Set the list of XML tags that should be used to split text into sentences. By default, this
-   * value is <code>null</code> and no tags are specified.
+   * value is <code>null</code> and no tags are specified. A <code>null</code> entry throws a {@link
+   * NullPointerException} when the request is built, before it is sent.
    */
   public TextTranslationOptions setSplittingTags(Iterable<String> splittingTags) {
     this.splittingTags = splittingTags;
@@ -392,7 +395,8 @@ public class TextTranslationOptions extends BaseRequestOptions {
 
   /**
    * Sets custom instructions to influence translations. By default, this value is <code>null</code>
-   * and no custom instructions are used.
+   * and no custom instructions are used. A <code>null</code> entry throws a {@link
+   * NullPointerException} when the request is built, before it is sent.
    */
   public TextTranslationOptions setCustomInstructions(Iterable<String> customInstructions) {
     this.customInstructions = customInstructions;

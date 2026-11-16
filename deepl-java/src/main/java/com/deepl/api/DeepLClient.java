@@ -1005,13 +1005,14 @@ public class DeepLClient {
         params.put("outline_detection", false);
       }
       if (options.getSplittingTags() != null) {
-        params.put("splitting_tags", splitTags(options.getSplittingTags()));
+        params.put("splitting_tags", splitTags("splittingTags", options.getSplittingTags()));
       }
       if (options.getNonSplittingTags() != null) {
-        params.put("non_splitting_tags", splitTags(options.getNonSplittingTags()));
+        params.put(
+            "non_splitting_tags", splitTags("nonSplittingTags", options.getNonSplittingTags()));
       }
       if (options.getIgnoreTags() != null) {
-        params.put("ignore_tags", splitTags(options.getIgnoreTags()));
+        params.put("ignore_tags", splitTags("ignoreTags", options.getIgnoreTags()));
       }
       if (options.getStyleId() != null) {
         params.put("style_id", options.getStyleId());
@@ -1030,7 +1031,8 @@ public class DeepLClient {
         params.put("translation_memory_threshold", options.getTranslationMemoryThreshold());
       }
       if (options.getCustomInstructions() != null) {
-        params.put("custom_instructions", toList(options.getCustomInstructions()));
+        params.put(
+            "custom_instructions", toList("customInstructions", options.getCustomInstructions()));
       }
     }
     return params;
@@ -1216,17 +1218,19 @@ public class DeepLClient {
     }
   }
 
-  private static List<String> toList(Iterable<String> values) {
+  private static List<String> toList(String name, Iterable<String> values) {
     List<String> list = new ArrayList<>();
-    values.forEach(list::add);
+    for (String value : values) {
+      list.add(Objects.requireNonNull(value, name));
+    }
     return list;
   }
 
   /** The tags of the given entries, each split at its commas, as JSON bodies need a list. */
-  private static List<String> splitTags(Iterable<String> tags) {
+  private static List<String> splitTags(String name, Iterable<String> tags) {
     List<String> list = new ArrayList<>();
     for (String entry : tags) {
-      list.addAll(Arrays.asList(entry.split(",")));
+      list.addAll(Arrays.asList(Objects.requireNonNull(entry, name).split(",")));
     }
     return list;
   }
