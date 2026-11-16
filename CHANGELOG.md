@@ -161,6 +161,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `setInclude((LanguageInclude[]) null)` leaves the option unset, like
   `setInclude((List<String>) null)`; both threw an unnamed
   `NullPointerException`. Migration: leave `null` out of the lists.
+- **Breaking:** the `DocumentHandle` constructor throws `NullPointerException`
+  for a `null` document ID or key. The document functions threw an unnamed
+  `NullPointerException` for such a handle before. Migration: use the handle
+  returned by `translateDocumentUpload()`.
 - Every `DeepLClient` and `DeepLAdminClient` method throws
   `NullPointerException` naming the parameter for a `null` required argument
   or a `null` entry of a list argument, before any request, where it threw an

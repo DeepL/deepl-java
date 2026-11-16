@@ -805,6 +805,18 @@ class TranslateDocumentTest {
   }
 
   @Test
+  void documentHandleThrowsNullPointerExceptionNamingANullIdOrKey() {
+    assertEquals(
+        "documentId",
+        assertThrows(NullPointerException.class, () -> new DocumentHandle(null, "k1"))
+            .getMessage());
+    assertEquals(
+        "documentKey",
+        assertThrows(NullPointerException.class, () -> new DocumentHandle("d1", null))
+            .getMessage());
+  }
+
+  @Test
   void throwsNullPointerExceptionBeforeAnyRequestWhenTheTargetLanguageIsNull() throws Exception {
     File input = writeInput("example.txt", "a");
     File output = tempDir.resolve("out.txt").toFile();

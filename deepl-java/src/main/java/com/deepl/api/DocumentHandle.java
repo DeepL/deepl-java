@@ -4,6 +4,7 @@
 package com.deepl.api;
 
 import com.google.gson.annotations.SerializedName;
+import java.util.Objects;
 
 /**
  * Handle to an in-progress document translation.
@@ -17,9 +18,16 @@ public class DocumentHandle {
   @SerializedName(value = "document_key")
   private final String documentKey;
 
+  /**
+   * Initializes a new {@link DocumentHandle} object.
+   *
+   * @param documentId ID of the document translation.
+   * @param documentKey Key of the document translation.
+   * @throws NullPointerException If documentId or documentKey is <code>null</code>.
+   */
   public DocumentHandle(String documentId, String documentKey) {
-    this.documentId = documentId;
-    this.documentKey = documentKey;
+    this.documentId = Objects.requireNonNull(documentId, "documentId");
+    this.documentKey = Objects.requireNonNull(documentKey, "documentKey");
   }
 
   /** Get the ID of associated document request. */
