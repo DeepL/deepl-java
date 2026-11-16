@@ -148,6 +148,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `renameDeveloperKey()` throws it for a `null` label (sent as JSON `null`
   before) and `setDeveloperKeyUsageLimits()` for `null` limits (the request
   was sent without limits before).
+- **Breaking:** `setAppInfo()` of `DeepLClientOptions` and
+  `DeepLAdminClientOptions`, and the `AppInfo` constructor, throw
+  `NullPointerException` for a `null` app name or version; the `User-Agent`
+  header ended in `null/null` (or `name/null`) before. Migration: pass both
+  values.
 - Every `DeepLClient` and `DeepLAdminClient` method throws
   `NullPointerException` naming the parameter for a `null` required argument
   or a `null` entry of a list argument, before any request, where it threw an

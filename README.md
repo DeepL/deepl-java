@@ -1947,7 +1947,8 @@ class Example {  // Continuing class Example from above
 ```
 
 This information is passed along when the library makes calls to the DeepL API.
-Both name and version are required. Please note that setting the `User-Agent` header
+Both name and version are required; `null` for either throws a
+`NullPointerException`. Please note that setting the `User-Agent` header
 via `DeepLClientOptions.setHeaders()` will override this setting, if you need to use this,
 please manually identify your Application in the `User-Agent` header.
 

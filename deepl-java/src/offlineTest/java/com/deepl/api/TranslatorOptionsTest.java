@@ -221,6 +221,22 @@ class TranslatorOptionsTest {
   }
 
   @Test
+  void throwsNullPointerExceptionNamingANullAppNameOrVersion() {
+    assertEquals(
+        "appName",
+        assertThrows(
+                NullPointerException.class,
+                () -> new DeepLClientOptions().setAppInfo(null, "1.2.3"))
+            .getMessage());
+    assertEquals(
+        "appVersion",
+        assertThrows(
+                NullPointerException.class,
+                () -> new DeepLAdminClientOptions().setAppInfo("my-app", null))
+            .getMessage());
+  }
+
+  @Test
   void acceptsAServerUrlWithAnUnderscoreInTheHostName() {
     assertDoesNotThrow(
         () ->

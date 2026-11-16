@@ -110,7 +110,11 @@ public class DeepLAdminClientOptions {
     return this;
   }
 
-  /** Set an identifier and a version for the program/plugin that uses this Client Library. */
+  /**
+   * Set an identifier and a version for the program/plugin that uses this Client Library.
+   *
+   * @throws NullPointerException If appName or appVersion is <code>null</code>.
+   */
   public DeepLAdminClientOptions setAppInfo(String appName, String appVersion) {
     this.appInfo = new AppInfo(appName, appVersion);
     return this;

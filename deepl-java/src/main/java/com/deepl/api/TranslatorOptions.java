@@ -106,6 +106,8 @@ public class TranslatorOptions {
    * Set an identifier and a version for the program/plugin that uses this Client Library. Example:
    * `DeepLClient client = new DeepLClient(myAuthKey, new DeepLClientOptions()
    * .setAppInfo("deepl-hadoop-plugin", "1.2.0"))`
+   *
+   * @throws NullPointerException If appName or appVersion is <code>null</code>.
    */
   public TranslatorOptions setAppInfo(String appName, String appVersion) {
     this.appInfo = new AppInfo(appName, appVersion);
