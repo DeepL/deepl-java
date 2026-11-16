@@ -1984,7 +1984,8 @@ The available options setters are:
   A document or translation memory export download is retried only while
   nothing has been written to the output yet. Every request, including `PATCH` requests, is sent at most `maxRetries + 1`
   times.
-- `setTimeout()`: connection timeout for each HTTP request.
+- `setTimeout()`: connection timeout for each HTTP request, the default is 10
+  seconds; `null` restores the default.
 - `setProxy()`: provide details about a proxy to use for all HTTP requests to
   DeepL, as any `java.net.Proxy`, HTTP or SOCKS. `Proxy.NO_PROXY` connects
   directly, ignoring the JVM proxy settings. By default the JVM proxy settings

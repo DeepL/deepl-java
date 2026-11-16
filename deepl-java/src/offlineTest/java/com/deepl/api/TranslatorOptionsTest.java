@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.github.tomakehurst.wiremock.http.HttpHeader;
 import com.github.tomakehurst.wiremock.matching.StringValuePattern;
 import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -204,6 +205,19 @@ class TranslatorOptionsTest {
             .setProxyUrl("http://proxy:3128")
             .setProxyUrl(null)
             .getProxy());
+  }
+
+  @Test
+  void keepsTheDefaultTimeoutWhenTheTimeoutIsNull() {
+    assertEquals(
+        Duration.ofSeconds(10),
+        new DeepLClientOptions().setTimeout(Duration.ofSeconds(1)).setTimeout(null).getTimeout());
+    assertEquals(
+        Duration.ofSeconds(10),
+        new DeepLAdminClientOptions()
+            .setTimeout(Duration.ofSeconds(1))
+            .setTimeout(null)
+            .getTimeout());
   }
 
   @Test

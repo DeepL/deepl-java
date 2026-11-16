@@ -19,7 +19,7 @@ public class DeepLClientOptions extends TranslatorOptions {
 
   /** {@inheritDoc} */
   @Override
-  public DeepLClientOptions setTimeout(Duration timeout) {
+  public DeepLClientOptions setTimeout(@Nullable Duration timeout) {
     super.setTimeout(timeout);
     return this;
   }

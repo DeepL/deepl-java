@@ -19,8 +19,9 @@ import org.jetbrains.annotations.Nullable;
  * </code>
  */
 public class DeepLAdminClientOptions {
+  private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(10);
   private int maxRetries = 5;
-  private Duration timeout = Duration.ofSeconds(10);
+  private Duration timeout = DEFAULT_TIMEOUT;
   @Nullable private Proxy proxy = null;
   @Nullable private Map<String, String> headers = null;
   @Nullable private String serverUrl = null;
@@ -40,9 +41,12 @@ public class DeepLAdminClientOptions {
     return this;
   }
 
-  /** Set the connection timeout used for each HTTP request retry, the default is 10 seconds. */
-  public DeepLAdminClientOptions setTimeout(Duration timeout) {
-    this.timeout = timeout;
+  /**
+   * Set the connection timeout used for each HTTP request retry, the default is 10 seconds; <code>
+   * null</code> restores the default.
+   */
+  public DeepLAdminClientOptions setTimeout(@Nullable Duration timeout) {
+    this.timeout = timeout == null ? DEFAULT_TIMEOUT : timeout;
     return this;
   }
 
