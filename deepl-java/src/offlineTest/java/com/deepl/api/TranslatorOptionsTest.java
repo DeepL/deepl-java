@@ -266,6 +266,9 @@ class TranslatorOptionsTest {
   void recognizesAuthKeysOfFreeAccounts() {
     assertTrue(DeepLClient.isFreeAccountAuthKey("b493b8ef-0176-215d-82fe-e28f182c9544:fx"));
     assertFalse(DeepLClient.isFreeAccountAuthKey("b493b8ef-0176-215d-82fe-e28f182c9544"));
-    assertFalse(DeepLClient.isFreeAccountAuthKey(null));
+    assertEquals(
+        "authKey",
+        assertThrows(NullPointerException.class, () -> DeepLClient.isFreeAccountAuthKey(null))
+            .getMessage());
   }
 }

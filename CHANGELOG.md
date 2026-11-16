@@ -173,6 +173,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `NullPointerException` naming the parameter for a `null` required argument
   or a `null` entry of a list argument, before any request, where it threw an
   unnamed `NullPointerException` or sent the request before.
+- **Breaking:** `DeepLClient.isFreeAccountAuthKey(null)` throws
+  `NullPointerException` with the message `authKey`, like every other `null`
+  required argument; it returned `false` before. Migration: check the key for
+  `null` before the call.
 - `updateMultilingualGlossaryName()` (all overloads) throws `InterruptedException`
   unwrapped when the thread is interrupted, like the other `DeepLClient`
   methods, instead of a `DeepLException`, and declares it. Callers must catch or

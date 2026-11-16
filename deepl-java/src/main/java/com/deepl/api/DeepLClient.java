@@ -128,9 +128,10 @@ public class DeepLClient {
    *     href="https://www.deepl.com/pro-account/">DeepL account</a>.
    * @return <code>true</code> if the Authentication Key belongs to an API Free account, otherwise
    *     <code>false</code>.
+   * @throws NullPointerException If authKey is <code>null</code>.
    */
   public static boolean isFreeAccountAuthKey(String authKey) {
-    return authKey != null && authKey.endsWith(":fx");
+    return Objects.requireNonNull(authKey, "authKey").endsWith(":fx");
   }
 
   /**
