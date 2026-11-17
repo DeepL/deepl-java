@@ -23,6 +23,7 @@ import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.client.utils.HttpClientUtils;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.ConnectTimeoutException;
@@ -226,6 +227,16 @@ class HttpClientWrapper {
 
       // Execute the request
       org.apache.http.HttpResponse response = httpClient.execute(request, context);
+      if (context.getAttribute(REQUEST_WRITE_STARTED) == null) {
+        // The request was never written, so HttpClient returned the proxy's refusal of CONNECT.
+        int status = response.getStatusLine().getStatusCode();
+        HttpClientUtils.closeQuietly(response);
+        throw new ConnectionException(
+            "Proxy refused the tunnel to the DeepL API, HTTP status: " + status,
+            false,
+            null,
+            false);
+      }
 
       // The body is read here so that a failure while reading it is retried like any other.
       byte[] body =

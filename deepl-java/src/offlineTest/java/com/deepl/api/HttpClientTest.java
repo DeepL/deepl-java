@@ -385,10 +385,12 @@ class HttpClientTest {
   }
 
   /**
-   * Runs the call through a local HTTP proxy that refuses every CONNECT with 403. Apache returns
-   * the proxy's answer as the response, so its failure is an HTTP error, not a ConnectionException.
+   * Runs the call through a local HTTP proxy that refuses every CONNECT with the given status and
+   * counts its connections. Apache returns the proxy's answer as the response; the client turns it
+   * into a ConnectionException.
    */
-  private static DeepLException failThroughRefusingProxy(ClientCall call) throws Exception {
+  private static DeepLException failThroughRefusingProxy(
+      ClientCall call, int status, AtomicInteger connections) throws Exception {
     try (ServerSocket proxy = new ServerSocket(0)) {
       Thread responder =
           new Thread(
@@ -396,6 +398,7 @@ class HttpClientTest {
                 try {
                   while (true) {
                     try (Socket socket = proxy.accept()) {
+                      connections.incrementAndGet();
                       BufferedReader request =
                           new BufferedReader(
                               new InputStreamReader(
@@ -407,7 +410,7 @@ class HttpClientTest {
                       socket
                           .getOutputStream()
                           .write(
-                              "HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\n\r\n"
+                              ("HTTP/1.1 " + status + " Refused\r\nContent-Length: 0\r\n\r\n")
                                   .getBytes(StandardCharsets.US_ASCII));
                     }
                   }
@@ -449,8 +452,25 @@ class HttpClientTest {
       assertSame(handshake, thrown.getCause());
       assertFalse(thrown.getShouldRetry(), "a TLS failure is not retried");
 
-      DeepLException refused = failThroughRefusingProxy(call);
+      DeepLException refused = failThroughRefusingProxy(call, 403, new AtomicInteger());
+      if (call == CREATE_EXPORT) {
+        assertTrue(refused instanceof ConnectionException, refused.toString());
+      }
       assertFalse(refused.getShouldRetry(), "a refused proxy tunnel is not retried");
+    }
+  }
+
+  @Test
+  void doesNotRetryAProxyErrorAnswerToConnect() throws Exception {
+    ClientCall patch = c -> c.updateMultilingualGlossaryName("g1", "n");
+    for (int status : new int[] {403, 429, 503}) {
+      for (ClientCall call : Arrays.asList(CREATE_EXPORT, patch)) {
+        AtomicInteger connections = new AtomicInteger();
+        DeepLException thrown = failThroughRefusingProxy(call, status, connections);
+        assertEquals(ConnectionException.class, thrown.getClass(), thrown.toString());
+        assertFalse(thrown.getShouldRetry(), "a proxy error answer is not retried");
+        assertEquals(1, connections.get(), "status " + status);
+      }
     }
   }
 

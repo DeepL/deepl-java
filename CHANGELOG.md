@@ -255,6 +255,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   constructor takes the map as well.
 - The library is now tested on the Java LTS releases 8, 11, 17, 21 and 25
   only; Java 8 remains the minimum.
+- **Breaking:** A non-2xx answer from an HTTP proxy to `CONNECT` for a PATCH
+  request (the update methods) or a POST without a body
+  (`createTranslationMemoryExport()` and the other bodiless creates) throws a
+  `ConnectionException` with `getShouldRetry()` `false` and is not retried, as
+  for every other request; it was treated as the API's response before, retried
+  for 429 and 5xx and then mapped by its status (for example
+  `AuthorizationException` for 403).
 
 ### Removed
 - **Breaking:** removed the deprecated `GlossaryNotFoundException`. Every
