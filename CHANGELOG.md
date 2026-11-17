@@ -355,6 +355,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `setTimeout(null)` of `DeepLClientOptions` and `DeepLAdminClientOptions`
   restores the default timeout of 10 seconds; every request then failed with a
   `NullPointerException`.
+- `uploadTranslationMemoryFile()` with a `null` content type uploads with
+  `application/xml`, like the overload without one; it threw
+  `NullPointerException` before.
 
 ## [1.18.0] - 2026-11-02
 TL;DR: new APIs in this release: the Admin API, spoken terms, style profiles and text correction.

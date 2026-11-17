@@ -3744,15 +3744,19 @@ public class DeepLClient {
    *     CreateTranslationMemoryImportOptions)}.
    * @param fileContent Content of the TMX file to upload.
    * @param contentType MIME type of the file, which must match the content type declared when the
-   *     import job was created.
-   * @throws NullPointerException If uploadUrl, fileContent or contentType is <code>null</code>;
-   *     checked before any request.
+   *     import job was created. Optional, defaults to "application/xml" when <code>null</code>.
+   * @throws NullPointerException If uploadUrl or fileContent is <code>null</code>; checked before
+   *     any request.
    * @throws InterruptedException If the thread is interrupted during execution of this function.
    * @throws DeepLException If any error occurs while uploading the file.
    */
-  public void uploadTranslationMemoryFile(String uploadUrl, byte[] fileContent, String contentType)
+  public void uploadTranslationMemoryFile(
+      String uploadUrl, byte[] fileContent, @Nullable String contentType)
       throws DeepLException, InterruptedException {
     validateParameter("uploadUrl", uploadUrl);
+    if (contentType == null) {
+      contentType = TRANSLATION_MEMORY_FILE_CONTENT_TYPE;
+    }
     validateParameter("contentType", contentType);
     Objects.requireNonNull(fileContent, "fileContent");
     HttpResponse response =
@@ -3783,7 +3787,9 @@ public class DeepLClient {
    * @see DeepLClient#uploadTranslationMemoryFile(String, byte[], String)
    */
   public void uploadTranslationMemoryFile(
-      TranslationMemoryImport translationMemoryImport, byte[] fileContent, String contentType)
+      TranslationMemoryImport translationMemoryImport,
+      byte[] fileContent,
+      @Nullable String contentType)
       throws DeepLException, InterruptedException {
     Objects.requireNonNull(translationMemoryImport, "translationMemoryImport");
 

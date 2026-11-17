@@ -260,6 +260,20 @@ class TranslationMemoriesTest {
   }
 
   @Test
+  void uploadsWithTheDefaultContentTypeWhenTheContentTypeIsNull() throws Exception {
+    wm.stubFor(
+        put("/storage")
+            .withHeader("Content-Type", equalTo(DeepLClient.TRANSLATION_MEMORY_FILE_CONTENT_TYPE))
+            .withHeader("Authorization", absent())
+            .withRequestBody(binaryEqualTo("<tmx/>".getBytes(StandardCharsets.UTF_8)))
+            .willReturn(aResponse().withStatus(200)));
+    client.uploadTranslationMemoryFile(
+        new TranslationMemoryImport("j1", storageUrl(), null),
+        "<tmx/>".getBytes(StandardCharsets.UTF_8),
+        null);
+  }
+
+  @Test
   void throwsDeepLExceptionWhenTheUploadIsRejected() {
     wm.stubFor(put("/storage").willReturn(aResponse().withStatus(403)));
     DeepLException thrown =
