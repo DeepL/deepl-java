@@ -44,6 +44,9 @@ upgrade to 2.0.0 and fix the remaining compile errors.
    counts: [Types and signatures](#types-and-signatures).
 10. Replace `Usage.anyLimitReached()` with `anyCharacterLimitReached()` and drop the document
     usage getters: [Usage](#usage).
+11. Do not pass `null` or empty strings for required arguments, and catch
+    `NullPointerException` where you caught `IllegalArgumentException` for `null`:
+    [Null and empty arguments](#null-and-empty-arguments).
 
 ## Client and options
 
@@ -63,6 +66,19 @@ DeepLClient client = new DeepLClient(authKey, new DeepLClientOptions().setTimeou
 
 Subclasses of `DeepLClient` that used the protected members `jsonParser` and
 `httpClientWrapper` still find them on `DeepLClient`.
+
+### Null options and keys
+
+`new DeepLClient(authKey, null)` and `new DeepLAdminClient(adminKey, null)` use the default
+options; before they threw `NullPointerException` and `IllegalArgumentException`.
+`setProxyUrl(null)` of `DeepLClientOptions` and `DeepLAdminClientOptions` clears the proxy, so
+the JVM proxy settings apply; before it threw `IllegalArgumentException`. A `null` key throws
+`NullPointerException` instead of `IllegalArgumentException`; an empty or blank key still
+throws `IllegalArgumentException`. `DeepLClient.isFreeAccountAuthKey(null)` throws
+`NullPointerException` instead of returning `false`.
+
+`setAppInfo()` and the `AppInfo` constructor throw `NullPointerException` for a `null` app name
+or version. Before, the `User-Agent` header ended in `null/null`. Pass both values.
 
 ### API version
 
@@ -142,6 +158,33 @@ new TextTranslationOptions().setGlossaryId(glossaryId).setStyleId(styleId);
 new TextTranslationOptions().setGlossary(glossaryId).setStyleRule(styleId);
 ```
 
+### Option values
+
+The setters of `TextTranslationOptions` and `DocumentTranslationOptions` that take a glossary,
+style rule, style profile or translation memory object leave the option unset for `null`, like
+the setters that take an ID. Before they threw `IllegalArgumentException` (`setGlossary()`:
+`NullPointerException`).
+
+`DocumentTranslationOptions.setGlossary()`, `setStyleRule()`, `setStyleProfile()` and
+`setTranslationMemory()` throw `IllegalArgumentException` for an empty ID and for an object
+without ID. Before, an empty ID was sent and an object without ID left the option unset.
+`setGlossaryIds()` of both classes throws it for an empty entry or a glossary object without
+ID, which were sent before.
+
+A `null` entry of `setGlossaryIds()` in both classes, and of `setGlossaryIds()`,
+`setStyleRuleIds()` and `setTranslationMemoryIds()` of `CreateStyleProfileOptions` and
+`UpdateStyleProfileOptions`, throws `NullPointerException`. So does a `null` entry of the
+lists given to `setCustomInstructions()`, `setSplittingTags()`, `setNonSplittingTags()` and
+`setIgnoreTags()`; before, a `null` tag was sent as the tag `null`. Leave `null` out of the
+lists.
+
+```java
+// Before: an empty ID was sent to the API
+new DocumentTranslationOptions().setGlossary(glossaryIdOrEmpty);
+// After: pass null to leave the option unset
+new DocumentTranslationOptions().setGlossary(glossaryIdOrEmpty.isEmpty() ? null : glossaryIdOrEmpty);
+```
+
 ### Language code constants
 
 The 42 string constants of `LanguageCode` (`LanguageCode.German`, `LanguageCode.EnglishAmerican`
@@ -209,8 +252,8 @@ try { client.getGlossary(id); } catch (NotFoundException e) { ... }
 `updateMultilingualGlossaryName()` (all overloads) now declares `InterruptedException` and
 throws it unwrapped instead of a `DeepLException`.
 
-The functions that take a `MultilingualGlossaryInfo` throw `IllegalArgumentException` for
-`null` instead of `NullPointerException`. `createGlossary()`, `createGlossaryFromCsv()`,
+The functions that take a `MultilingualGlossaryInfo` throw `NullPointerException` for `null`,
+now with the parameter name as message. `createGlossary()`, `createGlossaryFromCsv()`,
 `createMultilingualGlossaryFromCsv()` and `updateMultilingualGlossaryName()` throw
 `IllegalArgumentException` for an empty name, and `createGlossary()` and
 `createMultilingualGlossary()` for empty entries, before sending a request. Before, the
@@ -249,8 +292,11 @@ them does not compile.
 a failed or expired job, a timeout and local file errors. The underlying error is the cause.
 `getJobId()` returns the job ID once the job was created, and `getJob()` returns the last
 fetched `TranslationMemoryJob`, or `null` before the first status request.
-`getHttpStatusCode()` and `getShouldRetry()` come from the cause. A missing input file still
-throws `IllegalArgumentException`.
+`getHttpStatusCode()` and `getShouldRetry()` come from the cause. An empty ID, or a
+`TranslationMemoryInfo` without ID, passed to `exportTranslationMemoryToFilepath()` is wrapped
+as well, without job ID. Not wrapped: a missing input file still throws
+`IllegalArgumentException`, and a `null` translation memory ID, `TranslationMemoryInfo`, file
+name, input file or output file throws `NullPointerException` before any request.
 
 ```java
 // Before
@@ -296,10 +342,48 @@ if (usage.anyLimitReached()) { ... }
 if (usage.anyCharacterLimitReached()) { ... }
 ```
 
+## Null and empty arguments
+
+Every `DeepLClient` and `DeepLAdminClient` function checks its arguments before any request. A
+`null` required argument, or a `null` entry of a list argument, throws `NullPointerException`
+with the parameter name as message. An empty string where a value is required throws
+`IllegalArgumentException`. Changes that need a code change:
+
+| Situation | Before | After |
+|---|---|---|
+| `null` resource ID, name, language code or other required string of the multilingual glossary, Spoken Terms, style rule, style profile, translation memory and `getLanguagesForResource()` functions | `IllegalArgumentException` | `NullPointerException` |
+| `null` translation memory, translation memory job or import, Spoken Terms, style profile, style rule or custom instruction object (an object without ID still throws `IllegalArgumentException`) | `IllegalArgumentException` | `NullPointerException` |
+| `null` glossary ID of `getGlossary()`, `getGlossaryEntries()`, `deleteGlossary()` | request to `/v2/glossaries/null` | `NullPointerException` |
+| Empty dictionary language code of `createMultilingualGlossary()`, `createMultilingualGlossaryFromCsv()`, `updateMultilingualGlossary()` | sent to the API | `IllegalArgumentException` |
+| Empty language code of a Spoken Terms term list, `getSpokenTermsEntries()` or `deleteSpokenTermsList()` | sent to the API | `IllegalArgumentException` |
+| Empty source language of a style rule custom instruction (`createStyleRule()`, `createStyleRuleCustomInstruction()`, `updateStyleRuleCustomInstruction()`; `null` leaves it unset) | sent to the API | `IllegalArgumentException` |
+| `null` name of `createSpokenTerms()` or `createStyleProfile()`; `null` custom instruction, label or prompt of `createStyleRule()` | left out of the request | `NullPointerException` |
+| `null` configured rules of `updateStyleRuleConfiguredRules()` | `IllegalArgumentException` | `NullPointerException` |
+| `null` file content, input file, output file or output stream of `uploadTranslationMemoryFile()`, `importTranslationMemoryFromFilepath()`, `exportTranslationMemoryToFilepath()`, `downloadTranslationMemoryExport()` | `IllegalArgumentException` | `NullPointerException` |
+| `null` target language, input stream, file name or output stream of `translateDocument()` | `DocumentTranslationException` | `NullPointerException` |
+| `null` key ID, `DeveloperKey` or date of `DeepLAdminClient` | `IllegalArgumentException` | `NullPointerException` |
+| `null` label of `renameDeveloperKey()`, `null` limits of `setDeveloperKeyUsageLimits()` | sent as JSON `null`, or sent without limits | `NullPointerException` |
+| `null` document ID or key of the `DocumentHandle` constructor | the document functions threw `NullPointerException` | the constructor throws `NullPointerException` |
+| `null` entries of the `SpokenTermsEntries` constructor | sent as an empty term list | `NullPointerException`; pass an empty list |
+
+`GetLanguagesForResourceOptions.setInclude()` throws `NullPointerException` for a `null`
+include value, and `setInclude((LanguageInclude[]) null)` leaves the option unset.
+
+```java
+// Before
+try {
+  client.getStyleProfile(styleProfileId);
+} catch (IllegalArgumentException e) { ... } // also thrown for a null ID
+// After
+Objects.requireNonNull(styleProfileId, "styleProfileId"); // or check before the call
+client.getStyleProfile(styleProfileId);
+```
+
 ## Errors, validation and retries
 
-- Requests that create a resource are retried only when they were not sent: after HTTP 429,
-  a DNS failure, a refused connection or a connect timeout. These are `createGlossary()`,
+- Requests that create a resource are retried only when they were not sent: after HTTP 429
+  or a failure while connecting, such as a DNS failure, a refused connection, an unreachable
+  host or network or a connect timeout; not after a TLS or proxy failure. These are `createGlossary()`,
   `createGlossaryFromCsv()`, `createMultilingualGlossary()`,
   `createMultilingualGlossaryFromCsv()`, `createSpokenTerms()`, `createStyleProfile()`,
   `createStyleRule()`, `createStyleRuleCustomInstruction()`,
@@ -310,6 +394,16 @@ if (usage.anyCharacterLimitReached()) { ... }
   Check before you retry such a request yourself. Except for
   `createTranslationMemoryExport()`, which has no body, these requests are streamed and do
   not follow HTTP redirects: a redirect fails with a `ConnectionException`.
+- A failure while connecting, before the request is written, is retried for every request
+  whatever its exception class, for example `Network is unreachable` or a reset during the TLS
+  handshake. This includes `DeepLAdminClient.createDeveloperKey()`, which before raised such a
+  failure at once with `getShouldRetry()` `false`. TLS failures and a proxy that refuses the
+  tunnel are not retried.
+- A non-2xx answer from an HTTP proxy to `CONNECT` for a `PATCH` request (the update
+  functions) or a `POST` without a body (`createTranslationMemoryExport()` and the other
+  bodiless creates) throws a `ConnectionException` with `getShouldRetry()` `false` and is not
+  retried. Before, it was treated as the API's response: retried for 429 and 5xx and mapped by
+  its status, for example to `AuthorizationException` for 403.
 - The `checkResponse` method that subclasses of `DeepLClient` can override lost its
   `usingGlossary` parameter: `checkResponse(HttpResponse, boolean)`.
 - `updateMultilingualGlossaryName()`, `translateDocument()` and the translation memory file
