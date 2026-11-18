@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Changed
-- This release removes everything deprecated in 1.18.0 and changes the error
+- **Breaking:** this release removes everything deprecated in 1.18.0 and changes the error
   handling of several functions. See [the upgrading guide](upgrading_to_v2.md)
   for the changes and how to migrate from 1.x.
 - **Breaking:** `createStyleRule()` (for its custom instructions),
@@ -173,52 +173,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `NullPointerException` for `null` entries; `createSpokenTerms()`,
   `updateSpokenTerms()` and `replaceSpokenTermsList()` sent such a term list as
   an empty one before. Migration: pass an empty list for an empty term list.
-- Every `DeepLClient` and `DeepLAdminClient` method throws
+- **Breaking:** every `DeepLClient` and `DeepLAdminClient` method throws
   `NullPointerException` naming the parameter for a `null` required argument
   or a `null` entry of a list argument, before any request, where it threw an
-  unnamed `NullPointerException` or sent the request before.
+  unnamed `NullPointerException` or sent the request before. Migration: do not
+  pass `null` for a required argument or list entry.
 - **Breaking:** `DeepLClient.isFreeAccountAuthKey(null)` throws
   `NullPointerException` with the message `authKey`, like every other `null`
   required argument; it returned `false` before. Migration: check the key for
   `null` before the call.
-- `updateMultilingualGlossaryName()` (all overloads) throws `InterruptedException`
+- **Breaking:** `updateMultilingualGlossaryName()` (all overloads) throws `InterruptedException`
   unwrapped when the thread is interrupted, like the other `DeepLClient`
   methods, instead of a `DeepLException`, and declares it. Callers must catch or
   declare `InterruptedException`.
-- `TextResult.getBilledCharacters()` returns `long` instead of `int`, and the
+- **Breaking:** `TextResult.getBilledCharacters()` returns `long` instead of `int`, and the
   `TextResult` constructors take a `long`. Assign the result to a `long`, or
   cast it explicitly.
-- `TranslationMemoryJobResult.getSkippedSegmentCount()` returns `Long` instead
+- **Breaking:** `TranslationMemoryJobResult.getSkippedSegmentCount()` returns `Long` instead
   of `Integer`, and the `TranslationMemoryJobResult` constructors take a `Long`.
   Use `Long` (or `long` after a null check) for the count.
-- `Usage.anyLimitReached()` is replaced by `Usage.anyCharacterLimitReached()`,
+- **Breaking:** `Usage.anyLimitReached()` is replaced by `Usage.anyCharacterLimitReached()`,
   which returns `true` if the account's character limit (`getCharacter()`) or
   this API key's character limit (`getApiKeyCharacter()`) is reached. The
   speech limits are not considered; call `limitReached()` on their details.
-- `TranslationMemoryJob.done()` and `TranslationMemoryJobResult.done()` now
+- **Breaking:** `TranslationMemoryJob.done()` and `TranslationMemoryJobResult.done()` now
   return `true` only when the job completed successfully, like
   `DocumentStatus.done()`; they returned `true` for a failed or expired job too.
   Check `ok()` for failure. `waitUntilTranslationMemoryJobDone()` still returns
   the completed job and throws `DeepLException` on failure or expiry.
-- `importTranslationMemoryFromFilepath()` and
+- **Breaking:** `importTranslationMemoryFromFilepath()` and
   `exportTranslationMemoryToFilepath()` throw `TranslationMemoryJobException`,
   with the `IOException` as its cause, for local file failures: an unreadable
   input file, an occupied output path, a missing output directory, an output
   file that cannot be created (checked before the export job is created), or a
   failed write. They no longer declare `IOException`; catch
   `TranslationMemoryJobException` instead and inspect `getCause()`.
-- `translateDocument(File, File, ...)` and `translateDocumentUpload(File, ...)`
+- **Breaking:** `translateDocument(File, File, ...)` and `translateDocumentUpload(File, ...)`
   throw `IllegalArgumentException` for a missing input file, before any
-  request, instead of `FileNotFoundException`.
-- `translateDocument(File, File, ...)` throws `DocumentTranslationException`,
+  request, instead of `FileNotFoundException`. Catch `IllegalArgumentException`
+  instead.
+- **Breaking:** `translateDocument(File, File, ...)` throws `DocumentTranslationException`,
   with the `IOException` as its cause, for an occupied output path, an
   unreadable input file or an output file that cannot be created, and no longer
   declares `IOException`. Catch `DocumentTranslationException` instead.
-- `translateDocument()` throws `InterruptedException` unwrapped when the
+- **Breaking:** `translateDocument()` throws `InterruptedException` unwrapped when the
   thread is interrupted, instead of a `DocumentTranslationException`, and
   declares it. Callers that do not already handle `InterruptedException`
   must catch or declare it.
-- Text translation, rephrasing, text correction, glossary creation (v2 and
+- **Breaking:** text translation, rephrasing, text correction, glossary creation (v2 and
   v3), and renaming a multilingual glossary or updating its dictionaries now
   send JSON request bodies instead of form-encoded ones, as the API
   specification describes. Texts, tag lists, custom instructions and glossary
@@ -226,8 +228,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   numbers. A comma-separated tag string such as `"a,b"` is sent as the list of
   its tags. Document upload, status and download requests are unchanged. Code
   that inspects the outgoing requests, such as proxies or test doubles, sees
-  the new format.
-- `BaseRequestOptions.setExtraBodyParameters()` and every subclass's override
+  the new format. Migration: such code must read the JSON body.
+- **Breaking:** `BaseRequestOptions.setExtraBodyParameters()` and every subclass's override
   take a `Map<String, ?>`, and `getExtraBodyParameters()` returns a
   `Map<String, ?>`. In JSON request bodies each value is sent as its JSON form
   instead of always as a string, so a string given for a boolean, number or
@@ -249,7 +251,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `getAccountUnitCount()` return a `Long` that is `null` when the API response
   omits the count, instead of a `long` that was `0`; the `Usage.Product`
   constructor takes `Long` counts. Check for null before unboxing.
-- `StyleRuleInfo.getConfiguredRules()` now returns the configured rules as the
+- **Breaking:** `StyleRuleInfo.getConfiguredRules()` now returns the configured rules as the
   API sends them, as a `Map<String, Map<String, String>>` from category to rule
   to value in snake_case form, instead of a `ConfiguredRules` object. Categories
   outside the former seven fields are no longer dropped. Replace getters such as
@@ -273,38 +275,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the glossary has no dictionary for the language pair. Catch
   `NotFoundException` instead. The `usingGlossary` parameter of the protected
   `DeepLClient.checkResponse()` is removed.
-- Removed `Usage.getDocument()`, `Usage.getTeamDocument()` and the matching
+- **Breaking:** removed `Usage.getDocument()`, `Usage.getTeamDocument()` and the matching
   `document` and `teamDocument` parameters of the `Usage` constructors, which
   are now `Usage(Detail)` and a seven-argument constructor: the API no longer
   returns document usage. `toString()` no longer prints "Documents"
   or "Team documents" lines. Responses that still contain these fields parse;
-  the fields are ignored.
-- Removed `TranslationMemoryJobResult.Status.Downloaded`: the API does not
+  the fields are ignored. Delete the calls and pass no document usage to the
+  constructors.
+- **Breaking:** removed `TranslationMemoryJobResult.Status.Downloaded`: the API does not
   report a `downloaded` job status. Code that compared against it can drop the
   comparison; `Completed` is the status of a finished export.
-- Removed the protected static helpers `DeepLClient.createWriteHttpParams()`,
+- **Breaking:** removed the protected static helpers `DeepLClient.createWriteHttpParams()`,
   `createGlossaryHttpParams()` and `createGlossaryDictionariesHttpParams()`,
   which built the form-encoded bodies that are now JSON. They were not meant
   for callers; subclasses that used them build the request themselves.
-- Removed the `Translator` class and its constructors `Translator(String)` and
+- **Breaking:** removed the `Translator` class and its constructors `Translator(String)` and
   `Translator(String, TranslatorOptions)`. `DeepLClient` no longer extends
   `Translator` and has all of its methods with the same signatures. Replace
   `new Translator(...)` with `new DeepLClient(...)`, `new TranslatorOptions()`
   with `new DeepLClientOptions()`, and variables of type `Translator` with
   `DeepLClient`.
-- The `TranslatorOptions()` constructor is no longer public; `TranslatorOptions`
+- **Breaking:** the `TranslatorOptions()` constructor is no longer public; `TranslatorOptions`
   remains as the base class of `DeepLClientOptions`. Create a
   `DeepLClientOptions` instead.
-- Removed `Translator.getLanguages(LanguageType)` and the `LanguageType` enum,
+- **Breaking:** removed `Translator.getLanguages(LanguageType)` and the `LanguageType` enum,
   deprecated in 1.18.0. Call `getSourceLanguages()` or `getTargetLanguages()`
   instead.
-- Removed `TextTranslationOptions.setGlossaryId()`, `setGlossaries()`,
+- **Breaking:** removed `TextTranslationOptions.setGlossaryId()`, `setGlossaries()`,
   `setStyleId()` and `setTranslationMemoryId()`, deprecated in 1.18.0. Call
   `setGlossary()`, `setGlossaryIds()`, `setStyleRule()` and
   `setTranslationMemory()` instead.
-- Removed the `DeepLClient(String, TranslatorOptions)` constructor, deprecated
+- **Breaking:** removed the `DeepLClient(String, TranslatorOptions)` constructor, deprecated
   in 1.8.1. Pass a `DeepLClientOptions` instead.
-- Removed the overloads `createStyleRule(String, String, ConfiguredRules, List)`
+- **Breaking:** removed the overloads `createStyleRule(String, String, ConfiguredRules, List)`
   and `updateStyleRuleConfiguredRules(String, ConfiguredRules)`, deprecated in
   1.18.0, and the `ConfiguredRules` class they took. Pass the configured rules as a `Map<String, Map<String, String>>` to
   `createStyleRule(String, String, Map, List, CreateStyleRuleOptions)` and
@@ -315,13 +318,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   protected `apiVersion` fields of `TranslatorOptions` and `DeepLClient`.
   Delete the calls; the client always uses API version 2. Subclasses that set
   or read `apiVersion` must drop it.
-- Removed `DocumentTranslationOptions.setGlossaryId()`, `setGlossaries()`,
+- **Breaking:** removed `DocumentTranslationOptions.setGlossaryId()`, `setGlossaries()`,
   `setStyleId()` and `setTranslationMemoryId()`, deprecated in 1.18.0. Call
   `setGlossary()`, `setGlossaryIds()`, `setStyleRule()` and
   `setTranslationMemory()` instead.
-- Removed `Translator.translateDocumentStatus()`, deprecated in 1.18.0. Call
+- **Breaking:** removed `Translator.translateDocumentStatus()`, deprecated in 1.18.0. Call
   `translateDocumentGetStatus()` instead.
-- Removed the language code constants of `LanguageCode` (for example
+- **Breaking:** removed the language code constants of `LanguageCode` (for example
   `LanguageCode.German`), deprecated in 1.18.0. Pass the language code as a
   string, for example `"de"`, or take it from `getSourceLanguages()` /
   `getTargetLanguages()`. `LanguageCode.removeRegionalVariant()` and
