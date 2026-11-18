@@ -131,7 +131,7 @@ tasks.register<Jar>("sourcesJar") {
 
 tasks.register<Jar>("javadocJar") {
     archiveClassifier.set("javadoc")
-    from(tasks.javadoc.get().destinationDir)
+    from(tasks.javadoc)
     manifest = project.java.manifest {
         from(sharedManifest)
     }

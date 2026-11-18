@@ -1457,9 +1457,9 @@ public class DeepLClient {
   /**
    * Creates a glossary in your DeepL account with the specified details and returns a {@link
    * MultilingualGlossaryInfo} object with details about the newly created glossary. The glossary
-   * will contain the glossary dictionaries specified in <paramref name="glossaryDicts" /> each with
-   * their own source language, target language and entries.The glossary can be used in translations
-   * to override translations for specific terms (words). The glossary must contain a glossary
+   * will contain the glossary dictionaries specified in {@code glossaryDicts} each with their own
+   * source language, target language and entries.The glossary can be used in translations to
+   * override translations for specific terms (words). The glossary must contain a glossary
    * dictionary that matches the languages of translations for which it will be used.
    *
    * <p>The create request is retried only when the request was not sent: after HTTP 429 or a
@@ -1533,9 +1533,9 @@ public class DeepLClient {
    * Creates a glossary in your DeepL account with the specified details and returns a {@link
    * MultilingualGlossaryInfo} object with details about the newly created glossary. The glossary
    * will contain a glossary dictionary with the source and target language codes specified and
-   * entries created from the <paramref name="csvFile" />. The glossary can be used in translations
-   * to override translations for specific terms (words). The glossary must contain a glossary
-   * dictionary that matches the languages of translations for which it will be used.
+   * entries created from the {@code csvFile}. The glossary can be used in translations to override
+   * translations for specific terms (words). The glossary must contain a glossary dictionary that
+   * matches the languages of translations for which it will be used.
    *
    * <p>The create request is retried only when the request was not sent: after HTTP 429 or a
    * failure while connecting (for example a DNS resolution failure, a refused connection, an
@@ -1593,9 +1593,9 @@ public class DeepLClient {
    * Creates a glossary in your DeepL account with the specified details and returns a {@link
    * MultilingualGlossaryInfo} object with details about the newly created glossary. The glossary
    * will contain a glossary dictionary with the source and target language codes specified and
-   * entries created from the <paramref name="csvFile" />. The glossary can be used in translations
-   * to override translations for specific terms (words). The glossary must contain a glossary
-   * dictionary that matches the languages of translations for which it will be used.
+   * entries created from the {@code csvFile}. The glossary can be used in translations to override
+   * translations for specific terms (words). The glossary must contain a glossary dictionary that
+   * matches the languages of translations for which it will be used.
    *
    * <p>The create request is retried only when the request was not sent: after HTTP 429 or a
    * failure while connecting (for example a DNS resolution failure, a refused connection, an
@@ -2207,9 +2207,8 @@ public class DeepLClient {
 
   /**
    * Updates a glossary dictionary with given entries for the source and target language codes. The
-   * glossary dictionary must belong to the glossary with the ID specified in <paramref
-   * name="glossaryId" />. If a dictionary for the provided language pair already exists, the
-   * dictionary entries are merged.
+   * glossary dictionary must belong to the glossary with the ID specified in {@code glossaryId}. If
+   * a dictionary for the provided language pair already exists, the dictionary entries are merged.
    *
    * @param glossaryId The specified ID of the glossary that contains the dictionary to be
    *     updated/created
@@ -2237,8 +2236,8 @@ public class DeepLClient {
 
   /**
    * Updates a glossary dictionary with given entries for the source and target language codes. The
-   * glossary dictionary must belong to the glossary specified in <paramref name="glossary" />. If a
-   * dictionary for the provided language pair already exists, the dictionary entries are merged.
+   * glossary dictionary must belong to the glossary specified in {@code glossary}. If a dictionary
+   * for the provided language pair already exists, the dictionary entries are merged.
    *
    * @param glossary The specified ID for the glossary that contains the dictionary to be
    *     updated/created
@@ -2270,10 +2269,10 @@ public class DeepLClient {
   }
 
   /**
-   * Updates a glossary dictionary with given glossary dictionary specified in <paramref
-   * name="glossaryDict" />. The glossary dictionary must belong to the glossary with the ID
-   * specified in <paramref name="glossaryId" />. If a dictionary for the provided language pair
-   * already exists, the dictionary entries are merged.
+   * Updates a glossary dictionary with given glossary dictionary specified in {@code glossaryDict}.
+   * The glossary dictionary must belong to the glossary with the ID specified in {@code
+   * glossaryId}. If a dictionary for the provided language pair already exists, the dictionary
+   * entries are merged.
    *
    * @param glossaryId The specified ID of the glossary that contains the dictionary to be
    *     updated/created

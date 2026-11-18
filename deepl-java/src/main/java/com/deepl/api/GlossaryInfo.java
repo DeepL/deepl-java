@@ -36,7 +36,8 @@ public class GlossaryInfo implements IGlossary {
    *
    * @param glossaryId ID of the associated glossary.
    * @param name Name of the glossary chosen during creation.
-   * @param ready <c>true</c> if the glossary may be used for translations, otherwise <c>false</c>.
+   * @param ready {@code true} if the glossary may be used for translations, otherwise {@code
+   *     false}.
    * @param sourceLang Language code of the source terms in the glossary.
    * @param targetLang Language code of the target terms in the glossary.
    * @param creationTime Time when the glossary was created.

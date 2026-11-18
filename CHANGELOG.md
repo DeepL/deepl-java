@@ -368,6 +368,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `uploadTranslationMemoryFile()` with a `null` content type uploads with
   `application/xml`, like the overload without one; it threw
   `NullPointerException` before.
+- The published `-javadoc.jar` contains the API documentation; it held only
+  its manifest before.
 
 ## [1.18.0] - 2026-11-02
 TL;DR: new APIs in this release: the Admin API, spoken terms, style profiles and text correction.
