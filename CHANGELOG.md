@@ -19,12 +19,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   through the term lists, `getSpokenTermsEntries()`,
   `deleteSpokenTermsList()`) throw `IllegalArgumentException` for an empty
   language code and `NullPointerException` for a `null` one, before any
-  request; the code was sent to the API before.
+  request; an empty code was sent to the API before, and a `null` one threw an
+  unnamed `NullPointerException`.
 - **Breaking:** `createMultilingualGlossary()`,
   `createMultilingualGlossaryFromCsv()` and `updateMultilingualGlossary()`
   throw `IllegalArgumentException` for an empty dictionary language code and
-  `NullPointerException` for a `null` one, before any request; the code was
-  sent to the API before.
+  `NullPointerException` for a `null` one, before any request; an empty code
+  was sent to the API before, and a `null` one threw an unnamed
+  `NullPointerException`.
 - **Breaking:** `importTranslationMemoryFromFilepath()` and
   `exportTranslationMemoryToFilepath()` wrap every failure in the new
   `TranslationMemoryJobException` (a `DeepLException`), whose `getJobId()`
@@ -132,8 +134,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `getGlossaryEntries()` and `deleteGlossary()` throw `NullPointerException`
   for a `null` glossary ID instead of requesting `/v2/glossaries/null`.
 - **Breaking:** `createGlossary()` and `createGlossaryFromCsv()` throw
-  `NullPointerException` for a `null` source or target language or CSV
-  content, `createSpokenTerms()` and `createStyleProfile()` for a `null` name,
+  `NullPointerException` naming the parameter for a `null` source or target
+  language or CSV content; they threw an unnamed `NullPointerException` before.
+  `createSpokenTerms()` and `createStyleProfile()` throw it for a `null` name,
   and `createStyleRule()` for a `null` custom instruction or one with a `null`
   label or prompt; these were left out of the request before.
   `updateStyleRuleConfiguredRules()` throws `NullPointerException` for `null`
