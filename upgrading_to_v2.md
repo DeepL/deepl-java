@@ -307,7 +307,9 @@ if (usage.anyCharacterLimitReached()) { ... }
   `createTranslationMemoryExport()`, `DeepLAdminClient.createDeveloperKey()` and the document
   upload. After HTTP 5xx, a read timeout or a connection reset, the error is raised without a
   retry and `DeepLException.getShouldRetry()` is `false`, because the resource may exist.
-  Check before you retry such a request yourself.
+  Check before you retry such a request yourself. Except for
+  `createTranslationMemoryExport()`, which has no body, these requests are streamed and do
+  not follow HTTP redirects: a redirect fails with a `ConnectionException`.
 - The `checkResponse` method that subclasses of `DeepLClient` can override lost its
   `usingGlossary` parameter: `checkResponse(HttpResponse, boolean)`.
 - `updateMultilingualGlossaryName()`, `translateDocument()` and the translation memory file

@@ -1989,8 +1989,9 @@ The available options setters are:
   import or export job) and the document upload are retried only when the
   request was not sent: after HTTP 429 or a failure while connecting (for
   example a DNS resolution failure, a refused connection, an unreachable host or
-  network, or a connect timeout), but not after a TLS or proxy failure. They are sent in streaming mode and do not
-  follow HTTP redirects.
+  network, or a connect timeout), but not after a TLS or proxy failure. Except
+  for the translation memory export job, which has no body, they are sent in
+  streaming mode and do not follow HTTP redirects.
   A document or translation memory export download is retried only while
   nothing has been written to the output yet. Every request, including `PATCH` requests, is sent at most `maxRetries + 1`
   times.
