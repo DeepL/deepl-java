@@ -61,6 +61,9 @@ Be careful not to expose your key, for example when sharing source code.
 
 ```java
 import com.deepl.api.*;
+import java.io.*;
+import java.nio.file.*;
+import java.time.Duration;
 import java.util.*;
 
 class Example {
@@ -284,7 +287,7 @@ Example call:
 
 ```java
 WriteResult result = client.rephraseText("A rainbouw has seven colours.", "EN-US", null);
-System.out.println(result.getText);
+System.out.println(result.getText());
 ```
 
 Additionally, you can optionally specify a style OR a tone (not both at once) that the
@@ -318,7 +321,7 @@ enums or a string, which is sent as given:
 ```java
 TextRephraseOptions options = (new TextRephraseOptions()).setWritingStyle(WritingStyle.Business);
 WriteResult result = client.rephraseText("A rainbouw has seven colours.", "EN-US", options);
-System.out.println(result.getText);
+System.out.println(result.getText());
 ```
 
 `TextRephraseOptions` also supports `setExtraBodyParameters()`: a map of
@@ -507,22 +510,23 @@ class Example {  // Continuing class Example from above
             put("artist", "Maler");
             put("prize", "Gewinn");
         }};
-        MultilingualGlossaryDictionaryEntries myGlossaryDicts = 
+        List<MultilingualGlossaryDictionaryEntries> myGlossaryDicts =
                 Arrays.asList(new MultilingualGlossaryDictionaryEntries(
                                 "en",
                                 "de",
                                 entries
                               ));
         MultilingualGlossaryInfo myGlossary =
-                client.createGlossary("My glossary", myGlossaryDicts);
+                client.createMultilingualGlossary("My glossary", myGlossaryDicts);
 
+        MultilingualGlossaryDictionaryInfo dict = myGlossary.getDictionaries().get(0);
         System.out.printf("Created '%s' (%s) containing %d dictionary from %s->%s with %d entries\n",
                           myGlossary.getName(),
                           myGlossary.getGlossaryId(),
-                          myGlossary.getDictionaries().length,
-                          myGlossary.getSourceLang(),
-                          myGlossary.getTargetLang(),
-                          myGlossary.getEntryCount());
+                          myGlossary.getDictionaries().size(),
+                          dict.getSourceLanguageCode(),
+                          dict.getTargetLanguageCode(),
+                          dict.getEntryCount());
         // Example: Created 'My glossary' (559192ed-8e23-...) containing 1 
         // dictionary from en->de containing 2 entries
     }
@@ -553,7 +557,7 @@ or a string containing the CSV data:
 
 ```java
 class Example {  // Continuing class Example from above
-    public createGlossaryFromCsvExample() throws Exception {
+    public void createGlossaryFromCsvExample() throws Exception {
         File csvFile = new File("/path/to/glossary_file.csv");
         MultilingualGlossaryInfo myGlossary =
                 client.createMultilingualGlossaryFromCsv("My glossary",
@@ -589,20 +593,20 @@ Functions to get, list, and delete stored glossaries are also provided:
 
 ```java
 class Example {  // Continuing class Example from above
-    public getListDeleteGlossaryExamples() throws Exception {
+    public void getListDeleteGlossaryExamples() throws Exception {
         // Retrieve a stored glossary using the ID
         String glossaryId = "559192ed-8e23-...";
         MultilingualGlossaryInfo myGlossary = 
           client.getMultilingualGlossary(glossaryId);
 
         client.deleteMultilingualGlossaryDictionary(glossaryId, 
-                                                    myGlossary.getDictionaries()[0]);
+                                                    myGlossary.getDictionaries().get(0));
 
         // Find and delete glossaries named 'Old glossary'
         List<MultilingualGlossaryInfo> glossaries = 
           client.listMultilingualGlossaries();
         for (MultilingualGlossaryInfo glossary : glossaries) {
-            if (glossary.getName() == "Old glossary") {
+            if (glossary.getName().equals("Old glossary")) {
                 client.deleteMultilingualGlossary(glossary);
             }
         }
@@ -624,11 +628,13 @@ thrown:
 
 ```java
 class Example {  // Continuing class Example from above
-  public getGlossaryEntriesExample() throws Exception {
-      List<MultilingualGlossaryDictionaryInfo> glossaryDicts = 
+  public void getGlossaryEntriesExample() throws Exception {
+      MultilingualGlossaryInfo myGlossary =
+        client.getMultilingualGlossary("559192ed-8e23-...");
+      MultilingualGlossaryDictionaryEntries glossaryDict =
         client.getMultilingualGlossaryDictionaryEntries(myGlossary, "en", "de");
-      
-      for (Map.Entry<String, String> entry : glossaryDicts.getDictionaries()[0].getEntries().entrySet()) {
+
+      for (Map.Entry<String, String> entry : glossaryDict.getEntries().entrySet()) {
         System.out.println(entry.getKey() + ":" + entry.getValue());
       }
       // prints:
@@ -674,6 +680,8 @@ values are added to the request body last.
 ```java
 class Example {  // Continuing class Example from above
   public void updateGlossaryExample() throws Exception {
+    MultilingualGlossaryInfo myGlossary =
+      client.getMultilingualGlossary("559192ed-8e23-...");
     GlossaryEntries entries = new GlossaryEntries(Collections.singletonMap("goodbye", "Tschüss"));
     MultilingualGlossaryInfo updatedGlossary =
       client.updateMultilingualGlossary(myGlossary,
@@ -688,7 +696,7 @@ class Example {  // Continuing class Example from above
 ```java
 // Update glossary dictionary
 class Example {  // Continuing class Example from above
-  public updateGlossaryEntriesExample() throws Exception {
+  public void updateGlossaryEntriesExample() throws Exception {
     GlossaryEntries entries = new GlossaryEntries() {{
               put("artist", "Maler");
               put("hello", "guten tag");
@@ -711,10 +719,10 @@ class Example {  // Continuing class Example from above
     MultilingualGlossaryInfo updatedGlossary = 
       client.updateMultilingualGlossaryDictionary(myGlossary, glossaryDict);
 
-    MultilingualGlossaryInfo entriesResponse = 
+    MultilingualGlossaryDictionaryEntries entriesResponse =
       client.getMultilingualGlossaryDictionaryEntries(myGlossary, "EN", "DE");
 
-    for (Map.Entry<String, String> entry : glossaryDicts.getDictionaries()[0].getEntries().entrySet()) {
+    for (Map.Entry<String, String> entry : entriesResponse.getEntries().entrySet()) {
       System.out.println(entry.getKey() + ":" + entry.getValue());
     }
     
@@ -725,11 +733,11 @@ class Example {  // Continuing class Example from above
   }
 
   // Update a glossary dictionary from CSV
-  public updateGlossaryEntriesFromCsvExample() throws Exception {
+  public void updateGlossaryEntriesFromCsvExample() throws Exception {
     File csvFile = new File("/path/to/glossary_file.csv");
     String glossaryId = "559192ed-8e23-...";
     MultilingualGlossaryInfo myGlossary =
-      client.createMultilingualGlossaryDictionaryFromCsv(glossaryId,
+      client.updateMultilingualGlossaryDictionaryFromCsv(glossaryId,
                                                         "en",
                                                         "de",
                                                         csvFile);
@@ -740,7 +748,7 @@ class Example {  // Continuing class Example from above
   public void updateGlossaryNameExample() throws Exception {
     String glossaryId = "559192ed-8e23-...";
     MultilingualGlossaryInfo myGlossary =
-      client.updateMultilingualName(glossaryId, "My new glossary name");
+      client.updateMultilingualGlossaryName(glossaryId, "My new glossary name");
     System.out.println(myGlossary.getName()); // 'My new glossary name'
   }
 
@@ -764,13 +772,13 @@ class Example {  // Continuing class Example from above
     MultilingualGlossaryDictionaryEntries glossaryDict = 
       new MultilingualGlossaryDictionaryEntries("EN", "DE", newEntries);
 
-    MultilingualGlossaryInfo updatedGlossary = 
+    MultilingualGlossaryDictionaryInfo replacedDict =
       client.replaceMultilingualGlossaryDictionary(myGlossary, glossaryDict);
 
-    MultilingualGlossaryInfo entriesResponse = 
+    MultilingualGlossaryDictionaryEntries entriesResponse =
       client.getMultilingualGlossaryDictionaryEntries(myGlossary, "EN", "DE");
 
-    for (Map.Entry<String, String> entry : glossaryDicts.getDictionaries()[0].getEntries().entrySet()) {
+    for (Map.Entry<String, String> entry : entriesResponse.getEntries().entrySet()) {
       System.out.println(entry.getKey() + ":" + entry.getValue());
     }
     
@@ -782,13 +790,13 @@ class Example {  // Continuing class Example from above
   public void replaceGlossaryEntriesFromCsvExample() throws Exception {
     File csvFile = new File("/path/to/glossary_file.csv");
     String glossaryId = "559192ed-8e23-...";
-    MultilingualGlossaryInfo myGlossary =
+    MultilingualGlossaryDictionaryInfo replacedDict =
       client.replaceMultilingualGlossaryDictionaryFromCsv(glossaryId,
                                                           "en",
                                                           "de",
                                                           csvFile);
-    MultilingualGlossaryInfo entriesResponse = 
-      client.getMultilingualGlossaryDictionaryEntries(myGlossary, "EN", "DE");
+    MultilingualGlossaryDictionaryEntries entriesResponse =
+      client.getMultilingualGlossaryDictionaryEntries(glossaryId, "EN", "DE");
   }
 }
 ```
@@ -802,10 +810,12 @@ language and uses the glossary's dictionary for the detected language pair:
 
 ```java
 class Example {  // Continuing class Example from above
-    public boid usingGlossaryExample() throws Exception {
+    public void usingGlossaryExample() throws Exception {
+        MultilingualGlossaryInfo myGlossary =
+                client.getMultilingualGlossary("559192ed-8e23-...");
         String text = "The artist was awarded a prize.";
         TextTranslationOptions options =
-                new TextTranslationOptions().setGlossary(my_glossary);
+                new TextTranslationOptions().setGlossary(myGlossary);
         TextResult resultWithGlossary =
                 client.translateText(text, "en", "de", options);
         System.out.println(resultWithGlossary.getText()); // "Der Maler wurde mit einem Gewinn ausgezeichnet."
@@ -824,7 +834,7 @@ Using a stored glossary for document translation is the same, except that the
 
 ```java
 class Example {  // Continuing class Example from above
-    public boid getListDeleteGlossaryExamples() throws Exception {
+    public void documentGlossaryExample() throws Exception {
         String glossaryId = "559192ed-8e23-...";
         DocumentTranslationOptions options =
                 new DocumentTranslationOptions().setGlossary(glossaryId);
@@ -1948,6 +1958,7 @@ If you use this library in an application, please identify the application with
 ```java
 class Example {  // Continuing class Example from above
     public void configurationExample() throws Exception {
+        String authKey = "f63c02c5-f056-...";  // Replace with your key
         DeepLClientOptions options =
                 new DeepLClientOptions().setAppInfo("my-java-translation-plugin", "1.2.3");
         DeepLClient client = new DeepLClient(authKey, options);
@@ -1969,6 +1980,7 @@ The `DeepLClient` constructor accepts `DeepLClientOptions` as a second argument
 ```java
 class Example {  // Continuing class Example from above
     public void configurationExample() throws Exception {
+        String authKey = "f63c02c5-f056-...";  // Replace with your key
         DeepLClientOptions options =
                 new DeepLClientOptions().setMaxRetries(1).setTimeout(Duration.ofSeconds(
                         1));
@@ -2023,6 +2035,7 @@ By default, we send some basic information about the platform the client library
 ```java
 class Example {  // Continuing class Example from above
     public void configurationExample() throws Exception {
+        String authKey = "f63c02c5-f056-...";  // Replace with your key
         DeepLClientOptions options =
                 new DeepLClientOptions().setSendPlatformInfo(false);
         DeepLClient client = new DeepLClient(authKey, options);
@@ -2035,6 +2048,7 @@ You can also customize the `User-Agent` header by setting its value explicitly i
 ```java
 class Example {  // Continuing class Example from above
     public void configurationExample() throws Exception {
+        String authKey = "f63c02c5-f056-...";  // Replace with your key
         Map<String, String> headers = new HashMap<>();
         headers.put("User-Agent", "my custom user agent");
         DeepLClientOptions options =
