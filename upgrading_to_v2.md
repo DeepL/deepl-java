@@ -93,7 +93,7 @@ failed with a `ConnectionException`. An empty string is rejected too: to use the
 server, do not call `setServerUrl()`.
 
 ```java
-// Before: an unset environment variable could end up as an empty server URL
+// Before: an environment variable set to an empty string ended up as an empty server URL
 options.setServerUrl(System.getenv("DEEPL_SERVER_URL"));
 // After
 String serverUrl = System.getenv("DEEPL_SERVER_URL");
@@ -269,11 +269,11 @@ the API. `StyleRuleInfo.getConfiguredRules()` returns the same map, so categorie
 ```java
 // Before
 String dates = rule.getConfiguredRules().getDatesAndTimes().get("calendar_era");
-client.createStyleRule("Name", "de", configuredRules, instructions);
+client.createStyleRule("Name", "en", configuredRules, instructions);
 client.updateStyleRuleConfiguredRules(id, configuredRules);
 // After
 String dates = rule.getConfiguredRules().get("dates_and_times").get("calendar_era");
-client.createStyleRule("Name", "de", configuredRulesMap, instructions, null);
+client.createStyleRule("Name", "en", configuredRulesMap, instructions, null);
 client.updateStyleRuleConfiguredRules(id, configuredRulesMap, null);
 ```
 
@@ -438,4 +438,7 @@ removed.
 - `DeepLClient.checkResponse(HttpResponse, boolean, boolean)`: now
   `checkResponse(HttpResponse, boolean)`.
 - `TranslatorOptions()`: constructor is protected.
+- `com.deepl.api.http.HttpResponse` and `HttpResponseStream` gained the public
+  `HttpResponse(int, String, boolean)` constructor, `isRetriedOnlyIfUnsent()` and
+  `toStringResponse(boolean)`; they are internal and not meant for callers.
 - `Usage` constructors and `Usage.Product` constructor: see [Usage](#usage).
