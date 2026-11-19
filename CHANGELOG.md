@@ -34,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `getJob()` returns the last fetched `TranslationMemoryJob` (for example the
   failed, expired or timed-out job), or `null` before the first status
   request. Before, API errors, a failed job and an exceeded timeout were
-  thrown unwrapped and local file errors as a plain `DeepLException`. The
+  thrown unwrapped and local file errors as an `IOException`. The
   underlying error is the cause; `getHttpStatusCode()` and `getShouldRetry()`
   are taken from it. A missing input file still throws
   `IllegalArgumentException`. An empty ID, or a `TranslationMemoryInfo`
@@ -93,8 +93,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `IllegalArgumentException` if the server URL set with `setServerUrl()` is not
   an absolute `http` or `https` URL with a host, instead of failing on the first
   request with a `ConnectionException`. An empty string is rejected too; to use
-  the default server, do not call `setServerUrl()` (for example when an
-  environment variable for it is unset or empty).
+  the default server, do not call `setServerUrl()` or pass `null` (for example
+  when an environment variable for it is set but empty).
 - **Breaking:** `new DeepLClient(authKey, null)` and
   `new DeepLAdminClient(adminKey, null)` use the default options, as the
   one-argument constructors do; they threw `NullPointerException` and
@@ -205,12 +205,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Check `ok()` for failure. `waitUntilTranslationMemoryJobDone()` still returns
   the completed job and throws `DeepLException` on failure or expiry.
 - **Breaking:** `importTranslationMemoryFromFilepath()` and
-  `exportTranslationMemoryToFilepath()` throw `TranslationMemoryJobException`,
-  with the `IOException` as its cause, for local file failures: an unreadable
-  input file, an occupied output path, a missing output directory, an output
-  file that cannot be created (checked before the export job is created), or a
-  failed write. They no longer declare `IOException`; catch
-  `TranslationMemoryJobException` instead and inspect `getCause()`.
+  `exportTranslationMemoryToFilepath()` no longer declare `IOException`; local
+  file failures are thrown as `TranslationMemoryJobException` with the
+  `IOException` as cause: an unreadable input file, an occupied output path, a
+  missing output directory, an output file that cannot be created (checked
+  before the export job is created), or a failed write.
 - **Breaking:** `translateDocument(File, File, ...)` and `translateDocumentUpload(File, ...)`
   throw `IllegalArgumentException` for a missing input file, before any
   request, instead of `FileNotFoundException`. Catch `IllegalArgumentException`
@@ -367,7 +366,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `NullPointerException`.
 - `uploadTranslationMemoryFile()` with a `null` content type uploads with
   `application/xml`, like the overload without one; it threw
-  `NullPointerException` before.
+  `IllegalArgumentException` before.
 - The published `-javadoc.jar` contains the API documentation; it held only
   its manifest before.
 
