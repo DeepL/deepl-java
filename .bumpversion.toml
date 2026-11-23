@@ -19,4 +19,4 @@ filename = "README.md"
 filename = "deepl-java/build.gradle.kts"
 
 [[tool.bumpversion.files]]
-filename = "deepl-java/src/main/java/com/deepl/api/Translator.java"
+filename = "deepl-java/src/main/java/com/deepl/api/DeepLClient.java"

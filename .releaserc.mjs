@@ -83,7 +83,7 @@ export default {
           ".bumpversion.toml",
           "README.md",
           "deepl-java/build.gradle.kts",
-          "deepl-java/src/main/java/com/deepl/api/Translator.java",
+          "deepl-java/src/main/java/com/deepl/api/DeepLClient.java",
         ],
         // The body is what .github/workflows/release.yml reads to fill the
         // GitHub release, so it must stay the changelog section.
