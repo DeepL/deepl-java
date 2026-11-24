@@ -36,7 +36,7 @@ To upgrade from version 1.x to 2.0.0, see [the upgrading guide](upgrading_to_v2.
 Add this dependency to your project's build file:
 
 ```
-implementation "com.deepl.api:deepl-java:1.18.0"
+implementation "com.deepl.api:deepl-java:2.0.0"
 ```
 
 ### Maven users
@@ -47,7 +47,7 @@ Add this dependency to your project's POM:
 <dependency>
   <groupId>com.deepl.api</groupId>
   <artifactId>deepl-java</artifactId>
-  <version>1.18.0</version>
+  <version>2.0.0</version>
 </dependency>
 ```
 

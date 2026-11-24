@@ -107,7 +107,7 @@ public class DeepLClient {
    */
   static String constructUserAgentString(boolean sendPlatformInfo, @Nullable AppInfo appInfo) {
     StringBuilder sb = new StringBuilder();
-    sb.append("deepl-java/1.18.0");
+    sb.append("deepl-java/2.0.0");
     if (sendPlatformInfo) {
       sb.append(" (");
       Properties props = System.getProperties();

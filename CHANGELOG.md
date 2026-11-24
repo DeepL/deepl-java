@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [2.0.0] - 2026-11-24
 ### Changed
 - **Breaking:** this release removes everything deprecated in 1.18.0 and changes the error
   handling of several functions. See [the upgrading guide](upgrading_to_v2.md)
@@ -993,7 +995,8 @@ Read Changed and Deprecated before upgrading; no public API is removed in this r
 ## [0.1.0] - 2022-09-08
 Initial version.
 
-[Unreleased]: https://github.com/DeepL/deepl-java/compare/v1.18.0...HEAD
+[Unreleased]: https://github.com/DeepL/deepl-java/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/DeepL/deepl-java/compare/v1.18.0...v2.0.0
 [1.18.0]: https://github.com/DeepL/deepl-java/compare/v1.17.0...v1.18.0
 [1.17.0]: https://github.com/DeepL/deepl-java/compare/v1.16.0...v1.17.0
 [1.16.0]: https://github.com/DeepL/deepl-java/compare/v1.15.0...v1.16.0

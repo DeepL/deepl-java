@@ -12,7 +12,7 @@ plugins {
 }
 
 group = "com.deepl.api"
-version = "1.18.0"
+version = "2.0.0"
 
 val sharedManifest = java.manifest {
     attributes (
