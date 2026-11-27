@@ -160,7 +160,7 @@ publishing {
             pom {
                 name.set("deepl-java")
                 description.set("DeepL API Java Client Library")
-                url.set("https://www.github.com/DeepLcom/deepl-java")
+                url.set("https://github.com/DeepL/deepl-java")
                 properties.set(mapOf(
                     "java.version" to "1.8",
                     "project.build.sourceEncoding" to "UTF-8",
@@ -184,9 +184,9 @@ publishing {
                     url.set("https://www.deepl.com")
                 }
                 scm {
-                    connection.set("scm:git:git://github.com/DeepLcom/deepl-java.git")
-                    developerConnection.set("scm:git:ssh://github.com/DeepLcom/deepl-java.git")
-                    url.set("https://www.github.com/DeepLcom/deepl-java")
+                    connection.set("scm:git:git://github.com/DeepL/deepl-java.git")
+                    developerConnection.set("scm:git:ssh://github.com/DeepL/deepl-java.git")
+                    url.set("https://github.com/DeepL/deepl-java")
                 }
             }
         }

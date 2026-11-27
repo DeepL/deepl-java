@@ -838,18 +838,18 @@ Read Changed and Deprecated before upgrading; no public API is removed in this r
 ## [1.10.3] - 2025-08-22
 ### Security
 - Updated `org.apache.httpcomponents:httpclient` to 4.5.14 due to [CVE-2020-13956](https://nvd.nist.gov/vuln/detail/CVE-2020-13956).
-   * Thanks to [warm-tune](https://github.com/warm-tune) for reporting in [#72](https://github.com/DeepLcom/deepl-java/issues/72).
+   * Thanks to [warm-tune](https://github.com/warm-tune) for reporting in [#72](https://github.com/DeepL/deepl-java/issues/72).
 
 ## [1.10.2] - 2025-07-11
 ### Changed
 - Migrate to Sonatype Portal OSSRH Staging API due to legacy OSSRH being sunsetted.
 - Whitespace surrounding auth key is now stripped.
-  * Thanks to [timazhum](https://github.com/timazhum) for the fix in [#64](https://github.com/DeepLcom/deepl-java/pull/69).
+  * Thanks to [timazhum](https://github.com/timazhum) for the fix in [#64](https://github.com/DeepL/deepl-java/pull/69).
 
 ## [1.10.1] - 2025-06-18
 ### Fixed
 - Fixed `DeepLClient::deleteMultilingualGlossary(String glossaryId)` being package private, made it public instead.
-  * Thanks to [MTSxoff](https://github.com/MTSxoff) for the report in [#68](https://github.com/DeepLcom/deepl-java/issues/68) and the fix in [#69](https://github.com/DeepLcom/deepl-java/pull/69).
+  * Thanks to [MTSxoff](https://github.com/MTSxoff) for the report in [#68](https://github.com/DeepL/deepl-java/issues/68) and the fix in [#69](https://github.com/DeepL/deepl-java/pull/69).
 
 ## [1.10.0] - 2025-04-30
 ### Added
@@ -901,7 +901,7 @@ Read Changed and Deprecated before upgrading; no public API is removed in this r
 ## [1.5.1] - 2024-09-05
 ### Fixed
 - Fixed parsing for usage count and limit for large values.
-  * Thanks to [lubo-dev](https://github.com/lubo-dev) in [#45](https://github.com/DeepLcom/deepl-java/pull/45).
+  * Thanks to [lubo-dev](https://github.com/lubo-dev) in [#45](https://github.com/DeepL/deepl-java/pull/45).
 
 ## [1.5.0] - 2024-04-10
 ### Added
@@ -948,7 +948,7 @@ Read Changed and Deprecated before upgrading; no public API is removed in this r
 ## [1.0.1] - 2023-01-02
 ### Fixed
 - Always send SentenceSplittingMode option in requests.
-  * [#3](https://github.com/DeepLcom/deepl-java/issues/3) thanks to
+  * [#3](https://github.com/DeepL/deepl-java/issues/3) thanks to
     [nicStuff](https://github.com/nicStuff)
 
 ## [1.0.0] - 2022-12-15

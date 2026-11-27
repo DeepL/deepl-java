@@ -1,7 +1,7 @@
 # DeepL Java Library
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.deepl.api/deepl-java.svg)](https://mvnrepository.com/artifact/com.deepl.api/deepl-java)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blueviolet.svg)](https://github.com/DeepLcom/deepl-java/blob/main/LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blueviolet.svg)](https://github.com/DeepL/deepl-java/blob/main/LICENSE)
 
 The [DeepL API][api-docs] is a language AI API that allows other computer programs
 to send texts and documents to DeepL's servers and receive high-quality
@@ -2114,6 +2114,6 @@ Each run writes a coverage report of the library to
 
 [create-account]: https://www.deepl.com/pro?utm_source=github&utm_medium=github-java-readme#developer
 
-[issues]: https://www.github.com/DeepLcom/deepl-java/issues
+[issues]: https://github.com/DeepL/deepl-java/issues
 
 [pro-account]: https://www.deepl.com/pro-account/?utm_source=github&utm_medium=github-java-readme
